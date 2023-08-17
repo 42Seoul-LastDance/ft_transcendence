@@ -15,7 +15,7 @@ clean	:
 
 fclean	:
 	make clean
-	docker volume rm $(docker volume ls -q -f dangling=true)
+	docker volume rm $$(docker volume ls -q -f dangling=true)
 
 re		:
 	make fclean
