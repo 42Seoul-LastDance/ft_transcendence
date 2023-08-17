@@ -3,7 +3,7 @@ NAME		= .transcendence
 all		: $(NAME)
 
 $(NAME) :
-	mkdir -p $(HOME)/Desktop/transcendence/srcs
+	mkdir -p $(PWD)/srcs
 	docker-compose up --build
 
 down	: 
