@@ -17,7 +17,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: './srcs'
+      device: '${PWD}/srcs'
 
 networks:
   my_network: 

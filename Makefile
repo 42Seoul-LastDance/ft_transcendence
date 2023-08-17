@@ -3,7 +3,6 @@ NAME		= .transcendence
 all		: $(NAME)
 
 $(NAME) :
-	mkdir -p $(PWD)/srcs
 	docker-compose up --build
 
 down	: 
@@ -16,7 +15,7 @@ clean	:
 
 fclean	:
 	make clean
-	docker volume rm -f transcendence_srcs
+	docker volume rm -f main_srcs
 
 re		:
 	make fclean
