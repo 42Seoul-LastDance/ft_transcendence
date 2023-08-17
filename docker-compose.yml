@@ -17,7 +17,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: '${HOME}/Desktop/transcendence/srcs'
+      device: './srcs'
 
 networks:
   my_network: 
