@@ -1,10 +1,17 @@
 # Main
 
 ### 사용법
-0. [중요] git clone [url] ~/Desktop/transcendence
-1. make docker -> init_docker.sh 스크립트 실행 후 Docker Desktop 실행
-2. Docker Desktop 실행될 때까지 기다리기
-2. make -> typescript 컴파일 엔진 구동
-3. srcs 폴더에서 작업 (볼륨 연결 되어있음)
-4. make compile -> srcs 폴더 하위에 있는 모든 .ts 파일 컴파일 -> .js로 바뀜
-5. 웹 브라우저에서 index.html 열기
+
+1. 레포 클론
+
+   ```bash
+   git clone https://github.com/42Seoul-LastDance/Main.git && cd Main
+   ```
+
+2. **[클러스터]** 도커가 꺼져있다면 `make docker` 로 도커 실행
+   
+3. 도커 실행 후 `make`하여 ts 컴파일 컨테이너 실행
+4. srcs 폴더에서 작업 (볼륨 연결 되어있음)
+5. `make compile` -> `srcs` 폴더 하위에 있는 모든 `.ts` 파일 컴파일 -> `.js`로 바뀜
+6. 웹 브라우저에서 `index.html` 열기
+   -  vscode extension -> Live Preview -> Show Preview (External Browser) 로 바로 실행 가능
