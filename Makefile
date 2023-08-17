@@ -22,7 +22,11 @@ re		:
 	make fclean
 	make all
 
+docker	:
+	chmod 777 ./utils/init_docker.sh
+	echo "y" | ./utils/init_docker.sh
+
 compile	:
 	docker exec node npx tsc ./srcs/*.ts
 
-.PHONY	: all down clean fclean re en
+.PHONY	: all down clean fclean docker compile

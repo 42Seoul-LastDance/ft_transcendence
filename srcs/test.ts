@@ -1,3 +1,3 @@
-let message:string = "Hello World!sadsdadasdasdas";
+let message:string = "Hello World!";
 
 alert(message);
