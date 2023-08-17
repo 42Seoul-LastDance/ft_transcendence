@@ -11,11 +11,11 @@ down	:
 
 clean	:
 	make down
-	docker system prune -a
+	docker system prune -af
 
 fclean	:
 	make clean
-	docker volume rm -f main_srcs
+	docker volume rm $(docker volume ls -q -f dangling=true)
 
 re		:
 	make fclean
