@@ -5,8 +5,7 @@ WORKDIR /usr/app
 RUN		apt-get update \
 		&& apt-get install -y dumb-init \
 		&& npm install -g npm \
-		&& npm install -g @nestjs/cli \
-		&& nest new our-nestjs
+		&& npm install -g @nestjs/cli
 
 ENTRYPOINT	["/usr/bin/dumb-init", "--"]
 
