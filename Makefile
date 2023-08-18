@@ -26,7 +26,8 @@ docker	:
 	echo "y" | ./utils/init_docker.sh
 
 compile	:
-	docker exec node npx tsc ./srcs/test.ts
+	docker exec node npx tsc $(ls ./srcs/ | grep .ts$)
+
 
 cntest	:
 	docker exec nest curl http://localhost:3000
