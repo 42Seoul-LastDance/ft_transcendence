@@ -26,6 +26,9 @@ docker	:
 	echo "y" | ./utils/init_docker.sh
 
 compile	:
-	docker exec node npx tsc ./srcs/*.ts
+	docker exec node npx tsc ./srcs/test.ts
 
-.PHONY	: all down clean fclean docker compile
+cntest	:
+	docker exec nest curl http://localhost:3000
+
+.PHONY	: all down clean fclean docker compile cntest

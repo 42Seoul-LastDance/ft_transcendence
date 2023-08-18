@@ -3,21 +3,36 @@ version: "3"
 services:
   node:
     container_name: node
-    build: ./node
+    build: ./services/node
     image: node:ts
     volumes:
-      - srcs:/usr/app/srcs
+      - node:/usr/app/srcs
+    networks:
+      - my_network
+    restart: always
+  nest:
+    container_name: nest
+    build: ./services/nest
+    image: nest:ts
+    volumes:
+      - nest:/usr/app/srcs
     networks:
       - my_network
     restart: always
 
 volumes:
-  srcs:
+  node:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: '${PWD}/srcs'
+      device: '${PWD}/srcs/node'
+  nest:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: '${PWD}/srcs/nest'
 
 networks:
   my_network: 
