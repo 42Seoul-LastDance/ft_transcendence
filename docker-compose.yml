@@ -11,8 +11,6 @@ services:
       - my_network
     env_file:
       - ./.env
-    ports:
-      - "3000:3000"
     restart: always
     depends_on:
       - postgresql
@@ -25,6 +23,8 @@ services:
       - nest:/usr/app/srcs
     networks:
       - my_network
+    ports:
+      - "3000:3000"
     restart: always
 
   postgresql:
