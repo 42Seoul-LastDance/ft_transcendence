@@ -3,6 +3,7 @@ NAME		= .transcendence
 all		: $(NAME)
 
 $(NAME) :
+	mkdir -p ./srcs/postgresql
 	docker-compose up --build
 
 down	: 
