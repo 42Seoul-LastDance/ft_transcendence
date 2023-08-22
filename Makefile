@@ -32,4 +32,10 @@ compile	:
 cntest	:
 	docker exec nest curl http://localhost:3000
 
-.PHONY	: all down clean fclean docker compile cntest
+run :
+	docker exec nest npm --prefix srcs run start
+
+restart :
+	docker exec nest npm --prefix srcs run restart
+
+.PHONY	: all down clean fclean docker compile cntest run stop
