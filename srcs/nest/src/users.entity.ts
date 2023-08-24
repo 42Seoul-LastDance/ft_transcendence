@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
-@Entity('player')
-export class Player {
+@Entity('users')
+export class Users {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
@@ -9,8 +9,9 @@ export class Player {
   name: string;
 
   @Column()
-  password: string;
+  profileurl: string;
 
-  @Column('int')
-  point: number;
+  constructor(partial: Partial<Users>) {
+    Object.assign(this, partial);
+  }
 }
