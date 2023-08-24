@@ -38,9 +38,4 @@ run :
 restart :
 	docker exec nest npm --prefix srcs run restart
 
-renest	:
-	docker container rm nest
-	docker image rm nest:ts
-	make all
-
 .PHONY	: all down clean fclean docker compile cntest run stop renest
