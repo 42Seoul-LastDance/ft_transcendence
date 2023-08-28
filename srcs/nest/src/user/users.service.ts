@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { Users } from './users.entity';
@@ -26,9 +26,9 @@ export class UsersService {
       }
     });
   }
-
-  async searchUsers(name: string): Promise<Users[]> {
-    return this.usersRepository.find({
+  
+  async getUserListByFistSlackId(slackId: string): Promise<Users[]> {
+    const found = this.usersRepository.find({
       where: {
         name: Like(`${name}%`),
       },
@@ -36,6 +36,12 @@ export class UsersService {
         name: 'ASC', // Ascending order (alphabetically)
       },
     });
+
+    if(!found)}{
+      return new NotFoundException();
+    }
+    
+    return found;  
   }
 
   async deleteOne(id: number): Promise<void> {
