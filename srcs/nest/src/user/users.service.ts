@@ -26,19 +26,22 @@ export class UsersService {
       }
     });
   }
-
-  async getUserByName(name: string): Promise<Users> {
-    const found = this.usersRepository.findOne({
+  
+  async getUserListByFistSlackId(slackId: string): Promise<Users[]> {
+    const found = this.usersRepository.find({
       where: {
-          name: name,
-      }
+        name: Like(`${name}%`),
+      },
+      order: {
+        name: 'ASC', // Ascending order (alphabetically)
+      },
     });
 
-    if(!found){
-      throw NotFoundException;      
+    if(!found)}{
+      return new NotFoundException();
     }
     
-    return found;
+    return found;  
   }
 
   async deleteOne(id: number): Promise<void> {
