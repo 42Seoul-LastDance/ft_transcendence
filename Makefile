@@ -29,10 +29,11 @@ stest	:
 	docker exec nest curl http://localhost:3000
 
 xtest	:
-	docker exec node curl http://localhost:3000
+	docker exec next curl http://localhost:3000
 
 next	:
-	docker exec node npm --prefix srcs run dev
+	docker exec -it next npx create-next-app srcs/my-app
+	docker exec next npm --prefix srcs/my-app run dev
 
 run		:
 	docker exec nest npm --prefix srcs run start
