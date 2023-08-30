@@ -30,7 +30,7 @@ export class UsersService {
   async getUserListByFistSlackId(slackId: string): Promise<Users[]> {
     const found = this.usersRepository.find({
       where: {
-        name: Like(`${name}%`),
+        slackId: Like(`${slackId}%`),
       },
       order: {
         name: 'ASC', // Ascending order (alphabetically)
