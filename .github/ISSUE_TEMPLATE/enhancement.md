@@ -1,3 +1,12 @@
+---
+name: Enhancement template
+about: Enhancement 라벨에 사용하는 템플릿입니다
+title: "Enhancement"
+labels: "Enhancement"
+assignees:
+
+---
+
 ## 요약
 <!-- 해당 이슈에 대한 전반적인 내용을 2~3줄로 요약해주세요. -->
 -
