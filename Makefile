@@ -1,4 +1,4 @@
-NAME		= .transcendence
+NAME	= .transcendence
 
 all		: $(NAME)
 
@@ -23,19 +23,20 @@ re		:
 	make all
 
 docker	:
-	chmod 777 ./utils/init_docker.sh
 	echo "y" | ./utils/init_docker.sh
 
-compile	:
-	docker exec node npx tsc $(ls ./srcs/ | grep .ts$)
-
-cntest	:
+stest	:
 	docker exec nest curl http://localhost:3000
 
-run :
-	docker exec nest npm --prefix srcs run start
+xtest	:
+	docker exec next curl http://localhost:3000
 
-restart :
-	docker exec nest npm --prefix srcs run restart
+next	:
+	docker exec -it next npx create-next-app srcs/my-app
+	docker exec next npm --prefix srcs/my-app run dev
 
+<<<<<<< HEAD
 .PHONY	: all down clean fclean docker compile cntest run stop
+=======
+.PHONY	: all down clean fclean docker compile cntest stest xtest next
+>>>>>>> main
