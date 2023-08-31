@@ -35,4 +35,8 @@ next	:
 	docker exec -it next npx create-next-app srcs/my-app
 	docker exec next npm --prefix srcs/my-app run dev
 
+<<<<<<< HEAD
+.PHONY	: all down clean fclean docker compile cntest run stop
+=======
 .PHONY	: all down clean fclean docker compile cntest stest xtest next
+>>>>>>> main

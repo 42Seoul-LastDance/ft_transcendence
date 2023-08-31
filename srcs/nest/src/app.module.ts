@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Player } from './player.entity';
-import { PlayersModule } from './players.module';
+import { Users } from './user/users.entity';
+import { UsersModule } from './user/users.module';
 
 @Module({
   imports: [
@@ -14,10 +14,10 @@ import { PlayersModule } from './players.module';
       username: 'root',
       password: 'root1234',
       database: 'pong_db',
-      entities: [Player], // Your entities here
+      entities: [Users], // Your entities here
       synchronize: false,
     }),
-    PlayersModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
