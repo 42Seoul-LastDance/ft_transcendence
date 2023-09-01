@@ -9,4 +9,4 @@ RUN		apt-get update \
 
 ENTRYPOINT	["/usr/bin/dumb-init", "--"]
 
-CMD		["nest", "npm", "--prefix", "srcs", "run", "start:dev"]
+CMD		["npm", "--prefix", "srcs", "run", "start:dev"]
