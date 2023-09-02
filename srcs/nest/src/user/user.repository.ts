@@ -4,7 +4,7 @@ import {
     InternalServerErrorException,
 } from '@nestjs/common';
 import { User } from './user.entity';
-import { AuthDto } from 'src/auth/dto/auth42.dto';
+import { Auth42Dto } from 'src/auth/dto/auth42.dto';
 import { UserInfoDto } from './dto/user-info.dto';
 
 @EntityRepository(User)
@@ -20,7 +20,7 @@ export class UserRepository extends Repository<User> {
     //* username 중복체크를 위해 catch error -> if(error.code == '23505') throw new ConflictException('Existing username')' else -> thrwo new InternalServerErrorException();
 
     async createUser(
-        authDto: AuthDto,
+        authDto: Auth42Dto,
         userinfoDto: UserInfoDto,
     ): Promise<void> {
         //oath 로그인 시 정보

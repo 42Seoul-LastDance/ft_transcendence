@@ -3,20 +3,21 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserRepository } from 'src/user/user.repository';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-// ! JwtModule 설치, Passport module 설치.
+import { ConfigModule } from '@nestjs/config';
+import { PassportModule } from '@nestjs/passport';
+import { FortytwoAuthGuard } from './fortytwo.guard';
+import { FortytwoStrategy } from './fortyTwo.strategy';
+
 @Module({
     imports: [
-        PassportModule.register({ defaultStrategy: 'jwt' }),
-        JwtModule.register({
-            secret: 'Sercret1234',
-            signOptions: {
-                expiresI: 60 * 60 * 60,
-            },
-        }),
+        ConfigModule.forRoot({
+            cache: true,
+            isGlobal: true,
+        }),        
         TypeOrmModule.forFeature([UserRepository]),
+        PassportModule.register({defaultStrategy : 'fortytwo'}),
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy],
-    exports: [JwtStrategy, PassportModule],
+    providers: [AuthService, FortytwoAuthGuard, FortytwoStrategy],
 })
 export class AuthModule {}
