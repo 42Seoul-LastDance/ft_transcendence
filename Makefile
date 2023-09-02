@@ -29,11 +29,10 @@ stest	:
 	docker exec nest curl http://localhost:3000
 
 xtest	:
-	docker exec next curl http://localhost:3000
+	docker exec next curl http://localhost:4242
 
 next	:
 	docker exec -it next npx create-next-app srcs/my-app
 	docker exec next npm --prefix srcs/my-app run dev
 
 .PHONY	: all down clean fclean docker cntest stest xtest next
-
