@@ -31,4 +31,8 @@ stest	:
 xtest	:
 	docker exec next curl http://localhost:4242
 
-.PHONY	: all down clean fclean docker cntest stest xtest
+next	:
+	docker exec -it next npx create-next-app srcs/my-app
+	docker exec next npm --prefix srcs/my-app run dev
+
+.PHONY	: all down clean fclean docker cntest stest xtest next

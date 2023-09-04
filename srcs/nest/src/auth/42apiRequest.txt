@@ -1,0 +1,47 @@
+curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" 
+https://api.intra.42.fr/v2/me
+{
+    "id":23,
+
+
+#    "email":"30_1@staff.42.fr",
+#    "login":"30_1",
+#    "image_url":"https://cdn.intra.42.fr/userprofil/30_1.jpg",
+#    "displayname":"Mathieu Trentin",
+
+
+    "url":"http://localhost:13000/v2/users/30_1",
+    "phone":"0611041698",
+    "staff?":true,
+    "correction_point":5,
+    "pool_month":null,
+    "pool_year":null,
+    "location":null,
+    "wallet":5,
+    "groups":[{"id":3,"name":"pixel"},{"id":1,"name":"staff"}],
+    "cursus":
+    [{"cursus":
+    {"id":1,"name":"42",
+    "created_at":"2014-11-02T16:43:38.480Z",
+    "updated_at":"2016-05-25T14:33:59.420Z",
+    "slug":"42","kind":"normal"},
+    "end_at":null,"level":0.0,"grade":"Midshipman",
+    "projects":[],"skills":[]},
+    {"cursus":{"id":4,"name":"Piscine C",
+    "created_at":"2015-05-01T17:46:08.433Z",
+    "updated_at":"2016-06-07T17:09:43.612Z",
+    "slug":"piscine-c","kind":"normal"},
+    "end_at":null,"level":0.0,"grade":null,
+    "projects":[],"skills":[]}],
+    "achievements":[...],
+    "titles":[],
+    "partnerships":[],
+    "patroned":[],
+    "patroning":[],
+    "expertises_users":[],
+    "campus":[{"id":1,"name":"Paris","time_zone":"Paris",
+    "language":{"id":1,"name":"Français","identifier":"fr",
+    "created_at":"2014-11-02T16:43:38.466Z",
+    "updated_at":"2016-06-08T13:40:28.805Z"},
+    "users_count":5929,"vogsphere_id":1}]
+}

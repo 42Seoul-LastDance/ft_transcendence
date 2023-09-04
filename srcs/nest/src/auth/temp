@@ -1,0 +1,8 @@
+curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" 
+https://api.intra.42.fr/v2/me
+{
+    "email":"30_1@staff.42.fr",
+    "login":"30_1",
+    "image_url":"https://cdn.intra.42.fr/userprofil/30_1.jpg",
+    "displayname":"Mathieu Trentin",
+}
