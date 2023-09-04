@@ -4,12 +4,14 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import Book from './Book';
+import Clock from './Clock';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 root.render(
   <React.StrictMode>
-    <App />
     <Book />
+    <Clock />
+    <App />
   </React.StrictMode>
 );
 
