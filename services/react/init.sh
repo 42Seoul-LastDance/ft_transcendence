@@ -1,7 +1,7 @@
 echo "----- Start installing npm dependencies -----"
 
-npm install --prefix srcs next
+npm install --prefix srcs react
 
 echo "----- Successfully installed -----"
 
-npm --prefix srcs run dev
+npm --prefix srcs start dev

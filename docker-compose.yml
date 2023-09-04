@@ -1,12 +1,12 @@
 version: "3"
 
 services:
-  next:
-    container_name: next
-    build: ./services/next
-    image: next:ts
+  react:
+    container_name: react
+    build: ./services/react
+    image: react:ts
     volumes:
-      - next:/usr/app/srcs
+      - react:/usr/app/srcs
     networks:
       - my_network
     env_file:
@@ -14,8 +14,8 @@ services:
     ports:
       - "3000:3000"
     restart: always
-    depends_on:
-      - postgresql
+    # depends_on:
+    #   - postgresql
 
   # nest:
   #   container_name: nest
@@ -50,12 +50,12 @@ services:
 
 
 volumes:
-  next:
+  react:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: '${PWD}/srcs/next'
+      device: '${PWD}/srcs/react'
   # nest:
   #   driver: local
   #   driver_opts:

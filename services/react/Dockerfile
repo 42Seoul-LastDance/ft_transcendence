@@ -13,3 +13,4 @@ RUN		chmod 777 init.sh
 ENTRYPOINT	["/usr/bin/dumb-init", "--"]
 
 CMD		["./init.sh"]
+# CMD		["tail", "-f"]

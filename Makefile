@@ -31,5 +31,8 @@ stest	:
 xtest	:
 	docker exec next curl http://localhost:4242
 
+exec	:
+	docker exec -it react /bin/bash
+
 .PHONY	: all down clean fclean docker cntest stest xtest next
 
