@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { User } from './user.entity';
 import { UserRepository } from './user.repository';
+import { CreateUserDto } from './dto/createUser.dto';
 
 @Injectable()
 export class UserService {
@@ -11,24 +12,37 @@ export class UserService {
         private userRepository: UserRepository,
     ) {}
 
-    async findAll(): Promise<User[]> {
-        return this.userRepository.find();
-    }
+    // async findAll(): Promise<User[]> {
+    //     return this.findAll();
+    // }
 
-    async addOne(user: User): Promise<User> {
-        const newUser = this.userRepository.create(user);
-        return this.userRepository.save(newUser);
-    }
+    // async createUser(createUserDto: CreateUserDto): Promise<User> {
+    //     return this.userRepository.createUser(createUserDto);
+    // }
 
-    async searchOne(username: string): Promise<User> {
-        return this.userRepository.findOne({
+    // async searchOne(username: string): Promise<User> {
+    //     return this.userRepository.findOne({
+    //         where: {
+    //             username: username,
+    //         },
+    //     });
+    // }
+
+    async getUserBySlackId(slackId: string): Promise<User> {
+        const found = await this.userRepository.findOne({
             where: {
-                username: username,
-            },
+                slackId: slackId,
+            }
         });
+
+        if (!found) {
+            throw new NotFoundException();
+        }
+
+        return found;
     }
 
-    async getUserListByFistSlackId(slackId: string): Promise<User[]> {
+    async getUserListBySlackId(slackId: string): Promise<User[]> {
         const found = await this.userRepository.find({
             where: {
                 slackId: Like(`${slackId}%`),
@@ -45,14 +59,14 @@ export class UserService {
         return found;
     }
 
-    async deleteOne(id: number): Promise<void> {
-        const user = await this.userRepository.findOne({
-            where: {
-                id: id,
-            },
-        });
-        if (user) {
-            await this.userRepository.remove(user);
-        }
-    }
+    // async deleteOne(id: number): Promise<void> {
+    //     const user = await this.userRepository.findOne({
+    //         where: {
+    //             id: id,
+    //         },
+    //     });
+    //     if (user) {
+    //         await this.userRepository.remove(user);
+    //     }
+    // }
 }

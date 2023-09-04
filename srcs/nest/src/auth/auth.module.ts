@@ -7,6 +7,8 @@ import { ConfigModule } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { FortytwoAuthGuard } from './fortytwo.guard';
 import { FortytwoStrategy } from './fortyTwo.strategy';
+import { Auth42Dto } from './dto/auth42.dto';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
     imports: [
@@ -16,8 +18,9 @@ import { FortytwoStrategy } from './fortyTwo.strategy';
         }),        
         TypeOrmModule.forFeature([UserRepository]),
         PassportModule.register({defaultStrategy : 'fortytwo'}),
+        UserModule
     ],
     controllers: [AuthController],
-    providers: [AuthService, FortytwoAuthGuard, FortytwoStrategy],
+    providers: [AuthService, FortytwoAuthGuard, FortytwoStrategy, Auth42Dto],
 })
 export class AuthModule {}

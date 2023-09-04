@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import {PassportStrategy} from '@nestjs/passport';
 import {Strategy} from 'passport-oauth2';
-import {ConfigService} from '@nestjs/config'
+import {ConfigService} from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
+import axios from 'axios';
+import { Auth42Dto } from './dto/auth42.dto';
+import { AuthService } from './auth.service';
 
 
 //42 OAuth2 인증을 위한 클래스
@@ -15,30 +19,49 @@ import {ConfigService} from '@nestjs/config'
 @Injectable()
 export class FortytwoStrategy extends PassportStrategy(Strategy, 'fortytwo') {
     //PassportStrategy 의 전략을 초기화하고 설정.
-    constructor(configService: ConfigService) {
+    constructor(private authService: AuthService, configService: ConfigService) {
         super({
             authorizationURL: `https://api.intra.42.fr/oauth/authorize?client_id=${configService.get<string>(
                 'ft.client_id',
               )}&redirect_uri=${configService.get<string>(
                 'ft.callback',
               )}&response_type=code`,
-              tokenURL: 'https://api.intra.42.fr/oauth/token',
-              clientID: configService.get<string>('ft.client_id'),
-              clientSecret: configService.get<string>('ft.client_secret'),
-              callbackURL: configService.get<string>('ft.callback'),
-            });
-        }
+            tokenURL: 'https://api.intra.42.fr/oauth/token',
+            clientID: configService.get<string>('ft.client_id'),
+            clientSecret: configService.get<string>('ft.client_secret'),
+            callbackURL: configService.get<string>('ft.callback'),
+        });
+    }
 
         //인증이 성공한 후 호출된다.
-        async validate(accessToken: string, refreshToken: string){
-        console.log('valdation 함수 호출')
+    async validate(accessToken: string, refreshToken: string){
+        console.log('valdation 함수 호출');
+
         try {
             console.log('accessToken: ', accessToken);
             console.log('refreshToken: ', refreshToken);
-            return accessToken;
-        }catch(error)
-        {
+
+            const response = await axios.get('https://api.intra.42.fr/v2/me', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            });
+
+            const userData = response.data;
+            const loginUser: Auth42Dto = {
+                email: userData.email,
+                login: userData.login,
+                image_url: userData.image.link,
+                displayname: userData.displayname,
+                accesstoken: accessToken,
+            };
+
+            this.authService.setLoginUser(loginUser);
+
+            return 'success';
+
+        } catch (error) {
             console.log(error);
         }
+
+
     }
 }
