@@ -1,24 +1,43 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { Fragment, useState, useCallback, useEffect } from "react";
+import { Unity, useUnityContext } from "react-unity-webgl";
 
 function App() {
+  const { unityProvider, sendMessage, addEventListener, removeEventListener } = useUnityContext({
+    loaderUrl: "build/1.loader.js",
+    dataUrl: "build/1.data.unityweb",
+    frameworkUrl: "build/1.framework.js.unityweb",
+    codeUrl: "build/1.wasm.unityweb",
+  });
+
+  // react to unity
+  function ButtonEvent()
+  {
+	sendMessage("Cube", "startGame");
+  }
+
+  // unity to react
+  const [isOver, setIsOver] = useState();
+  const handleGameOver = useCallback(() => {
+    setIsOver(true);
+  }, []);
+
+  useEffect(() => {
+    addEventListener("IsOver", handleGameOver);
+    return () => {
+      removeEventListener("IsOver", handleGameOver);
+    };
+  }, [addEventListener, removeEventListener, handleGameOver]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+	<Fragment>
+	<div className="App">
+		{isOver === true && (
+			<p>{`Game Over!`}</p>
+		)}
+		<button onClick={ButtonEvent}> 시작 버튼 </button>
+		<Unity unityProvider={unityProvider} style={{ width: 800, height: 600 }} />
+	</div>
+	</Fragment>
   );
 }
 
