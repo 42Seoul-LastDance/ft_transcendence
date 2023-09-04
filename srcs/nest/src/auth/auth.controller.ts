@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { FortytwoAuthGuard } from './fortytwo.guard';
-import { validate } from 'passport-oauth2';
 
 @Controller('auth')
 export class AuthController {
