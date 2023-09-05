@@ -12,7 +12,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Change to Backend directory
+      - name: check current path
+        run : echo ${pwd}
+      - name: Change to directory
         run: cd srcs/nest/src
       - name: Checkout code
         uses: actions/checkout@v2
