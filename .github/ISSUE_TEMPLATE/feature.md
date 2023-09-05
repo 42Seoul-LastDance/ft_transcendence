@@ -1,3 +1,13 @@
+---
+name: Feature template
+about: Feature 라벨에 사용하는 템플릿입니다
+title: "Feature"
+labels: "Feature"
+assignees:
+
+---
+
+
 ## 요약
 <!-- 해당 이슈에 대한 전반적인 내용을 2~3줄로 요약해주세요. -->
 <!-- 사전 계획된 기능을 구현하기 위한 이슈일 경우, 제목에 [Feature] 를 달아주세요. -->
