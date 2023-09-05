@@ -27,6 +27,7 @@ jobs:
           node-version: '18'
       - name: Install dependencies
         run: npm install
+        working-directory: /home/runner/work/Backend/Backend/srcs/nest/src
       - name: Run ESLint
         run: npm run lint
         working-directory: /home/runner/work/Backend/Backend/srcs/nest/src
