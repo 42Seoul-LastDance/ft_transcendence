@@ -13,9 +13,9 @@ RUN echo "CREATE DATABASE ${DB_NAME};" > /docker-entrypoint-initdb.d/init_psql.s
     echo "CREATE USER ${POSTGRES_USER_ID} WITH SUPERUSER PASSWORD '${POSTGRES_USER_PASSWORD}';" >> /docker-entrypoint-initdb.d/init_psql.sql && \
     echo "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${POSTGRES_USER_ID};" >> /docker-entrypoint-initdb.d/init_psql.sql && \
     echo "\\\c ${DB_NAME};" >> /docker-entrypoint-initdb.d/init_psql.sql && \
-    echo "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255), profileUrl VARCHAR(255));" >> /docker-entrypoint-initdb.d/init_psql.sql && \
-    echo "INSERT INTO users (name) VALUES ('pongmaster');" >> /docker-entrypoint-initdb.d/init_psql.sql && \
-    echo "ALTER TABLE users OWNER TO ${POSTGRES_USER_ID};" >> /docker-entrypoint-initdb.d/init_psql.sql && \
+    # echo "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255), profileUrl VARCHAR(255));" >> /docker-entrypoint-initdb.d/init_psql.sql && \
+    # echo "INSERT INTO users (name) VALUES ('pongmaster');" >> /docker-entrypoint-initdb.d/init_psql.sql && \
+    # echo "ALTER TABLE users OWNER TO ${POSTGRES_USER_ID};" >> /docker-entrypoint-initdb.d/init_psql.sql && \
     echo "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${POSTGRES_USER_ID};" >> /docker-entrypoint-initdb.d/init_psql.sql && \
     echo "GRANT ALL PRIVILEGES ON SCHEMA public TO ${POSTGRES_USER_ID};" >> /docker-entrypoint-initdb.d/init_psql.sql
 

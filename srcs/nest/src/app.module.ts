@@ -16,7 +16,7 @@ import { AuthModule } from './auth/auth.module';
             password: 'root1234',
             database: 'pong_db',
             entities: [User], // Your entities here
-            synchronize: false,
+            synchronize: true,
         }),
         UserModule,
         AuthModule,

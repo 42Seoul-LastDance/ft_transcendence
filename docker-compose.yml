@@ -25,6 +25,8 @@ services:
       - nest:/usr/app/srcs
     networks:
       - my_network
+    env_file:
+      - ./.env
     ports:
       - "3000:3000"
     restart: always

@@ -3,59 +3,46 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { User } from './user.entity';
 import { UserRepository } from './user.repository';
+import { CreateUserDto } from './dto/createUser.dto';
 
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectRepository(User)
-    private userRepository: UserRepository,
-  ) {}
+    constructor(
+        @InjectRepository(User)
+        private userRepository: UserRepository,
+    ) {}
 
-  async findByEmail(email: string): Promise<User> {
-    return this.userRepository.findOneBy({ email });
+   async findByEmail(email: string): Promise<User> {
+      return this.userRepository.findOneBy({ email });
   }
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find();
-  }
+   
+  async getUserBySlackId(slackId: string): Promise<User> {
+        const found = await this.userRepository.findOne({
+            where: {
+                slackId: slackId,
+            }
+        });
 
-  async addOne(user: User): Promise<User> {
-    const newUser = this.userRepository.create(user);
-    return this.userRepository.save(newUser);
-  }
+        if (!found) {
+            throw new NotFoundException();
+        }
 
-  async searchOne(username: string): Promise<User> {
-    return this.userRepository.findOne({
-      where: {
-        username: username,
-      },
-    });
-  }
-
-  async getUserListByFistSlackId(slackId: string): Promise<User[]> {
-    const found = await this.userRepository.find({
-      where: {
-        slackId: Like(`${slackId}%`),
-      },
-      order: {
-        username: 'ASC', // Ascending order (alphabetically)
-      },
-    });
-
-    if (!found) {
-      throw new NotFoundException();
+        return found;
     }
 
-    return found;
-  }
+    async getUserListBySlackId(slackId: string): Promise<User[]> {
+        const found = await this.userRepository.find({
+            where: {
+                slackId: Like(`${slackId}%`),
+            },
+            order: {
+                username: 'ASC', // Ascending order (alphabetically)
+            },
+        });
 
-  async deleteOne(id: number): Promise<void> {
-    const user = await this.userRepository.findOne({
-      where: {
-        id: id,
-      },
-    });
-    if (user) {
-      await this.userRepository.remove(user);
+        if (!found) {
+            throw new NotFoundException();
+        }
+        return found;
     }
-  }
 }
