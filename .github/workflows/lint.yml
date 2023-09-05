@@ -12,14 +12,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
       - name: check current path
         run : pwd
-      - name: check directories
+      - name: list directories
         run : ls
       - name: Change to directory
         run: cd ./srcs/nest/src
-      - name: Checkout code
-        uses: actions/checkout@v2
+
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
