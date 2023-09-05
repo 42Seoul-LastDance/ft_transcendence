@@ -37,7 +37,7 @@ export class UsersService {
       },
     });
 
-    if(!found)}{
+    if(!found){
       return new NotFoundException();
     }
     
