@@ -13,9 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: check current path
-        run : echo ${pwd}
+        run : pwd
       - name: check directories
-        run : echo ${ls}
+        run : ls
       - name: Change to directory
         run: cd Backend/srcs/nest/src
       - name: Checkout code
