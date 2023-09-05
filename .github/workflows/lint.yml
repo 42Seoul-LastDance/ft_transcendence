@@ -14,8 +14,10 @@ jobs:
     steps:
       - name: check current path
         run : echo ${pwd}
+      - name: check directories
+        run : echo ${ls}
       - name: Change to directory
-        run: cd srcs/nest/src
+        run: cd Backend/srcs/nest/src
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Set up Node.js
