@@ -12,23 +12,11 @@ export class UserService {
         private userRepository: UserRepository,
     ) {}
 
-    // async findAll(): Promise<User[]> {
-    //     return this.findAll();
-    // }
-
-    // async createUser(createUserDto: CreateUserDto): Promise<User> {
-    //     return this.userRepository.createUser(createUserDto);
-    // }
-
-    // async searchOne(username: string): Promise<User> {
-    //     return this.userRepository.findOne({
-    //         where: {
-    //             username: username,
-    //         },
-    //     });
-    // }
-
-    async getUserBySlackId(slackId: string): Promise<User> {
+   async findByEmail(email: string): Promise<User> {
+      return this.userRepository.findOneBy({ email });
+  }
+   
+  async getUserBySlackId(slackId: string): Promise<User> {
         const found = await this.userRepository.findOne({
             where: {
                 slackId: slackId,
@@ -55,18 +43,6 @@ export class UserService {
         if (!found) {
             throw new NotFoundException();
         }
-
         return found;
     }
-
-    // async deleteOne(id: number): Promise<void> {
-    //     const user = await this.userRepository.findOne({
-    //         where: {
-    //             id: id,
-    //         },
-    //     });
-    //     if (user) {
-    //         await this.userRepository.remove(user);
-    //     }
-    // }
 }
