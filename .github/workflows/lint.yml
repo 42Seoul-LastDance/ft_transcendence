@@ -29,3 +29,4 @@ jobs:
         run: npm install
       - name: Run ESLint
         run: npm run lint
+        working-directory: /home/runner/work/Backend/Backend/srcs/nest/src
