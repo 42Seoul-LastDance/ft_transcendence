@@ -20,7 +20,7 @@ export class AuthService {
 
     generateRefreshToken(payload) {
         return this.jwtService.signAsync(payload, {
-            secret: process.env.JWT_SECRET_KEY,
+            secret: process.env.JWT_SECRET_KEY, 
             expiresIn: '24d',
         });
     }
@@ -29,33 +29,25 @@ export class AuthService {
         if (!user) {
             throw new BadRequestException('Unauthenticated');
         }
-        const userExists = await this.userService.findByEmail(user.email);
+        const userExists = await this.userService.findUserByEmail(user.email);
 
         if (!userExists) {
-            //없었던 경우 저장 먼저
+            console.log('user does no exist, so must be saved.\n');
             this.userService.registerUser(user);
+           
         }
-
-        const refreshToken = this.generateRefreshToken(user);
-
-        const userId = this.userService.setCurrentRefreshToken(
-            user.email,
+        const id = await this.userService.getUserIdByEmail(user.email);
+        const refreshToken = await this.generateRefreshToken({id});
+        this.userService.saveUserCurrentRefreshToken(
+            id,
             refreshToken,
         );
+ 
         console.log('user saved', userExists);
         return this.generateJwt({
-            sub: userId,
+            sub: id,
             email: user.email,
         });
     }
-    // setLoginUser(auth42Dto: Auth42Dto) {
-    //     this.auth42Dto = auth42Dto;
-    // }
 
-    // getUserData() {
-    //     return this.auth42Dto;
-    // }
-
-    //! 이 아래로는 무시하세요
-    //로그인 시 받을 정보? -> Auth
 }

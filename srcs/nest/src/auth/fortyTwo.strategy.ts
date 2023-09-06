@@ -57,8 +57,6 @@ export class FortytwoStrategy extends PassportStrategy(Strategy, 'fortytwo') {
                 displayname: userData.displayname,
                 accesstoken: accessToken,
             };
-
-            console.log(desiredFields);
             return desiredFields;
         } catch (error) {
             console.log(error);

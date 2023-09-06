@@ -12,25 +12,29 @@ export class UserService {
         private userRepository: UserRepository,
     ) {}
 
-    async findByEmail(email: string): Promise<User> {
-        return this.userRepository.findOneBy({ email });
+    async findUserByEmail(email: string): Promise<User> {
+        return this.userRepository.findOne({ where: { email }})
     }
 
+    async getUserIdByEmail(email: string){
+        return (await this.userRepository.findOne({ where: {email} })).id;
+    }
+
+    async findUserById(id: number){
+        return (await this.userRepository.findOne({ where: {id} }));
+    }
     async registerUser(user: Auth42Dto) {
         try {
-            //* TODO: Dto에 없는 내용은 null로 저장된다. 확인 필요
+            //*  Dto에 없는 내용은 entity에 저장되어있는 default 값으로 세팅된다. 
             const newUser = await this.userRepository.create(user);
             await this.userRepository.save(newUser);
             return user;
         } catch {}
     }
 
-    async setCurrentRefreshToken(userEmail: string, refreshToken) {
-        const userid = (
-            await this.userRepository.findOneBy({ email: userEmail })
-        ).id;
-        this.userRepository.update(userid, { refreshToken: refreshToken });
-        return userid;
+    async saveUserCurrentRefreshToken(userId: number, refreshToken) {
+        //TODO: 암호화해서 refreshToken 저장하기.
+        this.userRepository.update(userId, { refreshToken: refreshToken });
     }
 
     async getUserBySlackId(slackId: string): Promise<User> {

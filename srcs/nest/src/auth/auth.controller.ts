@@ -33,9 +33,6 @@ export class AuthController {
 
         const token = await this.authService.signIn(req.user);
 
-        //TODO: refresh token 이 만들어지는 부분이 없는데 jwtService 에서 주는지 확인 -> signAsync 함수사용
-        console.log('token: ', token);
-
         res.cookie('access_token', token, {
             httpOnly: true,
             maxAge: 2592000000,
@@ -43,10 +40,14 @@ export class AuthController {
             secure: false,
         });
 
-        //? controller 에서 리다이렉션으로 main을 줘야 하나?
         res.status(HttpStatus.OK);
-        // console.log('res', res);
-        //TODO main page 로 redirect할지 아니면 쿠키만 셋해서 ok 보낼지 결정
+        //TODO: main page 로 redirect
         return res.redirect('/auth/cookie-check');
     }
+
+    @Get('cookie-check')
+    checkCooke(@Req() req){
+        console.log(req);
+    }
+
 }
