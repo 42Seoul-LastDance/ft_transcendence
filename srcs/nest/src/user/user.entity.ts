@@ -8,7 +8,7 @@ import { userRole } from './user-role.enum';
 export class User {
     @PrimaryGeneratedColumn('increment')
     id: number;
-    
+
     @Column()
     @IsString()
     username: string;
@@ -46,6 +46,6 @@ export class User {
     level: number;
 
     constructor(partial: Partial<User>) {
-      Object.assign(this, partial);
+        Object.assign(this, partial);
     }
 }
