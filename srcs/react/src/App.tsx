@@ -3,17 +3,21 @@ import { Unity, useUnityContext } from "react-unity-webgl";
 
 function App() {
   const { unityProvider, sendMessage, addEventListener, removeEventListener } = useUnityContext({
-    loaderUrl: "build/1.loader.js",
-    dataUrl: "build/1.data.unityweb",
-    frameworkUrl: "build/1.framework.js.unityweb",
-    codeUrl: "build/1.wasm.unityweb",
+    loaderUrl: "build/Pong.loader.js",
+    dataUrl: "build/Pong.data.unityweb",
+    frameworkUrl: "build/Pong.framework.js.unityweb",
+    codeUrl: "build/Pong.wasm.unityweb",
   });
 
   const [gameOver, setGameOver] = useState<boolean | undefined>(undefined);
 
   // react to unity
-  function ButtonEvent() {
+  function StartEvent() {
     sendMessage("GameManager", "StartGame");
+  }
+  function RestartEvent() {
+    sendMessage("GameManager", "RestartGame");
+	setGameOver(false);
   }
 
   // unity to react
@@ -32,7 +36,8 @@ function App() {
     <Fragment>
       <div className="App">
         {gameOver === true && <p>{`Game Over!`}</p>}
-        <button onClick={ButtonEvent}> 시작 버튼 </button>
+        <button onClick={StartEvent}> 시작 </button>
+		<button onClick={RestartEvent}> 재시작 </button>
         <Unity unityProvider={unityProvider} style={{ width: 1280, height: 720 }} />
       </div>
     </Fragment>
