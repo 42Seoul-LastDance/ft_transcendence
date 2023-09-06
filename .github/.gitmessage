@@ -16,7 +16,6 @@
 # 예시)  user 의 비즈니스 로직 추가
 #    game 점수를 보여주는 showGame(id)
 
-
 # Footer 꼬리말
 # issue 관리시 사용 
 # 예시) Closes #이슈번호
