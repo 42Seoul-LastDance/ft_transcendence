@@ -10,6 +10,7 @@ import { FortytwoStrategy } from './fortyTwo.strategy';
 import { Auth42Dto } from './dto/auth42.dto';
 import { UserModule } from 'src/user/user.module';
 import { HttpModule } from '@nestjs/axios';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
     imports: [
@@ -30,6 +31,12 @@ import { HttpModule } from '@nestjs/axios';
         UserModule,
     ],
     controllers: [AuthController],
-    providers: [AuthService, FortytwoAuthGuard, FortytwoStrategy, Auth42Dto],
+    providers: [
+        AuthService,
+        FortytwoAuthGuard,
+        FortytwoStrategy,
+        Auth42Dto,
+        JwtService,
+    ],
 })
 export class AuthModule {}

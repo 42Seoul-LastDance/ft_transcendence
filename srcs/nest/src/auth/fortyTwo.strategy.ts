@@ -49,28 +49,17 @@ export class FortytwoStrategy extends PassportStrategy(Strategy, 'fortytwo') {
             });
 
             const userData = response.data;
+            //* TODO: 필드를 못가져오는 경우에 대한 예외처리
             const desiredFields: Auth42Dto = {
                 email: userData.email,
-                login: userData.login,
+                slackId: userData.login,
                 image_url: userData.image.link,
                 displayname: userData.displayname,
                 accesstoken: accessToken,
             };
 
-            //this.authService.setLoginUser(desiredFields);
-
             console.log(desiredFields);
-
-            //slack email로 조회 후 있는 유저라면 token  재발급
-            //없는 유저라면 저장 후 token 발급
-
-            //token 반환
-
-            //acccess Token 이 있는 경우, 재발급해서 반환하는 로직 실행( 더 상위의 Guard)?
-            //없는 경우가 이 Guard에 들어왔다고 치고 정보 요청 api.
-            //DB에 정보 저장 후 accessToken 반환.
-
-            return accessToken;
+            return desiredFields;
         } catch (error) {
             console.log(error);
         }

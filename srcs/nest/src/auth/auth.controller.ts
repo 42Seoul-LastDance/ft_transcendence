@@ -1,7 +1,14 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    HttpStatus,
+    Req,
+    Res,
+    UseGuards,
+} from '@nestjs/common';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { FortytwoAuthGuard } from './fortytwo.guard';
-import { Auth42Dto } from './dto/auth42.dto';
 import { UserService } from 'src/user/user.service';
 
 @Controller('auth')
@@ -21,21 +28,25 @@ export class AuthController {
 
     @Get('/callback')
     @UseGuards(FortytwoAuthGuard)
-    async callBack() {
+    async callBack(@Req() req, @Res() res: Response) {
         console.log('callback 함수 호출');
-        const loginUser: Auth42Dto = this.authService.getUserData();
 
-        try {
-            //등록된 유저의 경우 => main화면으로
-            const user = await this.userService.getUserBySlackId(
-                loginUser.login,
-            );
+        const token = await this.authService.signIn(req.user);
 
-            return user;
-        } catch (error) {
-            //신규 유저의 경우 => 회원가입 화면으로
-            if (error.status == '404') return '신규 유저입니다';
-            else return '잘못된 접근입니다';
-        }
+        //TODO: refresh token 이 만들어지는 부분이 없는데 jwtService 에서 주는지 확인 -> signAsync 함수사용
+        console.log('token: ', token);
+
+        res.cookie('access_token', token, {
+            httpOnly: true,
+            maxAge: 2592000000,
+            sameSite: true,
+            secure: false,
+        });
+
+        //? controller 에서 리다이렉션으로 main을 줘야 하나?
+        res.status(HttpStatus.OK);
+        // console.log('res', res);
+        //TODO main page 로 redirect할지 아니면 쿠키만 셋해서 ok 보낼지 결정
+        return res.redirect('/auth/cookie-check');
     }
 }
