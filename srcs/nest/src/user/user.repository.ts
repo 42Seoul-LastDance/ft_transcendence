@@ -9,20 +9,19 @@ import { CreateUserDto } from './dto/createUser.dto';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
-    
     async createUser(
         authDto: Auth42Dto,
         createUserDto: CreateUserDto,
     ): Promise<User> {
         //oath 로그인 시 정보
-        const { email, login, image_url, displayname } = authDto;
+        const { email, login, image_url } = authDto;
         //회원가입 시 정보
         const { username, profileurl, require2fa } = createUserDto;
 
         const new_user = this.create({
             username,
             email,
-            profileurl: profileurl? profileurl : image_url,
+            profileurl: profileurl ? profileurl : image_url,
             slackId: login,
             role: 'GENERIC',
             require2fa,
@@ -36,8 +35,7 @@ export class UserRepository extends Repository<User> {
         } catch (error) {
             if (error.code == '23505')
                 throw new ConflictException('Existing username');
-            else
-                throw new InternalServerErrorException(); 
+            else throw new InternalServerErrorException();
         }
 
         return new_user;

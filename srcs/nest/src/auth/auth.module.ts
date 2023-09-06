@@ -10,14 +10,12 @@ import { FortytwoStrategy } from './fortyTwo.strategy';
 import { Auth42Dto } from './dto/auth42.dto';
 import { UserModule } from 'src/user/user.module';
 import { HttpModule } from '@nestjs/axios';
-import { async } from 'rxjs';
-import { config } from 'process';
 
 @Module({
     imports: [
         HttpModule.registerAsync({
             imports: [ConfigModule],
-            useFactory: async(configService: ConfigService) => ({
+            useFactory: async (configService: ConfigService) => ({
                 timeout: configService.get('HTTP_TIMEOUT'),
                 maxRedirects: configService.get('HTTP_MAX_REDIRECTS'),
             }),
@@ -26,10 +24,10 @@ import { config } from 'process';
         ConfigModule.forRoot({
             cache: true,
             isGlobal: true,
-        }),        
+        }),
         TypeOrmModule.forFeature([UserRepository]),
-        PassportModule.register({defaultStrategy : 'fortytwo'}),
-        UserModule
+        PassportModule.register({ defaultStrategy: 'fortytwo' }),
+        UserModule,
     ],
     controllers: [AuthController],
     providers: [AuthService, FortytwoAuthGuard, FortytwoStrategy, Auth42Dto],

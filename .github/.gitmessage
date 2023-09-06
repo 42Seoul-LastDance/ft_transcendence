@@ -1,11 +1,11 @@
 ### 아래 명령어를 적용해주세요 !!!!
 ### git config --global commit.template .github/.gitmessage
 # Subject 제목 
-# feat | 새로운 기능을 추가 | 
+# feat | 새로운 기능을 추가 |
 # fix | 버그를 고친 경우 |
 # style | 코드 포맷 변경, 세미 콜론 누락, 코드 수정이 없는 경우 |
 # refactor | 코드 리팩토링 (기능 추가/수정/제거 없음) |
-# commit | 필요한수 주석 추가 및 변경 | 
+# commit | 필요한수 주석 추가 및 변경 |
 # docs | 문서를 수정한 경우 |
 # test | 테스트 추가, 테스트 리팩토링(프로덕션 코드 변경 X) |
 # rename | 파일 혹은 폴더명을 수정하거나 옮기는 작업만인 경우 |
@@ -15,7 +15,7 @@
 # Body 본문
 # 예시)  user 의 비즈니스 로직 추가
 #    game 점수를 보여주는 showGame(id)
- 
+
 # Footer 꼬리말
 # issue 관리시 사용 
 # 예시) Closes #이슈번호

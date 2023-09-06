@@ -10,11 +10,11 @@ import { AuthModule } from './auth/auth.module';
     imports: [
         TypeOrmModule.forRoot({
             type: 'postgres',
-            host: 'postgresql',
-            port: 5432,
-            username: 'root',
-            password: 'root1234',
-            database: 'pong_db',
+            host: process.env.DB_HOST,
+            port: parseInt(process.env.NEST_PORT, 10),
+            username: process.env.POSTGRES_USER_ID,
+            password: process.env.POSTGRES_USER_PASSWORD,
+            database: process.env.DB_NAME,
             entities: [User], // Your entities here
             synchronize: true,
         }),
