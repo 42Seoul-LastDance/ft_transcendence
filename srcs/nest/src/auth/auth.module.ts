@@ -11,6 +11,7 @@ import { Auth42Dto } from './dto/auth42.dto';
 import { UserModule } from 'src/user/user.module';
 import { HttpModule } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
+// import { JwtAuthGuard } from './jwtAuth.guard';
 
 @Module({
     imports: [

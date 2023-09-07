@@ -7,48 +7,41 @@
     </head>
     <body>
         <div id="content">
-            <!-- 토큰이 있는 경우 여기에 사용자에게 보여줄 내용을 추가하세요 -->
+            <!-- Content to be shown to the user -->
         </div>
         <div id="button" style="display: none">
-            <!-- 이곳에 버튼이 출력됩니다. -->
             <button id="loginButton">Login</button>
         </div>
 
         <script>
-            // 특정 쿠키 (예: 'access_token')의 존재 여부를 확인하는 함수
-            function hasCookie(cookieName) {
+            function getCookieValue(cookieName) {
                 const cookieString = `${cookieName}=`;
                 const cookieArray = document.cookie.split(';');
                 for (let i = 0; i < cookieArray.length; i++) {
-                    let cookie = cookieArray[i];
-                    while (cookie.charAt(0) === ' ') {
-                        cookie = cookie.substring(1);
-                    }
+                    let cookie = cookieArray[i].trim();
                     if (cookie.indexOf(cookieString) === 0) {
-                        return true;
+                        return cookie.substring(
+                            cookieString.length,
+                            cookie.length,
+                        );
                     }
                 }
-                return false;
+                return null;
             }
 
-            // 페이지가 로드될 때 'access_token' 쿠키의 존재 여부를 확인합니다.
             window.addEventListener('load', () => {
-                const hasToken = hasCookie('access_token');
-
-                if (hasToken) {
-                    // 토큰이 있는 경우 사용자에게 보여줄 내용을 업데이트합니다.
-                    const contentDiv = document.getElementById('content');
-                    contentDiv.textContent = 'Hello, you have a token!';
+                const refreshToken = getCookieValue('refresh_token');
+                if (refreshToken) {
+                    alert('logged in');
+                    // validateRefreshToken(refreshToken);
                 } else {
-                    const buttonDiv = document.getElementById('button');
-                    buttonDiv.style.display = 'block';
+                    document.getElementById('button').style.display = 'block';
                 }
             });
 
-            // 로그인 버튼 클릭 시 토큰 생성 (임의로 처리하는 예제)
             const loginButton = document.getElementById('loginButton');
             loginButton.addEventListener('click', () => {
-                window.location.href = 'http://127.0.0.1:3000/auth/42login';
+                window.location.href = 'http://10.12.4.3:3000/auth/42login';
             });
         </script>
     </body>
