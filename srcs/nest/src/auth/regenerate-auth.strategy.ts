@@ -21,13 +21,6 @@ export class RegenerateJwtStrategy extends PassportStrategy(
         //이 함수는 refresh 토큰이 검증되고 유효한 경우 실행된다.
         console.log(payload); //body 에 refreshToken 이 들어있다.
 
-        // const userId = payload.sub;
-        // if (refreshToken) console.log('refreshtoken');
-        //
-
-        //
-
-        //verify 한다음, id 로 저장된 refresh 된 토큰을 재발급해서 return.
-        //controller에서도 return.
+        return payload;
     }
 }

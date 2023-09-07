@@ -19,16 +19,14 @@ export class AuthService {
     async generateJwt(payload): Promise<string> {
         return await this.jwtService.signAsync(payload, {
             secret: process.env.JWT_SECRET_KEY,
-            //? expiresIn .env => JWT_ACCESS_EXPIRATION_TIME랑 동일한 값으로 해야하나요?
-            expiresIn: '60s',
+            expiresIn: process.env.JWT_ACCESS_EXPIRATION_TIME,
         });
     }
 
     async generateRefreshToken(payload): Promise<string> {
         return await this.jwtService.signAsync(payload, {
             secret: process.env.JWT_SECRET_KEY,
-            //? expiresIn .env => JWT_REFRESH_EXPIRATION_TIME과 동일한 값으로 해야하나요?
-            expiresIn: '24d',
+            expiresIn: process.env.JWT_REFRESH_EXPIRATION_TIME,
         });
     }
 

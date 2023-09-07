@@ -11,7 +11,7 @@ import { AuthService } from './auth.service';
 import { FortytwoAuthGuard } from './fortytwo.guard';
 import { UserService } from 'src/user/user.service';
 import { RegenerateJwtGuard } from './regenerate-auth.guard';
-// import { JwtAuthGuard } from './jwtAuth.guard';
+import { JwtAuthGuard } from './jwtAuth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -20,13 +20,13 @@ export class AuthController {
         private userService: UserService,
     ) {}
 
-    // @Get('/login')
-    // @UseGuards()
-    // async login() {
-    //     // 이미 클라이언트가 유효한 access token(jwt)을 소유하고 있는지  -> front에서 메인페이지 접속 요청하면 확인 후 redirect
-    //     // 아니라면 /auth/42login 이동 시켜서 로그인 or 회원가입
-    //     // 소유하고 있다면 바로 메인으로 이동시키기
-    // }
+    @Get('/login')
+    @UseGuards(JwtAuthGuard)
+    async login() {
+        // 이미 클라이언트가 유효한 access token(jwt)을 소유하고 있는지  -> front에서 메인페이지 접속 요청하면 확인 후 redirect
+        // 아니라면 /auth/42login 이동 시켜서 로그인 or 회원가입
+        // 소유하고 있다면 바로 메인으로 이동시키기
+    }
 
     @Get('/42login')
     @UseGuards(FortytwoAuthGuard)
@@ -58,7 +58,6 @@ export class AuthController {
 
         res.status(HttpStatus.OK);
         // TODO: main page 로 redirect
-
         // return res.redirect('/auth/cookie-check');
         return res.redirect('/');
     }
