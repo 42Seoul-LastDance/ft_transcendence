@@ -22,10 +22,12 @@ export class AuthController {
 
     @Get('/login')
     @UseGuards(JwtAuthGuard)
-    async login() {
+    async login(@Res() res: Response) {
         // 이미 클라이언트가 유효한 access token(jwt)을 소유하고 있는지  -> front에서 메인페이지 접속 요청하면 확인 후 redirect
+        //* @UseGuards(JwtAuthGuard) return true;인 경우 이 함수가 실행될거같아요
         // 아니라면 /auth/42login 이동 시켜서 로그인 or 회원가입
         // 소유하고 있다면 바로 메인으로 이동시키기
+        return res.redirect('/');
     }
 
     @Get('/42login')
@@ -44,14 +46,14 @@ export class AuthController {
         const { jwt, refreshToken } = await this.authService.signIn(req.user);
         res.cookie('access_token', jwt, {
             httpOnly: true,
-            maxAge: +process.env.JWT_ACCESS_EXPIRATION_TIME,
+            maxAge: +process.env.COOKIE_MAX_AGE,
             sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
             secure: false,
         });
 
         res.cookie('refresh_token', refreshToken, {
             httpOnly: true,
-            maxAge: +process.env.JWT_REFRESH_EXPIRATION_TIME,
+            maxAge: +process.env.COOKIE_MAX_AGE,
             sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
             secure: false,
         });
@@ -69,7 +71,7 @@ export class AuthController {
 
         res.cookie('access_token', regeneratedToken, {
             httpOnly: true,
-            maxAge: +process.env.JWT_ACCESS_EXPIRATION_TIME,
+            maxAge: +process.env.COOKIE_MAX_AGE,
             sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
             secure: false,
         });
