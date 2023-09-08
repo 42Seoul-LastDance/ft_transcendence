@@ -9,39 +9,92 @@
         <div id="content">
             <!-- Content to be shown to the user -->
         </div>
-        <div id="button" style="display: none">
-            <button id="loginButton">Login</button>
+        <div id="42login" style="display: none">
+            <button id="42loginButton">42Login</button>
+        </div>
+        <div id="refresh" style="display: none">
+            <button id="refreshButton">refresh</button>
+        </div>
+        <div id="logout" style="display: none">
+            <button id="logoutButton">logout</button>
         </div>
 
         <script>
-            function getCookieValue(cookieName) {
-                const cookieString = `${cookieName}=`;
-                const cookieArray = document.cookie.split(';');
-                for (let i = 0; i < cookieArray.length; i++) {
-                    let cookie = cookieArray[i].trim();
-                    if (cookie.indexOf(cookieString) === 0) {
-                        return cookie.substring(
-                            cookieString.length,
-                            cookie.length,
-                        );
-                    }
-                }
-                return null;
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
             }
 
             window.addEventListener('load', () => {
-                const refreshToken = getCookieValue('refresh_token');
-                if (refreshToken) {
-                    alert('logged in');
-                    // validateRefreshToken(refreshToken);
+                const access_token = getCookie('access_token');
+                const refresh_token = getCookie('refresh_token');
+
+                if (access_token) {
+                    document.getElementById('content').innerText = 'logged in';
+                    document.getElementById('logout').style.display = 'block';
+                } else if (refresh_token) {
+                    document.getElementById('content').innerText =
+                        'have refresh token';
+                    document.getElementById('refresh').style.display = 'block';
                 } else {
-                    document.getElementById('button').style.display = 'block';
+                    document.getElementById('42login').style.display = 'block';
                 }
             });
 
-            const loginButton = document.getElementById('loginButton');
-            loginButton.addEventListener('click', () => {
-                window.location.href = 'http://10.12.4.3:3000/auth/42login';
+            const checkLogout = document.getElementById('logoutButton');
+            logout.addEventListener('click', async () => {
+                const access_token = getCookie('access_token');
+                const refresh_token = getCookie('refresh_token');
+
+                const headers = {
+                    Authorization: `Bearer ${access_token}`, // access_token을 Bearer 토큰으로 사용
+                    'Refresh-Token': refresh_token, // refresh_token을 사용자 정의 헤더로 추가
+                    'Content-Type': 'application/json', // 요청 데이터가 JSON 형식인 경우
+                };
+                const requestOptions = {
+                    method: 'POST',
+                    headers: headers,
+                };
+                const response = await fetch(
+                    'http://10.11.8.4:3000/auth/logout',
+                    requestOptions,
+                );
+                if (!response.ok) {
+                    alert('sth went wrong!');
+                }
+                const data = response.json();
+                alert('data: ', data);
+            });
+
+            const checkRefresh = document.getElementById('refreshButton');
+            checkRefresh.addEventListener('click', async () => {
+                const response = await fetch(
+                    'http://10.11.8.4:3000/auth/regenerate-token',
+                );
+
+                if (!response.ok) {
+                    alert('sth went wrong!');
+                }
+                const data = response.json();
+                alert('data: ', data);
+            });
+
+            const login42Button = document.getElementById('42loginButton');
+            login42Button.addEventListener('click', async () => {
+                // const response = await fetch(
+                //     'http://10.11.8.4:3000/auth/42login',
+                //     {
+                //         mode: 'no-cors',
+                //     },
+                // );
+
+                // if (!response.ok) {
+                //     alert('sth went wrong!');
+                // }
+                // // const data = await response.json();
+                // alert('data: ', response);
+                window.location.href = 'http://10.11.8.4:3000/auth/42login';
             });
         </script>
     </body>

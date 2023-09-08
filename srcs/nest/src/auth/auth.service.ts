@@ -30,33 +30,41 @@ export class AuthService {
         });
     }
 
-    extractTokenFromHeader(request: Request): string | undefined {
-        const [type, token] = request.headers.authorization?.split(' ') ?? [];
-        return type === 'Bearer' ? token : undefined;
+    getRefreshTokenFromRequest(req: Request): string | undefined {
+        if (req.headers.cookie) {
+            const cookies = req.headers.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'refresh_token') {
+                    return decodeURIComponent(value);
+                }
+            }
+        }
+        return undefined;
     }
-
     async regenerateJwt(request) {
         //헤더 에서 jwt, refreshToken 추출 후 DB에 저장해둔 것과 비교하여 검증
         //jwt payload 에서 id추출.
-
-        const token = this.extractTokenFromHeader(request);
+        const token = this.getRefreshTokenFromRequest(request);
         if (!token) {
             throw new UnauthorizedException();
         }
+        const payload = await this.jwtService.verifyAsync(token, {
+            secret: process.env.JWT_SECRET_KEY,
+        }); // ! 로직 확인 필요 : try 블록 밖에 있어도 되는 친구인가?
         try {
-            const payload = await this.jwtService.verifyAsync(token, {
-                secret: process.env.JWT_SECRET_KEY,
-            });
             this.userService.verifyRefreshToken(payload, token);
         } catch {
             throw new UnauthorizedException();
         }
 
-        const payload = {
-            sub: request.id,
-            email: request.email,
+        const userEmail = (await this.userService.findUserById(payload.id))
+            .email;
+        const newPayload = {
+            sub: payload.id,
+            email: userEmail,
         };
-        const newAccessToken = await this.generateJwt(payload);
+        const newAccessToken = await this.generateJwt(newPayload);
 
         return newAccessToken;
         // refresh 토큰 검증(guard) , 서버에서도 검증 -> 삭제되어있으면 x (로그아웃한거임)
@@ -76,6 +84,14 @@ export class AuthService {
             await this.userService.registerUser(user);
         }
         const id = await this.userService.getUserIdByEmail(user.email);
+        //ok 로직 보낸다. 그럼 frontend가 jwt 발급 로직 endpoint로 이동
+        //&& 창으로 'code 를 입력해서 인증을 완료하세요 ' 로직?
+
+        //! 여기선 jwt 토큰 발급안하는 걸로?
+
+        //! FactorAuthentication 확인 여부 저장하고 확인하는 로직 작성. -> 그 다음에 jwt 토큰 발급하게.
+
+        // TODO mailService 에서 verifyFactorAuthentication ㅇ
         const jwt = await this.generateJwt({
             sub: id,
             email: user.email,

@@ -11,6 +11,7 @@ import { Auth42Dto } from './dto/auth42.dto';
 import { UserModule } from 'src/user/user.module';
 import { HttpModule } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
+import { MailService } from 'src/mail/mail.service';
 // import { JwtAuthGuard } from './jwtAuth.guard';
 
 @Module({
@@ -38,6 +39,7 @@ import { JwtService } from '@nestjs/jwt';
         FortytwoStrategy,
         Auth42Dto,
         JwtService,
+        MailService,
     ],
 })
 export class AuthModule {}

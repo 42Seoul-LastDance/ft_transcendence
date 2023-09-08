@@ -5,7 +5,11 @@ import * as express from 'express';
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
-    app.enableCors();
+    app.enableCors({
+        origin: '*',
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        credentials: true,
+    });
 
     //정적파일 미들웨어 추가
     app.use(express.static('public'));

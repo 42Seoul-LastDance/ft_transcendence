@@ -41,8 +41,6 @@ export class FortytwoStrategy extends PassportStrategy(Strategy, 'fortytwo') {
         console.log('valdation 함수 호출');
 
         try {
-            console.log('accessToken: ', accessToken);
-            console.log('refreshToken: ', refreshToken);
             const response = await axios.get('https://api.intra.42.fr/v2/me', {
                 headers: { Authorization: `Bearer ${accessToken}` },
             });

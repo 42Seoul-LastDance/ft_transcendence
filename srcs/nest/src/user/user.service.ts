@@ -43,7 +43,6 @@ export class UserService {
     }
 
     async saveUserCurrentRefreshToken(userId: number, refreshToken: string) {
-        //TODO: 암호화해서 refreshToken 저장하기.
         const bcrypt = require('bcrypt');
         const salt = await bcrypt.genSalt(10);
         const hashedRefreshToken = await bcrypt.hash(refreshToken, salt);
@@ -54,14 +53,15 @@ export class UserService {
     }
 
     async verifyRefreshToken(payload, token: string): Promise<void> {
-        //userRepository 에서 payload.sub (userid) 에 해당하는 refresh token 꺼내서 같은 지 비교.
+        //userRepository 에서 payload.id (userid) 에 해당하는 refresh token 꺼내서 같은 지 비교.
         const storedToken = (
             await this.userRepository.findOne({
-                where: { email: payload.sub },
+                where: { id: payload.id },
             })
         ).refreshToken;
 
-        if (!(storedToken && (await bcrypt.compare(storedToken, token)))) {
+        const bcrypt = require('bcrypt');
+        if (!(storedToken && (await bcrypt.compare(token, storedToken)))) {
             throw new UnauthorizedException();
         }
     }
@@ -94,5 +94,11 @@ export class UserService {
             throw new NotFoundException();
         }
         return found;
+    }
+
+    async removeRefreshToken(id: number): Promise<any> {
+        return await this.userRepository.update(id, {
+            refreshToken: null,
+        });
     }
 }
