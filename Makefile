@@ -7,9 +7,9 @@ $(NAME) :
 	@if docker info | grep -q "ERROR"; then \
 		echo "\033[0;96m--- Docker will be running soon ---"; \
 		echo "y" | ./utils/init_docker.sh; \
-		while ! docker info | grep -q "ERROR"; do \
+		while docker info | grep -q "ERROR"; do \
 			sleep 1; \
-		done; \
+		done >/dev/null 2>&1; \
 		docker-compose up --build; \
 	else \
 		echo "\033[0;96m--- Docker is already running ---"; \
