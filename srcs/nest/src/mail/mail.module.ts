@@ -3,6 +3,10 @@ import { MailService } from './mail.service';
 import { MailController } from './mail.controller';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+// import { UserService } from 'src/user/user.service';
+// import { UserRepository } from 'src/user/user.repository';
+// import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
     imports: [
@@ -26,6 +30,7 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
                 },
             },
         }),
+        UserModule,
     ],
     providers: [MailService],
     controllers: [MailController],

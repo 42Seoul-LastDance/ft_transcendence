@@ -6,8 +6,12 @@ import {
     Req,
     Res,
     UseGuards,
+    InternalServerErrorException,
+    Param,
+    UnauthorizedException,
+    Query,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { FortytwoAuthGuard } from './fortytwo.guard';
 import { UserService } from 'src/user/user.service';
@@ -32,11 +36,13 @@ export class AuthController {
     @Get('login')
     @UseGuards(JwtAuthGuard)
     async login(@Res() res: Response) {
-        // 프론트에 로그인  버튼 이랑  연결.
-        // 이미 클라이언트가 유효한 access token(jwt)을 소유하고 있는지  -> front에서 메인페이지 접속 요청하면 확인 후 redirect
-        //* @UseGuards(JwtAuthGuard) return true;인 경우 이 함수가 실행될거같아요
-        // 아니라면 /auth/42login 이동 시켜서 로그인 or 회원가입
-        // 소유하고 있다면 바로 메인으로 이동시키기
+        // 메인페이지 로그인 버튼과 연결.
+        // 이미 클라이언트가 유효한 access token(jwt)을 소유하고 있으면 통과 -> 메인으로 이동
+        return res.redirect('/');
+
+        //하기 내용은 가드에서 처리
+        // access token 없으면 refresh token으로 재발급 진행 (redirection)
+        // refresh token도 없으면 /auth/42login 리다이렉션
     }
 
     //로그인 관련 부분 남은 일
@@ -57,11 +63,40 @@ export class AuthController {
     //6.
 
     @Get('require2fa')
-    twofactorAuthentication(@Res() res: Response) {
+    // @UseGuard(JwtAccessGuard)    //TODO
+    @UseGuards(JwtAuthGuard) //!test용 - user.sub 받아오려고 일단 진행중
+    async twofactorAuthentication(@Req() req, @Res() res: Response) {
         // 메일 보내기
-        this.mailService.sendMail();
-        res.status(HttpStatus.OK);
-        return res.redirect('/');
+        try {
+            this.mailService.sendMail(req.user.sub);
+            res.status(HttpStatus.OK);
+        } catch (error) {
+            return new InternalServerErrorException(
+                'from twofactorAuthentication',
+            );
+        }
+        return res.status(200).json({
+            message: '2FA 코드가 이메일로 전송되었습니다. 코드를 확인해주세요.',
+        });
+    }
+
+    //서버 에러떠서 주석처리해둠 - 완성 후 해제해주세용
+    @Get('verify2fa')
+    // @UseGuard(JwtAccessGuard)    //TODO
+    @UseGuards(JwtAuthGuard) //!test용 - user.sub 받아오려고 일단 진행중
+    async verify2fa(
+        @Req() req,
+        @Query('code') code: string,
+        @Res() res: Response,
+    ) {
+        const isAuthenticated = await this.userService.verifyUser2faCode(
+            req.user.sub,
+            code,
+        );
+
+        if (isAuthenticated) {
+            return res.redirect('/');
+        } else throw new UnauthorizedException('verify failed');
     }
 
     @Get('requestJwt') // TODO :
@@ -90,21 +125,37 @@ export class AuthController {
     async callBack(@Req() req, @Res() res: Response) {
         console.log('42 callback 함수 호출');
 
-        const { jwt, refreshToken } = await this.authService.signIn(req.user);
-        res.cookie('access_token', jwt, {
-            // httpOnly: true,
-            maxAge: +process.env.COOKIE_MAX_AGE,
-            sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-            secure: false,
-        });
+        //유저 검색해 신규 유저면 등록해줌 => 유저 리턴
+        const user = await this.authService.signUser(req.user);
 
-        res.cookie('refresh_token', refreshToken, {
-            // httpOnly: true,
-            // maxAge: +process.env.COOKIE_MAX_AGE,
-            maxAge: 100000000, //테스트용으로 숫자 길게 맘대로 해둠
-            sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-            secure: false,
-        });
+        //프론트에서 처리를 할것인가 아니면 백에서 리다이렉션??
+        if (user.require2fa) {
+            res.status(HttpStatus.OK);
+            console.log('2fa true, go to email!');
+            return res.redirect('/auth/require2fa');
+        } else {
+            res.status(HttpStatus.OK);
+            console.log('2fa false, go to main!');
+            return res.redirect('/');
+        }
+
+        // * requestJwt로 이사할 친구들
+        // const { jwt, refreshToken } = await this.authService.signIn(req.user);
+        // res.cookie('access_token', jwt, {
+        //     // httpOnly: true,
+        //     maxAge: +process.env.COOKIE_MAX_AGE,
+        //     sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+        //     secure: false,
+        // });
+
+        // res.cookie('refresh_token', refreshToken, {
+        //     // httpOnly: true,
+        //     // maxAge: +process.env.COOKIE_MAX_AGE,
+        //     maxAge: 100000000, //테스트용으로 숫자 길게 맘대로 해둠
+        //     sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+        //     secure: false,
+        // });
+        // * ---------------------------
 
         res.status(HttpStatus.OK);
         // TODO: main page 로 redirect

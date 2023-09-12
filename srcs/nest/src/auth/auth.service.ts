@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 import { Auth42Dto } from './dto/auth42.dto';
 import { Request } from 'express';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -72,42 +73,62 @@ export class AuthService {
         // this.jwtService.
     }
 
-    async signIn(
-        user: Auth42Dto,
-    ): Promise<{ jwt: string; refreshToken: string }> {
-        if (!user) {
-            throw new BadRequestException('Unauthenticated');
-        }
+    /**
+     * Dto에 있는 정보가 DB에 없다면 유저를 만들고, 있다면 찾아서 반환하는 함수
+     */
+    async signUser(user: Auth42Dto): Promise<User> {
         try {
             const userExists = await this.userService.findUserByEmail(
                 user.email,
             );
+            return userExists;
         } catch (error) {
             if (error.getStatus() == 404) {
                 console.log('user does no exist, so must be saved.\n');
-                await this.userService.registerUser(user);
-            }
+                return await this.userService.registerUser(user);
+            } else throw error;
         }
-        const id = await this.userService.getUserIdByEmail(user.email);
-        //ok 로직 보낸다. 그럼 frontend가 jwt 발급 로직 endpoint로 이동
-        //&& 창으로 'code 를 입력해서 인증을 완료하세요 ' 로직?
-
-        //! 여기선 jwt 토큰 발급안하는 걸로?
-
-        //! FactorAuthentication 확인 여부 저장하고 확인하는 로직 작성. -> 그 다음에 jwt 토큰 발급하게.
-
-        // TODO mailService 에서 verifyFactorAuthentication ㅇ
-        const jwt = await this.generateJwt({
-            sub: id,
-            email: user.email,
-        });
-        const refreshToken = await this.generateRefreshToken({ id });
-        this.userService.saveUserCurrentRefreshToken(id, refreshToken);
-
-        const returnObject: { jwt: string; refreshToken: string } = {
-            jwt,
-            refreshToken,
-        };
-        return returnObject;
     }
+
+    //TODO : signIn 함수의 책임 -> Auth42Dto를 받아서 User 객체 반환
+    //TODO : 함수명이 이게 맞나? -> signIn도 하고 signUp도 하는데
+    //* signIn 함수 원본 지킴이
+    // async signIn(
+    //     user: Auth42Dto,
+    // ): Promise<{ jwt: string; refreshToken: string }> {
+    //     if (!user) {
+    //         throw new BadRequestException('Unauthenticated');
+    //     }
+    //     try {
+    //         const userExists = await this.userService.findUserByEmail(
+    //             user.email,
+    //         );
+    //     } catch (error) {
+    //         if (error.getStatus() == 404) {
+    //             console.log('user does no exist, so must be saved.\n');
+    //             await this.userService.registerUser(user);
+    //         }
+    //     }
+    //     const id = await this.userService.getUserIdByEmail(user.email);
+    //     //ok 로직 보낸다. 그럼 frontend가 jwt 발급 로직 endpoint로 이동
+    //     //&& 창으로 'code 를 입력해서 인증을 완료하세요 ' 로직?
+
+    //     //! 여기선 jwt 토큰 발급안하는 걸로?
+
+    //     //! FactorAuthentication 확인 여부 저장하고 확인하는 로직 작성. -> 그 다음에 jwt 토큰 발급하게.
+
+    //     // TODO mailService 에서 verifyFactorAuthentication ㅇ
+    //     const jwt = await this.generateJwt({
+    //         sub: id,
+    //         email: user.email,
+    //     });
+    //     const refreshToken = await this.generateRefreshToken({ id });
+    //     this.userService.saveUserCurrentRefreshToken(id, refreshToken);
+
+    //     const returnObject: { jwt: string; refreshToken: string } = {
+    //         jwt,
+    //         refreshToken,
+    //     };
+    //     return returnObject;
+    // }
 }

@@ -9,6 +9,7 @@ import {
     CanActivate,
     UnauthorizedException,
     ExecutionContext,
+    Redirect,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
@@ -21,7 +22,8 @@ export class JwtAuthGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
         const token = this.extractTokenFromHeader(request);
         if (!token) {
-            throw new UnauthorizedException();
+            console.log('1111');
+            throw new UnauthorizedException('no token');
         }
         try {
             const payload = await this.jwtService.verifyAsync(token, {
@@ -29,7 +31,8 @@ export class JwtAuthGuard implements CanActivate {
             });
             request['user'] = payload;
         } catch (error) {
-            throw new UnauthorizedException();
+            console.log('2222');
+            throw new UnauthorizedException("can't verify token");
         }
         return true;
     }

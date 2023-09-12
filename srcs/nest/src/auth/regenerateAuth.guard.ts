@@ -16,7 +16,7 @@ export class RegenerateAuthGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
         const token = this.getRefreshTokenFromHeader(request);
         if (!token) {
-            throw new BadRequestException('no refresh token');
+            throw new UnauthorizedException('no refresh token');
         }
         try {
             const payload = await this.jwtService.verifyAsync(token, {
@@ -31,7 +31,9 @@ export class RegenerateAuthGuard implements CanActivate {
 
     private getRefreshTokenFromHeader(request: Request): string | null {
         // HTTP 요청 헤더에서 "refresh_token" 값을 가져옵니다.
-        const cookies = request.headers.cookie.split(' ');
+        const reqCookie = request.headers.cookie;
+        if (!reqCookie) return null;
+        const cookies = reqCookie.split(' ');
 
         for (const cookie of cookies) {
             if (cookie.startsWith('refresh_token='))

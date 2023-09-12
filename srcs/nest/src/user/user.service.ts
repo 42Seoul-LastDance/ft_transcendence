@@ -125,8 +125,17 @@ export class UserService {
         }); // exception 안던지고 그냥 혼자 터져버리면 비상
         //에러 안뜨고 그냥 아무일도 안일어나는거 같아요 -> 그럼 안찾고 이대로 그냥 둬도 될지도??
         //findUserById 안하면 클라이언트에 에러 안던져짐 (아무일도 안일어나고 logout called 진행)
-        //은정님은 둘 다 상관없을거같다고 하고
-        //주현님은 에러던지는걸 선호합니다 -> 백엔드 서버에만 표기되게 하는건 어떨까요? -> 그거 어케하는건데
-        //현준님은 어때요 ㅇㅅㅇ;; 무섭다
+    }
+
+    async saveUser2faCode(userId: number, code: string): Promise<void> {
+        await this.userRepository.update(userId, { code2fa: code });
+    }
+
+    async verifyUser2faCode(userId: number, code: string): Promise<boolean> {
+        const storedCode: string = (await this.findUserById(userId)).code2fa;
+        console.log('stored = ', storedCode);
+        console.log('input = ', code);
+        if (storedCode === code) return true;
+        else return false;
     }
 }
