@@ -10,7 +10,7 @@
             <!-- Content to be shown to the user -->
         </div>
         <div id="42login" style="display: none">
-            <button id="42loginButton">42Login</button>
+            <button id="login42Button">42Login</button>
         </div>
         <div id="refresh" style="display: none">
             <button id="refreshButton">refresh</button>
@@ -57,7 +57,7 @@
                     headers: headers,
                 };
                 const response = await fetch(
-                    'http://10.11.8.4:3000/auth/logout',
+                    'http://10.11.8.6:3000/auth/logout',
                     requestOptions,
                 );
                 if (!response.ok) {
@@ -69,21 +69,32 @@
 
             const checkRefresh = document.getElementById('refreshButton');
             checkRefresh.addEventListener('click', async () => {
+                const refresh_token = getCookie('refresh_token');
+                const headers = {
+                    // Authorization: `Bearer ${refresh_token}`, // access_token을 Bearer 토큰으로 사용
+                    'Refresh-Token': refresh_token, // refresh_token을 사용자 정의 헤더로 추가
+                    'Content-Type': 'application/json', // 요청 데이터가 JSON 형식인 경우
+                };
+                const requestOptions = {
+                    method: 'GET',
+                    headers: headers,
+                };
+
                 const response = await fetch(
-                    'http://10.11.8.4:3000/auth/regenerate-token',
+                    'http://10.11.8.6:3000/auth/regenerate-token',
                 );
 
                 if (!response.ok) {
                     alert('sth went wrong!');
+                } else {
+                    alert('access_token regenerated');
                 }
-                const data = response.json();
-                alert('data: ', data);
             });
 
-            const login42Button = document.getElementById('42loginButton');
+            const login42Button = document.getElementById('login42Button');
             login42Button.addEventListener('click', async () => {
                 // const response = await fetch(
-                //     'http://10.11.8.4:3000/auth/42login',
+                //     'http://10.11.8.6:3000/auth/42login',
                 //     {
                 //         mode: 'no-cors',
                 //     },
@@ -94,7 +105,7 @@
                 // }
                 // // const data = await response.json();
                 // alert('data: ', response);
-                window.location.href = 'http://10.11.8.4:3000/auth/42login';
+                window.location.href = 'http://10.11.8.6:3000/auth/42login';
             });
         </script>
     </body>

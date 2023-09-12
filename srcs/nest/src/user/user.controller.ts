@@ -6,6 +6,7 @@ import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
+    //@Pipe
     @Patch()
     updateUserInfo() {
         //* 받을 정보: username, profileUrl, require2fa -> userInfoDto

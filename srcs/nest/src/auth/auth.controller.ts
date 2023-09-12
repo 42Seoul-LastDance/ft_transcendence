@@ -11,7 +11,8 @@ import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { FortytwoAuthGuard } from './fortytwo.guard';
 import { UserService } from 'src/user/user.service';
-import { RegenerateJwtGuard } from './regenerate-auth.guard';
+// import { RegenerateJwtGuard } from './regenerate-auth.guard';
+import { RegenerateAuthGuard } from './regenerateAuth.guard';
 import { JwtAuthGuard } from './jwtAuth.guard';
 import { MailService } from 'src/mail/mail.service';
 
@@ -38,8 +39,25 @@ export class AuthController {
         // 소유하고 있다면 바로 메인으로 이동시키기
     }
 
+    //로그인 관련 부분 남은 일
+    //1. 2fa 연결 ======================= 오늘1
+    //2. 신규 가입 페이지 연결 ======================= 오늘2
+    //2-1. 이미지 파일 업로드 -> multer!  ========== 오늘 3
+
+    //추가로 같이 했으면 하는 일
+    //1. 파이프 관련 내용 ======================= 오늘 juhoh 정리예정
+    //2. socket.io -> 게임 큐, 게임 진행, 채팅 DM
+
+    //나눠서 할 일
+    //1. 게임(socket.io 제외) + elo(수식 구현) + 게임 큐
+    //2. 채팅룸(public, private, secret): 방장 나가면 터짐 (채팅 DM 제외)
+    //3. DM: 대화내용 DB에 저장
+    //4. 친구추가 및 유저 관련내용
+    //5. 관리자(?)
+    //6.
+
     @Get('require2fa')
-    factorAuthentication(@Res() res: Response) {
+    twofactorAuthentication(@Res() res: Response) {
         // 메일 보내기
         this.mailService.sendMail();
         res.status(HttpStatus.OK);
@@ -70,7 +88,7 @@ export class AuthController {
     @Get('/callback')
     @UseGuards(FortytwoAuthGuard)
     async callBack(@Req() req, @Res() res: Response) {
-        console.log('callback 함수 호출');
+        console.log('42 callback 함수 호출');
 
         const { jwt, refreshToken } = await this.authService.signIn(req.user);
         res.cookie('access_token', jwt, {
@@ -83,7 +101,7 @@ export class AuthController {
         res.cookie('refresh_token', refreshToken, {
             // httpOnly: true,
             // maxAge: +process.env.COOKIE_MAX_AGE,
-            maxAge: 100000000,
+            maxAge: 100000000, //테스트용으로 숫자 길게 맘대로 해둠
             sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
             secure: false,
         });
@@ -95,7 +113,7 @@ export class AuthController {
     }
 
     @Get('/regenerate-token')
-    // @UseGuards(RegenerateJwtGuard)   //TODO Regenerate-jwt strategy 짜야함!
+    @UseGuards(RegenerateAuthGuard) //TODO Regenerate-jwt strategy bearer로 하는건지 확인 필요
     async regenerateToken(@Req() req, @Res() res) {
         const regeneratedToken = await this.authService.regenerateJwt(req);
         res.cookie('access_token', regeneratedToken, {
@@ -105,7 +123,7 @@ export class AuthController {
             secure: false,
         });
         res.status(HttpStatus.OK);
-        return res.redirect('/');
+        return res.send();
     }
 
     @Get('cookie-check')
@@ -119,10 +137,10 @@ export class AuthController {
     }
 
     @Post('/logout')
-    @UseGuards(JwtAuthGuard) //추후 프론트 로그인 기능 구현 후 해제 예정
+    @UseGuards(JwtAuthGuard)
     async logout(@Req() req: any, @Res() res: Response) {
         console.log('logout called');
-        await this.userService.removeRefreshToken(req.user.sub);
+        await this.userService.removeRefreshToken(req.user);
         res.clearCookie('access_token');
         res.clearCookie('refresh_token');
         return res.send({

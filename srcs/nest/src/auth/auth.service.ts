@@ -47,15 +47,15 @@ export class AuthService {
         //jwt payload 에서 id추출.
         const token = this.getRefreshTokenFromRequest(request);
         if (!token) {
-            throw new UnauthorizedException();
+            throw new UnauthorizedException('no token ');
         }
         const payload = await this.jwtService.verifyAsync(token, {
             secret: process.env.JWT_SECRET_KEY,
         }); // ! 로직 확인 필요 : try 블록 밖에 있어도 되는 친구인가?
         try {
-            this.userService.verifyRefreshToken(payload, token);
+            await this.userService.verifyRefreshToken(payload, token);
         } catch {
-            throw new UnauthorizedException();
+            throw new UnauthorizedException('not verified token');
         }
 
         const userEmail = (await this.userService.findUserById(payload.id))
@@ -78,10 +78,15 @@ export class AuthService {
         if (!user) {
             throw new BadRequestException('Unauthenticated');
         }
-        const userExists = await this.userService.findUserByEmail(user.email);
-        if (!userExists) {
-            console.log('user does no exist, so must be saved.\n');
-            await this.userService.registerUser(user);
+        try {
+            const userExists = await this.userService.findUserByEmail(
+                user.email,
+            );
+        } catch (error) {
+            if (error.getStatus() == 404) {
+                console.log('user does no exist, so must be saved.\n');
+                await this.userService.registerUser(user);
+            }
         }
         const id = await this.userService.getUserIdByEmail(user.email);
         //ok 로직 보낸다. 그럼 frontend가 jwt 발급 로직 endpoint로 이동

@@ -6,12 +6,14 @@ import { AuthController } from './auth.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { FortytwoAuthGuard } from './fortytwo.guard';
-import { FortytwoStrategy } from './fortyTwo.strategy';
+import { FortytwoStrategy } from './fortytwo.strategy';
 import { Auth42Dto } from './dto/auth42.dto';
 import { UserModule } from 'src/user/user.module';
 import { HttpModule } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
+// import { RegenerateJwtStrategy } from './regenerate-auth.strategy';
+import { RegenerateAuthGuard } from './regenerateAuth.guard';
 // import { JwtAuthGuard } from './jwtAuth.guard';
 
 @Module({
@@ -35,8 +37,10 @@ import { MailService } from 'src/mail/mail.service';
     controllers: [AuthController],
     providers: [
         AuthService,
+        RegenerateAuthGuard,
         FortytwoAuthGuard,
         FortytwoStrategy,
+        // RegenerateJwtStrategy,
         Auth42Dto,
         JwtService,
         MailService,

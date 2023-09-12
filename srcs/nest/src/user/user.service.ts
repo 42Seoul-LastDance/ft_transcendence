@@ -1,5 +1,6 @@
 import {
     Injectable,
+    InternalServerErrorException,
     NotFoundException,
     UnauthorizedException,
 } from '@nestjs/common';
@@ -8,7 +9,7 @@ import { Like } from 'typeorm';
 import { User } from './user.entity';
 import { UserRepository } from './user.repository';
 import { Auth42Dto } from 'src/auth/dto/auth42.dto';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UserService {
@@ -18,32 +19,48 @@ export class UserService {
     ) {}
 
     async findUserByEmail(email: string): Promise<User> {
-        return await this.userRepository.findOne({ where: { email: email } });
+        const user = await this.userRepository.findOne({
+            where: { email: email },
+        });
+        if (!user) {
+            throw new NotFoundException('from findUserByEmail');
+        }
+        return user;
     }
 
-    async getUserIdByEmail(email: string) {
-        return (await this.userRepository.findOne({ where: { email: email } }))
-            .id;
+    async getUserIdByEmail(email: string): Promise<number> {
+        const user = await this.userRepository.findOne({
+            where: { email: email },
+        });
+        if (!user) {
+            throw new NotFoundException('from getUserIdByEmail');
+        }
+        return user.id;
     }
 
-    async findUserById(id: number) {
-        return await this.userRepository.findOne({ where: { id: id } });
+    async findUserById(id: number): Promise<User> {
+        const user = await this.userRepository.findOne({ where: { id: id } });
+        if (!user) {
+            console.log('findUserById error - not found');
+            throw new NotFoundException(`user with id ${id} not found`);
+        }
+        return user;
     }
 
-    async registerUser(user: Auth42Dto) {
+    async registerUser(userDto: Auth42Dto): Promise<User> {
         try {
             //*  Dto에 없는 내용은 entity에 저장되어있는 default 값으로 세팅된다.
-            const newUser = this.userRepository.create(user);
-            await this.userRepository.save(newUser);
-            console.log('register user in UserService:', newUser);
+            const newUser = this.userRepository.create(userDto);
+            const user = await this.userRepository.save(newUser);
+            // console.log('register user in UserService:', newUser);
             return user;
         } catch (error) {
             console.log('error in registerUser ', error);
+            throw new InternalServerErrorException('from registerUser');
         }
     }
 
     async saveUserCurrentRefreshToken(userId: number, refreshToken: string) {
-        const bcrypt = require('bcrypt');
         const salt = await bcrypt.genSalt(10);
         const hashedRefreshToken = await bcrypt.hash(refreshToken, salt);
 
@@ -54,15 +71,16 @@ export class UserService {
 
     async verifyRefreshToken(payload, token: string): Promise<void> {
         //userRepository 에서 payload.id (userid) 에 해당하는 refresh token 꺼내서 같은 지 비교.
-        const storedToken = (
-            await this.userRepository.findOne({
-                where: { id: payload.id },
-            })
-        ).refreshToken;
-
-        const bcrypt = require('bcrypt');
-        if (!(storedToken && (await bcrypt.compare(token, storedToken)))) {
-            throw new UnauthorizedException();
+        try {
+            const storedToken = (await this.findUserById(payload.id))
+                .refreshToken;
+            if (!(storedToken && (await bcrypt.compare(token, storedToken)))) {
+                throw new UnauthorizedException();
+            }
+        } catch (error) {
+            if (error.getStatus() == 404)
+                throw new NotFoundException('from verifyRefreshToken');
+            throw new UnauthorizedException('from verifyRefreshToken');
         }
     }
 
@@ -74,7 +92,7 @@ export class UserService {
         });
 
         if (!found) {
-            throw new NotFoundException();
+            throw new NotFoundException('from getUserBySlackId');
         }
 
         return found;
@@ -91,14 +109,24 @@ export class UserService {
         });
 
         if (!found) {
-            throw new NotFoundException();
+            throw new NotFoundException('from getUserListBySlackId');
         }
         return found;
     }
 
-    async removeRefreshToken(id: number): Promise<any> {
-        return await this.userRepository.update(id, {
+    async removeRefreshToken(user): Promise<any> {
+        // TODO: 프론트 쿠키 관리 로직이 추가되면 수정해야 함
+        // TODO: 함수 명이랑 로직 다시 정리필요해보입니다!
+        const found = await this.findUserById(user.sub); //안에서 에러처리 됨
+
+        //없는 유저로 id 넣어서 요청하기 post 맨 좋네요! !
+        return await this.userRepository.update(found.id, {
             refreshToken: null,
-        });
+        }); // exception 안던지고 그냥 혼자 터져버리면 비상
+        //에러 안뜨고 그냥 아무일도 안일어나는거 같아요 -> 그럼 안찾고 이대로 그냥 둬도 될지도??
+        //findUserById 안하면 클라이언트에 에러 안던져짐 (아무일도 안일어나고 logout called 진행)
+        //은정님은 둘 다 상관없을거같다고 하고
+        //주현님은 에러던지는걸 선호합니다 -> 백엔드 서버에만 표기되게 하는건 어떨까요? -> 그거 어케하는건데
+        //현준님은 어때요 ㅇㅅㅇ;; 무섭다
     }
 }
