@@ -7,11 +7,10 @@ import {
     Res,
     UseGuards,
     InternalServerErrorException,
-    Param,
     UnauthorizedException,
     Query,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { FortytwoAuthGuard } from './fortytwo.guard';
 import { UserService } from 'src/user/user.service';
@@ -19,6 +18,7 @@ import { UserService } from 'src/user/user.service';
 import { RegenerateAuthGuard } from './regenerateAuth.guard';
 import { JwtAuthGuard } from './jwtAuth.guard';
 import { MailService } from 'src/mail/mail.service';
+import { JwtAccessGuard } from './jwtAccess.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -33,16 +33,12 @@ export class AuthController {
     // * 4. 2fa:true 라면 nodemailer를 통해 2fa 인증
     // * 5. 2fa 인증 후 (or 가입되어 있는데 2fa:false 라면) 토큰과 함께 메인 페이지 리다이렉션
 
-    @Get('login')
+    @Get('/login')
     @UseGuards(JwtAuthGuard)
     async login(@Res() res: Response) {
         // 메인페이지 로그인 버튼과 연결.
         // 이미 클라이언트가 유효한 access token(jwt)을 소유하고 있으면 통과 -> 메인으로 이동
         return res.redirect('/');
-
-        //하기 내용은 가드에서 처리
-        // access token 없으면 refresh token으로 재발급 진행 (redirection)
-        // refresh token도 없으면 /auth/42login 리다이렉션
     }
 
     //로그인 관련 부분 남은 일
@@ -62,13 +58,102 @@ export class AuthController {
     //5. 관리자(?)
     //6.
 
+    @Get('/42login')
+    @UseGuards(FortytwoAuthGuard)
+    async oauth42() {
+        console.log('42 login called');
+        return 'success';
+    }
+
+    @Get('/callback')
+    @UseGuards(FortytwoAuthGuard)
+    async callBack(@Req() req, @Res() res: Response) {
+        console.log('42 callback 함수 호출');
+
+        //유저 검색해 신규 유저면 등록해줌 => 유저 리턴 (0912 작업 내용)
+        // const user = await this.authService.signUser(req.user);
+
+        //! (주현) 신규 유저면 우선 등록해두는게 맞는지 잘 모르겠어요. (회원가입창에서 등록 눌러야 회원 등록돼야한다고 생각)
+        //!     => 대세에 따르겠습니다 (하지만 일단 로직은 구현해둠ㅎ)
+        //생각한 로직 (신규 유저 바로 등록 안하는 로직) ==========================
+        let user;
+        try {
+            user = await this.userService.findUserById(req.user.id);
+        } catch (error) {
+            if (error.getStatus() == 404) {
+                //JwtAccess 토큰 발급 후 신규 유저 등록 페이지로 진행
+                console.log('new user: redirect to enroll page');
+                res.status(HttpStatus.OK);
+                const tempJwt = await this.authService.generateTempToken(
+                    req.user,
+                );
+                res.status(HttpStatus.OK);
+                res.cookie('temp_token', tempJwt, {
+                    // httpOnly: true,
+                    // maxAge: +process.env.COOKIE_MAX_AGE,
+                    maxAge: 270000, //테스트용으로 숫자 길게 맘대로 해둠
+                    sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+                    secure: false,
+                });
+                res.cookie('enroll', true, {
+                    // httpOnly: true,
+                    // maxAge: +process.env.COOKIE_MAX_AGE,
+                    maxAge: 270000, //테스트용으로 숫자 길게 맘대로 해둠
+                    sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+                    secure: false,
+                });
+                return res.redirect('/'); //!test용 추후 수정 예정
+            } else throw new InternalServerErrorException('from 42callback');
+        }
+        // ==================================================== End of 생각한 로직
+
+        if (user.require2fa) {
+            //프론트에서 처리를 할것인가 아니면 백에서 리다이렉션??
+            res.status(HttpStatus.OK);
+            console.log('2fa true, go to email!');
+
+            //temp_token 발행 후 메일 발송하는 핸들러로 리다이렉션
+            const tempJwt = await this.authService.generateTempToken(req.user);
+            res.status(HttpStatus.OK);
+            res.cookie('temp_token', tempJwt, {
+                // httpOnly: true,
+                // maxAge: +process.env.COOKIE_MAX_AGE,
+                maxAge: 100000000, //테스트용으로 숫자 길게 맘대로 해둠
+                sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+                secure: false,
+            });
+            return res.redirect('/auth/require2fa');
+        } else {
+            //2차 인증 없이 jwt 발급 후 메인으로 리다이렉트
+            console.log('no need to 2fa, redirect to main page');
+            const { jwt, refreshToken } = await this.authService.generateToken(
+                req.user,
+            );
+            res.status(HttpStatus.OK);
+            res.cookie('access_token', jwt, {
+                // httpOnly: true,
+                maxAge: +process.env.COOKIE_MAX_AGE,
+                sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+                secure: false,
+            });
+            res.cookie('refresh_token', refreshToken, {
+                // httpOnly: true,
+                // maxAge: +process.env.COOKIE_MAX_AGE,
+                maxAge: 100000000, //테스트용으로 숫자 길게 맘대로 해둠
+                sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+                secure: false,
+            });
+            return res.redirect('/');
+        }
+    }
+
     @Get('require2fa')
-    // @UseGuard(JwtAccessGuard)    //TODO
-    @UseGuards(JwtAuthGuard) //!test용 - user.sub 받아오려고 일단 진행중
+    @UseGuards(JwtAccessGuard)
+    // @UseGuards(JwtAuthGuard) //!test용 - user.sub 받아오려고 일단 진행중
     async twofactorAuthentication(@Req() req, @Res() res: Response) {
         // 메일 보내기
         try {
-            this.mailService.sendMail(req.user.sub);
+            this.mailService.sendMail(req.authDto.sub);
             res.status(HttpStatus.OK);
         } catch (error) {
             return new InternalServerErrorException(
@@ -80,64 +165,55 @@ export class AuthController {
         });
     }
 
-    //서버 에러떠서 주석처리해둠 - 완성 후 해제해주세용
     @Get('verify2fa')
-    // @UseGuard(JwtAccessGuard)    //TODO
-    @UseGuards(JwtAuthGuard) //!test용 - user.sub 받아오려고 일단 진행중
+    @UseGuards(JwtAccessGuard)
+    // @UseGuards(JwtAuthGuard) //!test용 - user.sub 받아오려고 일단 진행중
     async verify2fa(
         @Req() req,
         @Query('code') code: string,
         @Res() res: Response,
     ) {
         const isAuthenticated = await this.userService.verifyUser2faCode(
-            req.user.sub,
+            req.authDto.sub,
             code,
         );
 
         if (isAuthenticated) {
+            //jwt 발급 후 메인페이지 리다이렉트
+            console.log('2fa verified, redirect to main page');
+            const { jwt, refreshToken } = await this.authService.generateToken(
+                req.authDto,
+            );
+            res.status(HttpStatus.OK);
+            res.cookie('access_token', jwt, {
+                // httpOnly: true,
+                maxAge: +process.env.COOKIE_MAX_AGE,
+                sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+                secure: false,
+            });
+            res.cookie('refresh_token', refreshToken, {
+                // httpOnly: true,
+                // maxAge: +process.env.COOKIE_MAX_AGE,
+                maxAge: 100000000, //테스트용으로 숫자 길게 맘대로 해둠
+                sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+                secure: false,
+            });
+            res.clearCookie('enroll');
+            res.clearCookie('temp_token');
             return res.redirect('/');
         } else throw new UnauthorizedException('verify failed');
     }
 
+    /* 
+    ?requestJwt를 핸들러로 만들지 않는 방식으로 진행하면 어떨까요?
+    42login, 2fa 확인 후에 바로 jwt 발급해주는걸로 하면 될거같아요
+    그럼 /auth/requestJwt 에 직접 접근할 수 있는 방법이 없으니까 보안에도 좋을 것 같습니다.
     @Get('requestJwt') // TODO :
-    async requestJwt(@Req() req) {
+    // @UseGuard(JwtAccessGuard)    //TODO
+    async requestJwt(@Req() req, @Res() res) {
         //TODO userInfoDto 와 함께 받아서
         //TODO 값이 있는 부분은 update하고, 2fa == true 인 경우 인증된 상태인지 함수로 확인 후
         //TODO jwt 발급
-    }
-
-    @Get('/42login')
-    @UseGuards(FortytwoAuthGuard)
-    async oauth42() {
-        console.log('42 login called');
-        return 'success';
-    }
-
-    @Get('/') // TODO 엔드포인트랑 함수 이름 고치기
-    async tempsignUp() {
-        //프론트에서 처음 회원 가입시 username, 2fa 정보를 받고 (메일 인증하기 버튼 클릭 -> 이 url로 옴.)
-        //request 에
-        return 'success';
-    }
-
-    @Get('/callback')
-    @UseGuards(FortytwoAuthGuard)
-    async callBack(@Req() req, @Res() res: Response) {
-        console.log('42 callback 함수 호출');
-
-        //유저 검색해 신규 유저면 등록해줌 => 유저 리턴
-        const user = await this.authService.signUser(req.user);
-
-        //프론트에서 처리를 할것인가 아니면 백에서 리다이렉션??
-        if (user.require2fa) {
-            res.status(HttpStatus.OK);
-            console.log('2fa true, go to email!');
-            return res.redirect('/auth/require2fa');
-        } else {
-            res.status(HttpStatus.OK);
-            console.log('2fa false, go to main!');
-            return res.redirect('/');
-        }
 
         // * requestJwt로 이사할 친구들
         // const { jwt, refreshToken } = await this.authService.signIn(req.user);
@@ -162,8 +238,17 @@ export class AuthController {
         // return res.redirect('/auth/cookie-check');
         return res.redirect('/');
     }
+    */
 
-    @Get('/regenerate-token')
+    //하기 함수 필요여부 확인 필요
+    @Get('/') // TODO 엔드포인트랑 함수 이름 고치기
+    async tempsignUp() {
+        //프론트에서 처음 회원 가입시 username, 2fa 정보를 받고 (메일 인증하기 버튼 클릭 -> 이 url로 옴.)
+        //request 에
+        return 'success';
+    }
+
+    @Get('/regenerateToken')
     @UseGuards(RegenerateAuthGuard) //TODO Regenerate-jwt strategy bearer로 하는건지 확인 필요
     async regenerateToken(@Req() req, @Res() res) {
         const regeneratedToken = await this.authService.regenerateJwt(req);
@@ -177,15 +262,10 @@ export class AuthController {
         return res.send();
     }
 
-    @Get('cookie-check')
-    checkCooke(@Req() req) {
-        console.log(req);
-    }
-
-    @Get('/request-jwt')
-    regenerateJwt(@Req() req) {
-        return req;
-    }
+    // @Get('cookie-check')
+    // checkCooke(@Req() req) {
+    //     console.log(req);
+    // }
 
     @Post('/logout')
     @UseGuards(JwtAuthGuard)

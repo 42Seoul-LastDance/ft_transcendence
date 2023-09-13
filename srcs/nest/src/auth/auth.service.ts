@@ -1,9 +1,4 @@
-import {
-    BadRequestException,
-    Injectable,
-    UnauthorizedException,
-} from '@nestjs/common';
-// import { Auth42Dto } from './dto/auth42.dto';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 import { Auth42Dto } from './dto/auth42.dto';
@@ -85,9 +80,28 @@ export class AuthService {
         } catch (error) {
             if (error.getStatus() == 404) {
                 console.log('user does no exist, so must be saved.\n');
-                return await this.userService.registerUser(user);
+                //기존 함수 주석처리로 하기 내용 주석처리함
+                // return await this.userService.registerUser(user);
             } else throw error;
         }
+    }
+
+    async generateToken(
+        authDto: Auth42Dto,
+    ): Promise<{ jwt: string; refreshToken: string }> {
+        const id = await this.userService.getUserIdByEmail(authDto.email);
+        const jwt = await this.generateJwt({
+            sub: id,
+            email: authDto.email,
+        });
+        const refreshToken = await this.generateRefreshToken({ id });
+        this.userService.saveUserCurrentRefreshToken(id, refreshToken);
+
+        const returnObject: { jwt: string; refreshToken: string } = {
+            jwt,
+            refreshToken,
+        };
+        return returnObject;
     }
 
     //TODO : signIn 함수의 책임 -> Auth42Dto를 받아서 User 객체 반환
@@ -131,4 +145,34 @@ export class AuthService {
     //     };
     //     return returnObject;
     // }
+
+    async generateTempJwt(payload): Promise<string> {
+        return await this.jwtService.signAsync(payload, {
+            secret: process.env.JWT_TEMP_SECRET,
+            expiresIn: process.env.JWT_TEMP_EXPIRATION_TIME,
+        });
+    }
+
+    async generateTempToken(authDto: Auth42Dto): Promise<string> {
+        // let id;
+        // try {
+        //     id = await this.userService.getUserIdByEmail(authDto.email);
+        // } catch (error) {
+        //     if (error.getStatus() == 404) id = -1;
+        //     else
+        //         throw new InternalServerErrorException(
+        //             'from generateTempToken',
+        //         );
+        // }
+
+        const tempJwt = await this.generateTempJwt({
+            // sub: id,
+            email: authDto.email,
+            slackId: authDto.slackId,
+            image_url: authDto.image_url,
+            displayname: authDto.displayname,
+            accesstoken: authDto.accesstoken,
+        });
+        return tempJwt;
+    }
 }
