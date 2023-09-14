@@ -18,6 +18,7 @@
     "axios-auth-refresh": "^3.3.6",
     "eslint": "8.48.0",
     "eslint-config-next": "13.4.19",
+    "jsonwebtoken": "^9.0.2",
     "next": "^13.4.19",
     "nextjs-unity-webgl": "^8.6.0",
     "postcss": "8.4.29",
