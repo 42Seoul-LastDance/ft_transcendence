@@ -12,6 +12,9 @@ import { UserRepository } from './user.repository';
 import { Auth42Dto } from 'src/auth/dto/auth42.dto';
 import * as bcrypt from 'bcryptjs';
 import { UserInfoDto } from './dto/userInfo.dto';
+import { readFileSync } from 'fs';
+import { extname } from 'path';
+import { UserProfileDto } from './dto/userProfile.dto';
 
 @Injectable()
 export class UserService {
@@ -183,5 +186,33 @@ export class UserService {
         // console.log('input = ', code);
         if (storedCode === code) return true;
         else return false;
+    }
+
+    async getUserProfile(userId: number): Promise<UserProfileDto> {
+        //TODO UserProfileDto 업데이트하고 추가로 진행
+        const user = await this.findUserById(userId);
+
+        const userProfileDto: UserProfileDto = {
+            //TODO UserProfileDto 업데이트하고 추가로 진행
+            username: user.username,
+            slackId: user.slackId,
+        };
+
+        return userProfileDto;
+    }
+
+    async getUserProfileImage(
+        userId: number,
+    ): Promise<{ image: Buffer; mimeType: string }> {
+        const user = await this.findUserById(userId);
+        const profileImgTarget = user.profileurl || 'default.png';
+        const imagePath = __dirname + '/../../profile/' + profileImgTarget;
+        const image = readFileSync(imagePath); // 이미지 파일을 읽어옴
+        if (!image)
+            throw new InternalServerErrorException(
+                `could not read ${imagePath}`,
+            );
+        const mimeType = 'image/' + extname(profileImgTarget).substring(1);
+        return { image, mimeType };
     }
 }

@@ -33,22 +33,28 @@
         />
         <button id="codeSubmit">2fa verify</button><br />
 
-        <label for="image">이미지 업로드:</label>
-        <input type="file" id="image" name="image" accept="image/*" /><br />
-
-        <!-- 라디오 버튼 -->
-        <label>2fa 선택:</label><br />
-        <input type="radio" id="2faTrue" name="2faa" value="2faTrue" />
-        <label for="2faTrue">설정</label><br />
-        <input type="radio" id="2faFalse" name="2faa" value="2faFalse" />
-        <label for="2faFalse">해제</label><br /><br />
-
-        <!-- 텍스트 입력 -->
-        <label for="username">유니크네임:</label>
-        <input type="text" id="username" name="username" /><br />
-
-        <!-- 제출 버튼 -->
-        <button id="enrollButton">회원가입</button><br />
+        <form
+            action="http://10.14.9.3:3000/users/signupUser"
+            method="POST"
+            enctype="multipart/form-data"
+        >
+            <label for="imageFile">이미지 파일 선택:</label>
+            <input
+                type="file"
+                name="image_url"
+                id="imageFile"
+                accept="image/*"
+                required
+            />
+            <br />
+            <!-- <label for="username">유저 이름:</label>
+            <input type="text" name="username" id="username" required>
+            <br>
+            <label for="require2fa">2FA 필요 여부:</label>
+            <input type="checkbox" name="require2fa" id="require2fa">
+            <br> -->
+            <input type="submit" value="이미지 파일 업로드" />
+        </form>
 
         <script>
             window.addEventListener('load', () => {
@@ -93,16 +99,20 @@
                     method: 'GET',
                     headers: headers,
                 };
-                const response = await fetch(
-                    'http://10.14.9.3:3000/auth/login',
-                    requestOptions,
-                );
-                if (!response.ok) {
-                    if (response.status == 401) alert('login => refresh');
-                    else alert('auto-login failed!');
-                } else {
-                    const data = response.json();
-                    alert('data: ', data);
+                try {
+                    const response = await fetch(
+                        'http://10.14.9.3:3000/auth/login',
+                        requestOptions,
+                    );
+                    if (!response.ok) {
+                        if (response.status == 401) alert('login => refresh');
+                        else alert('auto-login failed!');
+                    } else {
+                        const data = response.json();
+                        alert('data: ', data);
+                    }
+                } catch (error) {
+                    alert('assdfsdfsd');
                 }
             }
 
@@ -213,16 +223,16 @@
             });
 
             async function enroll() {
-                // const imageInput = document.getElementById('image');
+                const imageInput = document.getElementById('image');
                 // const genderInputs = document.getElementsByName('2faa');
-                const nameInput = document.getElementById('username');
+                // const nameInput = document.getElementById('username');
 
                 // // 사용자 입력 가져오기
-                // const imageFile = imageInput.files[0];
+                const imageFile = imageInput.files[0];
                 // const selectedGender = [...genderInputs].find(
                 //     (input) => input.checked,
                 // ).value;
-                const enteredName = nameInput.value;
+                // const enteredName = nameInput.value;
 
                 const access_token = getCookie('temp_token');
                 const headers = {
@@ -231,9 +241,9 @@
                 };
 
                 const bodies = {
-                    image_url: 'asdf',
-                    require2fa: false,
-                    username: enteredName,
+                    image_url: imageFile,
+                    // require2fa: false,
+                    // username: enteredName,
                 };
 
                 // 서버로 데이터 전송
