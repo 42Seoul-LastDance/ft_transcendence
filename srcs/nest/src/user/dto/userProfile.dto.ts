@@ -1,12 +1,28 @@
-import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsString, IsNumber } from 'class-validator';
 
+//TODO 프로필에 보여줄 내용 정해야함
 export class UserProfileDto {
-    //     @IsNotEmpty()
-    //     @IsString()
-    //     username: string;
-    //     @IsString()
-    //     profileurl: string;
-    //     @IsBoolean()
-    //     @IsNotEmpty()
-    //     require2fa: boolean;
+    @IsNotEmpty()
+    @IsNumber()
+    id: number;    
+    
+    @IsNotEmpty()
+    @IsNumber()
+    slackId: string;
+
+    @IsNotEmpty()
+    @IsString()
+    username: string;
+
+    @IsNotEmpty()
+    @IsString()
+    profileurl: string;
+
+    @IsNotEmpty()
+    @IsNumber()
+    exp: number;
+
+    @IsNotEmpty()
+    @IsNumber()
+    level: number;
 }

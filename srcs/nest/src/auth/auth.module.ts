@@ -6,7 +6,7 @@ import { AuthController } from './auth.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { FortytwoAuthGuard } from './fortytwo.guard';
-import { FortytwoStrategy } from './fortytwo.strategy';
+import { FortytwoStrategy } from './fortyTwo.strategy';
 import { Auth42Dto } from './dto/auth42.dto';
 import { UserModule } from 'src/user/user.module';
 import { HttpModule } from '@nestjs/axios';

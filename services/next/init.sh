@@ -13,6 +13,7 @@ npm install --prefix srcs --save @headlessui/react
 # npm install --prefix srcs --save react-cookie
 # npm install --prefix srcs --save jsonwebtoken
 # npm install --prefix srcs --save @typescript-eslint
+npm install --prefix srcs --save react-devtools
 
 npm update --prefix srcs react react-dom redux react-redux next @reduxjs/toolkit
 

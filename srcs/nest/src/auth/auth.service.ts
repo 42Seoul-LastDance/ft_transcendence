@@ -38,6 +38,7 @@ export class AuthService {
         }
         return undefined;
     }
+
     async regenerateJwt(request) {
         //헤더 에서 jwt, refreshToken 추출 후 DB에 저장해둔 것과 비교하여 검증
         //jwt payload 에서 id추출.
@@ -45,20 +46,21 @@ export class AuthService {
         if (!token) {
             throw new UnauthorizedException('no token ');
         }
-        const payload = await this.jwtService.verifyAsync(token, {
-            secret: process.env.JWT_SECRET_KEY,
-        }); // ! 로직 확인 필요 : try 블록 밖에 있어도 되는 친구인가?
+        let payload;
         try {
+            payload = await this.jwtService.verifyAsync(token, {
+                secret: process.env.JWT_SECRET_KEY,
+            });
             await this.userService.verifyRefreshToken(payload, token);
         } catch {
             throw new UnauthorizedException('not verified token');
         }
 
-        const userEmail = (await this.userService.findUserById(payload.id))
-            .email;
+        const user = (await this.userService.findUserById(payload.id));
         const newPayload = {
             sub: payload.id,
-            email: userEmail,
+            email: user.email,
+            slackId: user.slackId,
         };
         const newAccessToken = await this.generateJwt(newPayload);
 
@@ -93,8 +95,13 @@ export class AuthService {
         const jwt = await this.generateJwt({
             sub: id,
             email: authDto.email,
+            slackId: authDto.slackId,
         });
-        const refreshToken = await this.generateRefreshToken({ id });
+        const refreshToken = await this.generateRefreshToken({
+            sub: id,
+            email: authDto.email,
+            slackId: authDto.slackId,
+        });
         this.userService.saveUserCurrentRefreshToken(id, refreshToken);
 
         const returnObject: { jwt: string; refreshToken: string } = {
@@ -146,26 +153,15 @@ export class AuthService {
     //     return returnObject;
     // }
 
-    async generateTempJwt(payload): Promise<string> {
+    async generateEnrollJwt(payload): Promise<string> {
         return await this.jwtService.signAsync(payload, {
-            secret: process.env.JWT_TEMP_SECRET,
-            expiresIn: process.env.JWT_TEMP_EXPIRATION_TIME,
+            secret: process.env.JWT_ENROLL_SECRET,
+            expiresIn: process.env.JWT_ENROLL_TIME,
         });
     }
 
-    async generateTempToken(authDto: Auth42Dto): Promise<string> {
-        // let id;
-        // try {
-        //     id = await this.userService.getUserIdByEmail(authDto.email);
-        // } catch (error) {
-        //     if (error.getStatus() == 404) id = -1;
-        //     else
-        //         throw new InternalServerErrorException(
-        //             'from generateTempToken',
-        //         );
-        // }
-
-        const tempJwt = await this.generateTempJwt({
+    async generateEnrollToken(authDto: Auth42Dto): Promise<string> {
+        const enrollToken = await this.generateEnrollJwt({
             // sub: id,
             email: authDto.email,
             slackId: authDto.slackId,
@@ -173,6 +169,21 @@ export class AuthService {
             displayname: authDto.displayname,
             accesstoken: authDto.accesstoken,
         });
-        return tempJwt;
+        return enrollToken;
+    }
+
+    async generate2faJwt(payload): Promise<string> {
+        return await this.jwtService.signAsync(payload, {
+            secret: process.env.JWT_2FA_SECRET,
+            expiresIn: process.env.JWT_2FA_TIME,
+        });
+    }
+
+    async generate2faToken(authDto: Auth42Dto): Promise<string> {
+        const user = await this.userService.findUserByEmail(authDto.email);
+        const token = await this.generate2faJwt({
+            sub: user.id,
+        });
+        return token;
     }
 }
