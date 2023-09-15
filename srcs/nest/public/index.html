@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>4242</title>
+    </head>
+    <body>
+        <div id="content">
+            <!-- Content to be shown to the user -->
+        </div>
+        <div id="login">
+            <button id="loginButton">site Login</button>
+        </div>
+        <div id="refresh">
+            <button id="refreshButton">refresh</button>
+        </div>
+        <div id="42login">
+            <button id="login42Button">42Login</button>
+        </div>
+
+        <div id="logout" style="display: none">
+            <button id="logoutButton">logout</button>
+        </div>
+
+        <div id="2fa">
+            <button id="2faButton">2fa request</button>
+        </div>
+        <input
+            type="text"
+            id="inputField"
+            placeholder="받은 코드를 입력하세요"
+        />
+        <button id="codeSubmit">2fa verify</button><br />
+
+        <form
+            action="http://10.14.9.3:3000/users/signupUser"
+            method="POST"
+            enctype="multipart/form-data"
+        >
+            <label for="imageFile">이미지 파일 선택:</label>
+            <input
+                type="file"
+                name="image_url"
+                id="imageFile"
+                accept="image/*"
+                required
+            />
+            <br />
+            <!-- <label for="username">유저 이름:</label>
+            <input type="text" name="username" id="username" required>
+            <br>
+            <label for="require2fa">2FA 필요 여부:</label>
+            <input type="checkbox" name="require2fa" id="require2fa">
+            <br> -->
+            <input type="submit" value="이미지 파일 업로드" />
+        </form>
+
+        <script>
+            window.addEventListener('load', () => {
+                const access_token = getCookie('access_token');
+                const refresh_token = getCookie('refresh_token');
+                const temp_token = getCookie('temp_token');
+                const enroll = getCookie('enroll');
+
+                if (access_token) {
+                    document.getElementById('content').innerText = 'logged in';
+                    document.getElementById('logout').style.display = 'block';
+                } else if (refresh_token) {
+                    document.getElementById('content').innerText =
+                        'have refresh token';
+                } else if (enroll) {
+                    document.getElementById('content').innerText =
+                        'please enroll';
+                } else if (temp_token) {
+                    document.getElementById('content').innerText =
+                        'have temp token, 2fa request';
+                } else {
+                    document.getElementById('content').innerText =
+                        'have nothing';
+                }
+            });
+
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            async function login() {
+                const access_token = getCookie('access_token');
+                const refresh_token = getCookie('refresh_token');
+                const headers = {
+                    Authorization: `Bearer ${access_token}`, // access_token을 Bearer 토큰으로 사용
+                    'Refresh-Token': refresh_token, // refresh_token을 사용자 정의 헤더로 추가
+                    'Content-Type': 'application/json', // 요청 데이터가 JSON 형식인 경우
+                };
+                const requestOptions = {
+                    method: 'GET',
+                    headers: headers,
+                };
+                try {
+                    const response = await fetch(
+                        'http://10.14.9.3:3000/auth/login',
+                        requestOptions,
+                    );
+                    if (!response.ok) {
+                        if (response.status == 401) alert('login => refresh');
+                        else alert('auto-login failed!');
+                    } else {
+                        const data = response.json();
+                        alert('data: ', data);
+                    }
+                } catch (error) {
+                    alert('assdfsdfsd');
+                }
+            }
+
+            async function request2fa() {
+                const access_token = getCookie('temp_token');
+                const headers = {
+                    Authorization: `Bearer ${access_token}`, // access_token을 Bearer 토큰으로 사용
+                    'Content-Type': 'application/json', // 요청 데이터가 JSON 형식인 경우
+                };
+                const requestOptions = {
+                    method: 'GET',
+                    headers: headers,
+                };
+                const response = await fetch(
+                    'http://10.14.9.3:3000/auth/require2fa',
+                    requestOptions,
+                );
+                const data = await response.json();
+                if (response.status === 200) {
+                    const msg = data.message;
+                    alert('msg: ' + msg);
+                } else {
+                    console.error(
+                        'Error fetching data:',
+                        response.status,
+                        response.statusText,
+                    );
+                }
+            }
+
+            async function logout() {
+                const access_token = getCookie('access_token');
+                const refresh_token = getCookie('refresh_token');
+                const headers = {
+                    Authorization: `Bearer ${access_token}`, // access_token을 Bearer 토큰으로 사용
+                    'Refresh-Token': refresh_token, // refresh_token을 사용자 정의 헤더로 추가
+                    'Content-Type': 'application/json', // 요청 데이터가 JSON 형식인 경우
+                };
+                const requestOptions = {
+                    method: 'POST',
+                    headers: headers,
+                };
+                const response = await fetch(
+                    'http://10.14.9.3:3000/auth/logout',
+                    requestOptions,
+                );
+                if (!response.ok) {
+                    alert('sth went wrong!');
+                }
+                const data = response.json();
+                alert('data: ', data);
+            }
+
+            async function refresh() {
+                const refresh_token = getCookie('refresh_token');
+                const headers = {
+                    // Authorization: `Bearer ${refresh_token}`, // access_token을 Bearer 토큰으로 사용
+                    'Refresh-Token': refresh_token, // refresh_token을 사용자 정의 헤더로 추가
+                    'Content-Type': 'application/json', // 요청 데이터가 JSON 형식인 경우
+                };
+                const requestOptions = {
+                    method: 'GET',
+                    headers: headers,
+                };
+                const response = await fetch(
+                    'http://10.14.9.3:3000/auth/regenerateToken',
+                );
+                if (!response.ok) {
+                    if (response.status == 401) alert('refresh => 42login');
+                    else alert('refresh failed: ', response.status);
+                } else {
+                    alert('access_token regenerated');
+                }
+            }
+
+            async function login42() {
+                window.location.href = 'http://10.14.9.3:3000/auth/42login';
+            }
+
+            const checkLogin = document.getElementById('loginButton');
+            checkLogin.addEventListener('click', function () {
+                login(); // 버튼 클릭 시 login 함수 호출
+            });
+
+            const check2fa = document.getElementById('2faButton');
+            check2fa.addEventListener('click', function () {
+                request2fa();
+            });
+
+            const checkLogout = document.getElementById('logoutButton');
+            checkLogout.addEventListener('click', function () {
+                logout();
+            });
+
+            const checkRefresh = document.getElementById('refreshButton');
+            checkRefresh.addEventListener('click', function () {
+                refresh();
+            });
+
+            const login42Button = document.getElementById('login42Button');
+            login42Button.addEventListener('click', function () {
+                login42();
+            });
+
+            const enrollButton = document.getElementById('enrollButton');
+            enrollButton.addEventListener('click', function () {
+                enroll();
+            });
+
+            async function enroll() {
+                const imageInput = document.getElementById('image');
+                // const genderInputs = document.getElementsByName('2faa');
+                // const nameInput = document.getElementById('username');
+
+                // // 사용자 입력 가져오기
+                const imageFile = imageInput.files[0];
+                // const selectedGender = [...genderInputs].find(
+                //     (input) => input.checked,
+                // ).value;
+                // const enteredName = nameInput.value;
+
+                const access_token = getCookie('temp_token');
+                const headers = {
+                    Authorization: `Bearer ${access_token}`, // access_token을 Bearer 토큰으로 사용
+                    'Content-Type': 'application/json', // 요청 데이터가 JSON 형식인 경우
+                };
+
+                const bodies = {
+                    image_url: imageFile,
+                    // require2fa: false,
+                    // username: enteredName,
+                };
+
+                // 서버로 데이터 전송
+                try {
+                    const response = await fetch(
+                        'http://10.14.9.3:3000/users/signupUser',
+                        {
+                            method: 'POST',
+                            headers: headers,
+                            // body: formData,
+                            body: bodies,
+                        },
+                    );
+
+                    if (response.ok) {
+                        alert('서버로 데이터 전송 완료!');
+                        // 여기에서 필요한 추가 작업 수행
+                    } else {
+                        alert('데이터 전송 실패!');
+                    }
+                } catch (error) {
+                    console.error('에러 발생:', error);
+                    alert('데이터 전송 중 에러 발생!');
+                }
+            }
+
+            document
+                .getElementById('codeSubmit')
+                .addEventListener('click', async () => {
+                    const inputField =
+                        document.getElementById('inputField').value;
+                    if (!inputField) {
+                        alert('입력하세요');
+                        return;
+                    }
+
+                    try {
+                        const access_token = getCookie('access_token');
+                        const refresh_token = getCookie('refresh_token');
+
+                        const headers = {
+                            Authorization: `Bearer ${access_token}`, // access_token을 Bearer 토큰으로 사용
+                            'Refresh-Token': refresh_token, // refresh_token을 사용자 정의 헤더로 추가
+                            'Content-Type': 'application/json', // 요청 데이터가 JSON 형식인 경우
+                        };
+                        const requestOptions = {
+                            method: 'GET',
+                            headers: headers,
+                        };
+                        const response = await fetch(
+                            `http://10.14.9.3:3000/auth/verify2fa?code=${inputField}`,
+                            requestOptions,
+                        );
+
+                        if (!response.ok) {
+                            alert('not okay');
+                        }
+                        alert('okay!');
+                        // const data = await response.json();
+                        // 서버에서 반환한 데이터를 처리 (예: 메시지 출력)
+                        // alert(data.message);
+                    } catch (error) {
+                        alert('서버 요청 중 오류가 발생했습니다.');
+                    }
+                });
+        </script>
+    </body>
+</html>

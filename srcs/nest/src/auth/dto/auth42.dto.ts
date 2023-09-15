@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class Auth42Dto {
     @IsString()
@@ -7,7 +7,7 @@ export class Auth42Dto {
 
     @IsString()
     @IsNotEmpty()
-    login: string;
+    slackId: string;
 
     @IsString()
     @IsNotEmpty()

@@ -28,7 +28,7 @@ export class FortytwoStrategy extends PassportStrategy(Strategy, 'fortytwo') {
     //PassportStrategy 의 전략을 초기화하고 설정.
     constructor(private authService: AuthService) {
         super({
-            authorizationURL: `https://api.intra.42.fr/oauth/authorize?client_id=${process.env.FT_CLIENT_ID}&redirect_uri=${process.env.T_CALLBACK}&response_type=code`,
+            authorizationURL: `https://api.intra.42.fr/oauth/authorize?client_id=${process.env.FT_CLIENT_ID}&redirect_uri=${process.env.FT_CALLBACK}&response_type=code`,
             tokenURL: 'https://api.intra.42.fr/oauth/token',
             clientID: process.env.FT_CLIENT_ID,
             clientSecret: process.env.FT_CLIENT_SECRET,
@@ -38,39 +38,23 @@ export class FortytwoStrategy extends PassportStrategy(Strategy, 'fortytwo') {
 
     //인증이 성공한 후 호출된다.
     async validate(accessToken: string, refreshToken: string) {
-        console.log('valdation 함수 호출');
+        console.log('42 valdation 함수 호출');
 
         try {
-            console.log('accessToken: ', accessToken);
-            console.log('refreshToken: ', refreshToken);
-
             const response = await axios.get('https://api.intra.42.fr/v2/me', {
                 headers: { Authorization: `Bearer ${accessToken}` },
             });
 
             const userData = response.data;
+            //* TODO: 필드를 못가져오는 경우에 대한 예외처리
             const desiredFields: Auth42Dto = {
                 email: userData.email,
-                login: userData.login,
+                slackId: userData.login,
                 image_url: userData.image.link,
                 displayname: userData.displayname,
                 accesstoken: accessToken,
             };
-
-            //this.authService.setLoginUser(desiredFields);
-
-            console.log(desiredFields);
-
-            //slack email로 조회 후 있는 유저라면 token  재발급
-            //없는 유저라면 저장 후 token 발급
-
-            //token 반환
-
-            //acccess Token 이 있는 경우, 재발급해서 반환하는 로직 실행( 더 상위의 Guard)?
-            //없는 경우가 이 Guard에 들어왔다고 치고 정보 요청 api.
-            //DB에 정보 저장 후 accessToken 반환.
-
-            return accessToken;
+            return desiredFields;
         } catch (error) {
             console.log(error);
         }
