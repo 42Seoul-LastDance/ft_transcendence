@@ -1,6 +1,7 @@
 echo "----- Start installing npm dependencies -----"
 
 npm install --prefix srcs next
+npm install --prefix srcs --save @headlessui/react
 # npm install --prefix srcs --save redux
 # npm install --prefix srcs --save react-redux
 # npm install --prefix srcs --save @reduxjs/toolkit
