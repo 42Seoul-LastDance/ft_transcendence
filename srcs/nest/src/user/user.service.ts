@@ -52,6 +52,16 @@ export class UserService {
         return user;
     }
 
+    async getUserByUsername(name: string): Promise<User> {
+        const user = await this.userRepository.findOne({
+            where: { username: name },
+        });
+        if (!user) {
+            throw new NotFoundException();
+        }
+        return user;
+    }
+
     //registerUser 원본
     // async registerUser(userDto: Auth42Dto): Promise<User> {
     //     try {

@@ -12,6 +12,7 @@ import {
     Res,
     NotFoundException,
     InternalServerErrorException,
+    BadRequestException,
     ParseIntPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
@@ -28,6 +29,7 @@ export class UserController {
     constructor(private readonly userService: UserService) {}
 
     //@Pipe //body에 userInfoDto 확인?
+    //TODO 유저 정보 설정 관련된 endpoint를 각각 3개로 쪼개기
     @Patch('/updateUserInfo')
     @UseGuards(JwtAuthGuard)
     async updateUserInfo(@Req() req, @Body() userInfoDto: UserInfoDto) {
@@ -71,6 +73,17 @@ export class UserController {
         }
     }
 
+    @Get('username/:name')
+    @UseGuards(JwtAuthGuard)
+    async checkUniqueName(@Param('name') name: string, @Res() res: Response) {
+        try {
+            const user = await this.userService.getUserByUsername(name);
+            if (user) throw new BadRequestException('username exist');
+        } catch (error) {
+            if (error.getStatus() == 404) res.send('OK');
+            else throw new InternalServerErrorException();
+        }
+    }
     // @Get('/status')
     // @UseGuards(JwtAuthGuard)
     // getStatus(@Param() id) {

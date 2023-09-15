@@ -45,10 +45,11 @@ export class AuthService {
         if (!token) {
             throw new UnauthorizedException('no token ');
         }
-        const payload = await this.jwtService.verifyAsync(token, {
-            secret: process.env.JWT_SECRET_KEY,
-        }); // ! 로직 확인 필요 : try 블록 밖에 있어도 되는 친구인가?
+        let payload;
         try {
+            payload = await this.jwtService.verifyAsync(token, {
+                secret: process.env.JWT_SECRET_KEY,
+            });
             await this.userService.verifyRefreshToken(payload, token);
         } catch {
             throw new UnauthorizedException('not verified token');
