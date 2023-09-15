@@ -1,63 +1,178 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { UserRepository } from 'src/user/user.repository';
-import { AuthDto } from './dto/auth42.dto';
+import { JwtService } from '@nestjs/jwt';
+import { UserService } from 'src/user/user.service';
+import { Auth42Dto } from './dto/auth42.dto';
+import { Request } from 'express';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class AuthService {
     constructor(
-        @InjectRepository(UserRepository)
-        private userRepository: UserRepository, // private jwtService: JwtService,
+        private jwtService: JwtService,
+        private userService: UserService,
     ) {}
-    
-    async signUp(
-        authCredentialDto: AuthCredentialDto,
-    ){
-     //회원가입하고 저장됨. -> auth42Dto   
+
+    async generateJwt(payload): Promise<string> {
+        return await this.jwtService.signAsync(payload, {
+            secret: process.env.JWT_SECRET_KEY,
+            expiresIn: process.env.JWT_ACCESS_EXPIRATION_TIME,
+        });
     }
 
-    async signIn(
-        auth42Dto : Auth42Dto,
-        ): Promise<{accessToken string}> {
-            //
+    async generateRefreshToken(payload): Promise<string> {
+        return await this.jwtService.signAsync(payload, {
+            secret: process.env.JWT_SECRET_KEY,
+            expiresIn: process.env.JWT_REFRESH_EXPIRATION_TIME,
+        });
+    }
+
+    getRefreshTokenFromRequest(req: Request): string | undefined {
+        if (req.headers.cookie) {
+            const cookies = req.headers.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'refresh_token') {
+                    return decodeURIComponent(value);
+                }
+            }
+        }
+        return undefined;
+    }
+    async regenerateJwt(request) {
+        //헤더 에서 jwt, refreshToken 추출 후 DB에 저장해둔 것과 비교하여 검증
+        //jwt payload 에서 id추출.
+        const token = this.getRefreshTokenFromRequest(request);
+        if (!token) {
+            throw new UnauthorizedException('no token ');
+        }
+        const payload = await this.jwtService.verifyAsync(token, {
+            secret: process.env.JWT_SECRET_KEY,
+        }); // ! 로직 확인 필요 : try 블록 밖에 있어도 되는 친구인가?
+        try {
+            await this.userService.verifyRefreshToken(payload, token);
+        } catch {
+            throw new UnauthorizedException('not verified token');
         }
 
-    //! 이 아래로는 무시하세요
-    //로그인 시 받을 정보? -> Auth
+        const userEmail = (await this.userService.findUserById(payload.id))
+            .email;
+        const newPayload = {
+            sub: payload.id,
+            email: userEmail,
+        };
+        const newAccessToken = await this.generateJwt(newPayload);
 
-    // get42Login(): string {
-    //     //로그인 링크 생성:  client_id, redirect_uri = 우리의 redirect 시킬 uri.
-    //     //보통은 Key로 숨겨두는 것 같다.
-    //     return 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-f0f8d4e13810d147a7fb0848c16cc1cbbebbbf9c6d353427710512de67a85cad&redirect_uri=https%3A%2F%2Fprofile.intra.42.fr%2Foauth%2Fapplications&response_type=code';
-    // }
+        return newAccessToken;
+        // refresh 토큰 검증(guard) , 서버에서도 검증 -> 삭제되어있으면 x (로그아웃한거임)
+        // 검증했으면 jwt 토큰 발급해서 반환.
+        // this.jwtService.
+    }
 
-    // //http://www.example.com/oauth_callback?code=ABC1234
-    // async verification(code: string): Promise<AuthDto> {
-    //     //1. code 를 이용해서 accesstoken 추출
-    //     var authDto = this.getAccessTokenByCode(code);
-    //     // const accessToken = this.getAccessTokenByCode(code);
-    //     // const authDto = await this.getUserInfoByAccessToken(accessToken);
+    /**
+     * Dto에 있는 정보가 DB에 없다면 유저를 만들고, 있다면 찾아서 반환하는 함수
+     */
+    async signUser(user: Auth42Dto): Promise<User> {
+        try {
+            const userExists = await this.userService.findUserByEmail(
+                user.email,
+            );
+            return userExists;
+        } catch (error) {
+            if (error.getStatus() == 404) {
+                console.log('user does no exist, so must be saved.\n');
+                //기존 함수 주석처리로 하기 내용 주석처리함
+                // return await this.userService.registerUser(user);
+            } else throw error;
+        }
+    }
 
-    //     //2.access 토큰을 이용해서 유저 정보 추출
-    //     // "https://api.intra.42.fr/v2/me" -> 42apiRequest.txt 참조!
+    async generateToken(
+        authDto: Auth42Dto,
+    ): Promise<{ jwt: string; refreshToken: string }> {
+        const id = await this.userService.getUserIdByEmail(authDto.email);
+        const jwt = await this.generateJwt({
+            sub: id,
+            email: authDto.email,
+        });
+        const refreshToken = await this.generateRefreshToken({ id });
+        this.userService.saveUserCurrentRefreshToken(id, refreshToken);
 
-    //     if (!authDto) {
-    //         throw new UnauthorizedException();
+        const returnObject: { jwt: string; refreshToken: string } = {
+            jwt,
+            refreshToken,
+        };
+        return returnObject;
+    }
+
+    //TODO : signIn 함수의 책임 -> Auth42Dto를 받아서 User 객체 반환
+    //TODO : 함수명이 이게 맞나? -> signIn도 하고 signUp도 하는데
+    //* signIn 함수 원본 지킴이
+    // async signIn(
+    //     user: Auth42Dto,
+    // ): Promise<{ jwt: string; refreshToken: string }> {
+    //     if (!user) {
+    //         throw new BadRequestException('Unauthenticated');
     //     }
+    //     try {
+    //         const userExists = await this.userService.findUserByEmail(
+    //             user.email,
+    //         );
+    //     } catch (error) {
+    //         if (error.getStatus() == 404) {
+    //             console.log('user does no exist, so must be saved.\n');
+    //             await this.userService.registerUser(user);
+    //         }
+    //     }
+    //     const id = await this.userService.getUserIdByEmail(user.email);
+    //     //ok 로직 보낸다. 그럼 frontend가 jwt 발급 로직 endpoint로 이동
+    //     //&& 창으로 'code 를 입력해서 인증을 완료하세요 ' 로직?
 
-    //     return authDto;
+    //     //! 여기선 jwt 토큰 발급안하는 걸로?
+
+    //     //! FactorAuthentication 확인 여부 저장하고 확인하는 로직 작성. -> 그 다음에 jwt 토큰 발급하게.
+
+    //     // TODO mailService 에서 verifyFactorAuthentication ㅇ
+    //     const jwt = await this.generateJwt({
+    //         sub: id,
+    //         email: user.email,
+    //     });
+    //     const refreshToken = await this.generateRefreshToken({ id });
+    //     this.userService.saveUserCurrentRefreshToken(id, refreshToken);
+
+    //     const returnObject: { jwt: string; refreshToken: string } = {
+    //         jwt,
+    //         refreshToken,
+    //     };
+    //     return returnObject;
     // }
 
-    // async getAccessTokenByCode(code: string) {
-    //     // AuthDto
-    //     // 1-1.HttpHeader 생성 및 정보 추가
-    //     // 1-2.Request에 담을 정보 추가
-    //     // 1-3.request를 하기위해 HttpEntity 객체에 헤더와 정보 조립
-    //     // 1-4.code에 대한 인증요청을 할 url :
-    // }
+    async generateTempJwt(payload): Promise<string> {
+        return await this.jwtService.signAsync(payload, {
+            secret: process.env.JWT_TEMP_SECRET,
+            expiresIn: process.env.JWT_TEMP_EXPIRATION_TIME,
+        });
+    }
 
-    // async getUserInfoByAccessToken(authDto: AuthDto): AuthDto {
-    //     // 2.access 토큰을 이용해서 유저 정보 추출
-    //     // email, login, image_url, displayname 가져와서 Dto로 반환
-    // }
+    async generateTempToken(authDto: Auth42Dto): Promise<string> {
+        // let id;
+        // try {
+        //     id = await this.userService.getUserIdByEmail(authDto.email);
+        // } catch (error) {
+        //     if (error.getStatus() == 404) id = -1;
+        //     else
+        //         throw new InternalServerErrorException(
+        //             'from generateTempToken',
+        //         );
+        // }
+
+        const tempJwt = await this.generateTempJwt({
+            // sub: id,
+            email: authDto.email,
+            slackId: authDto.slackId,
+            image_url: authDto.image_url,
+            displayname: authDto.displayname,
+            accesstoken: authDto.accesstoken,
+        });
+        return tempJwt;
+    }
 }
