@@ -1,15 +1,15 @@
 import { Entity, PrimaryGeneratedColumn, Column, Unique } from 'typeorm';
 import { userStatus } from './user-status.enum';
-import { IsString } from 'class-validator';
+import { IsNumber, IsString } from 'class-validator';
 import { userRole } from './user-role.enum';
 
-@Entity('user')
+@Entity({ name: 'user', schema: 'public' })
 @Unique(['username']) // * username이 중복될 경우 알아서 오류를 내뱉음. : try catch 구문 사용.
 export class User {
     @PrimaryGeneratedColumn('increment')
     id: number;
-    
-    @Column()
+
+    @Column({ nullable: true })
     @IsString()
     username: string;
 
@@ -17,7 +17,7 @@ export class User {
     @IsString()
     email: string;
 
-    @Column()
+    @Column({ nullable: true })
     @IsString()
     profileurl: string;
 
@@ -25,27 +25,35 @@ export class User {
     @IsString()
     slackId: string;
 
-    @Column()
+    @Column({ default: userRole.GENERIC })
     @IsString()
     role: userRole;
 
-    @Column()
+    @Column({ default: true })
     @IsString()
     require2fa: boolean;
 
-    @Column()
+    @Column({ default: 0 })
+    @IsString()
+    code2fa: string;
+
+    @Column({ default: userStatus.OFFLINE })
     @IsString()
     status: userStatus;
 
-    @Column()
+    @Column({ default: 0 })
     @IsString()
     exp: number;
 
-    @Column()
+    @Column({ default: 0 })
     @IsString()
     level: number;
 
-    // constructor(partial: Partial<User>) {
-    //   Object.assign(this, partial);
-    // }
+    @Column({ default: 0, nullable: true })
+    @IsString()
+    refreshToken: string;
+
+    constructor(partial: Partial<User>) {
+        Object.assign(this, partial);
+    }
 }
