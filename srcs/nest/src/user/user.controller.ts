@@ -17,43 +17,93 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
-import { JwtAccessGuard } from 'src/auth/jwtAccess.guard';
-import { UserInfoDto } from './dto/userInfo.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { readFileSync } from 'fs';
-import { extname } from 'path';
+import { JwtEnrollGuard } from 'src/auth/jwtEnroll.guard';
+import { UserProfileDto } from './dto/userProfile.dto';
 
 @Controller('users')
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
-    //@Pipe //body에 userInfoDto 확인?
-    //TODO 유저 정보 설정 관련된 endpoint를 각각 3개로 쪼개기
-    @Patch('/updateUserInfo')
-    @UseGuards(JwtAuthGuard)
-    async updateUserInfo(@Req() req, @Body() userInfoDto: UserInfoDto) {
-        //* 받을 정보: username, profileUrl, require2fa -> userInfoDto
-        //* null 이 아닌 값만 업데이트
-        await this.userService.updateUserInfo(req.user.id, userInfoDto);
+    //* user signup
+
+    @Post('/signup')
+    @UseGuards(JwtEnrollGuard)
+    async signup(@Req() req) {
+        await this.userService.registerUser(req.authDto);
     }
 
-    @Post('/signupUser')
-    // @UseGuards(JwtAccessGuard)
+    @Patch('/signup/username')
+    @UseGuards(JwtEnrollGuard)
+    async signupUsername(@Req() req, @Body('username') username: string) {
+        const user = await this.userService.getUserByUsername(username);
+        if (user) throw new BadRequestException('already used username');
+        await this.userService.updateUsernameBySlackId(
+            req.authDto.slackId,
+            username,
+        );
+    }
+
+    //*프론트에서 이거 안한대
+    // @Patch('/signup/2fa')
+    // @UseGuards(JwtEnrollGuard)
+    // async signupUser2fa(@Req() req, @Body('2fa') is2fa: boolean) {
+    //     await this.userService.update2faConfBySlackId(req.authDto.slackId, is2fa);
+    // }
+
+    //TODO: null일 수 도 있다
+    @Patch('/signup/profileImage')
+    @UseGuards(JwtEnrollGuard)
+    @UseInterceptors(FileInterceptor('profileImage'))
+    async signupProfileImage(
+        @Req() req,
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        await this.userService.updateProfileImageBySlackId(
+            req.authDto.slackId,
+            file.filename,
+        );
+    }
+
+    //* user info update
+    @Patch('/update/username')
+    @UseGuards(JwtAuthGuard)
+    async updateUsername(@Req() req, @Body('username') username: string) {
+        const user = await this.userService.getUserByUsername(username);
+        if (user) throw new BadRequestException('already used username');
+        await this.userService.updateUsernameBySlackId(
+            req.user.slackId,
+            username,
+        );
+    }
+
+    @Patch('/update/2fa')
+    @UseGuards(JwtAuthGuard)
+    async updateUser2fa(@Req() req, @Body('2fa') is2fa: boolean) {
+        await this.userService.update2faConfBySlackId(req.user.slackId, is2fa);
+    }
+
+    @Patch('/update/username')
+    @UseGuards(JwtAuthGuard)
     @UseInterceptors(FileInterceptor('image_url'))
-    async signupUser(@UploadedFile() file: Express.Multer.File) {
-        //신규 유저 생성
-        console.log('in signupUser');
-        console.log(file.filename);
-        // await this.userService.registerUser(req.authDto, userInfoDto);
+    async updateProfileImage(
+        @Req() req,
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        await this.userService.updateProfileImageBySlackId(
+            req.user.slackId,
+            file.filename,
+        );
     }
 
     @Get('/profile/:id')
     @UseGuards(JwtAuthGuard)
-    async getProfile(@Param('id', ParseIntPipe) id: number) {
+    async getProfile(@Param('id', ParseIntPipe) id: number, @Res() res) {
         //누구의 profile을 보고 싶은지 id로 조회.
-        return await this.userService.getUserProfile(id);
-        //TODO: 줄 정보: username, profileUrl, exp, level,
+        const userProfile: UserProfileDto =
+            await this.userService.getUserProfile(id);
+        return res.status(200).json(userProfile);
     }
 
     @Get('/profileImg/:id')
@@ -73,10 +123,11 @@ export class UserController {
         }
     }
 
-    @Get('username/:name')
-    @UseGuards(JwtAuthGuard)
+    @Get('/username/:name')
+    // @UseGuards(JwtAuthGuard) // TODO : enroll 과 accesstoken 분리 필요
     async checkUniqueName(@Param('name') name: string, @Res() res: Response) {
         try {
+            console.log(`checking name : ${name}`);
             const user = await this.userService.getUserByUsername(name);
             if (user) throw new BadRequestException('username exist');
         } catch (error) {
@@ -84,6 +135,7 @@ export class UserController {
             else throw new InternalServerErrorException();
         }
     }
+
     // @Get('/status')
     // @UseGuards(JwtAuthGuard)
     // getStatus(@Param() id) {

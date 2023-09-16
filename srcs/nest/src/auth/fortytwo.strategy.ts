@@ -1,6 +1,6 @@
 import { Auth42Dto } from './dto/auth42.dto';
 import { AuthService } from './auth.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Res } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-oauth2';
 import axios from 'axios';
@@ -37,7 +37,11 @@ export class FortytwoStrategy extends PassportStrategy(Strategy, 'fortytwo') {
     }
 
     //인증이 성공한 후 호출된다.
-    async validate(accessToken: string, refreshToken: string) {
+    async validate(
+        accessToken: string,
+        refreshToken: string,
+        @Res() res: Response,
+    ) {
         console.log('42 valdation 함수 호출');
 
         try {
@@ -56,7 +60,8 @@ export class FortytwoStrategy extends PassportStrategy(Strategy, 'fortytwo') {
             };
             return desiredFields;
         } catch (error) {
-            console.log(error);
+            //rediection to login page
+            return res.redirect(process.env.SITE_ADDR); //! 이 왜 오류?
         }
     }
 }

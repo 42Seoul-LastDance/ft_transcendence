@@ -55,11 +55,11 @@ export class AuthService {
             throw new UnauthorizedException('not verified token');
         }
 
-        const userEmail = (await this.userService.findUserById(payload.id))
-            .email;
+        const user = await this.userService.findUserById(payload.id);
         const newPayload = {
             sub: payload.id,
-            email: userEmail,
+            email: user.email,
+            slackId: user.slackId,
         };
         const newAccessToken = await this.generateJwt(newPayload);
 
@@ -147,33 +147,36 @@ export class AuthService {
     //     return returnObject;
     // }
 
-    async generateTempJwt(payload): Promise<string> {
+    async generateEnrollJwt(payload): Promise<string> {
         return await this.jwtService.signAsync(payload, {
-            secret: process.env.JWT_TEMP_SECRET,
-            expiresIn: process.env.JWT_TEMP_EXPIRATION_TIME,
+            secret: process.env.JWT_ENROLL_SECRET,
+            expiresIn: process.env.JWT_ENROLL_TIME,
         });
     }
 
-    async generateTempToken(authDto: Auth42Dto): Promise<string> {
-        // let id;
-        // try {
-        //     id = await this.userService.getUserIdByEmail(authDto.email);
-        // } catch (error) {
-        //     if (error.getStatus() == 404) id = -1;
-        //     else
-        //         throw new InternalServerErrorException(
-        //             'from generateTempToken',
-        //         );
-        // }
-
-        const tempJwt = await this.generateTempJwt({
-            // sub: id,
+    async generateEnrollToken(authDto: Auth42Dto): Promise<string> {
+        const enrollToken = await this.generateEnrollJwt({
             email: authDto.email,
             slackId: authDto.slackId,
             image_url: authDto.image_url,
             displayname: authDto.displayname,
             accesstoken: authDto.accesstoken,
         });
-        return tempJwt;
+        return enrollToken;
+    }
+
+    async generate2faJwt(payload): Promise<string> {
+        return await this.jwtService.signAsync(payload, {
+            secret: process.env.JWT_2FA_SECRET,
+            expiresIn: process.env.JWT_2FA_TIME,
+        });
+    }
+
+    async generate2faToken(authDto: Auth42Dto): Promise<string> {
+        const user = await this.userService.findUserByEmail(authDto.email);
+        const token = await this.generate2faJwt({
+            sub: user.id,
+        });
+        return token;
     }
 }

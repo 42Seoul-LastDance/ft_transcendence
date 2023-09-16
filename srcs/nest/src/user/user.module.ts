@@ -8,6 +8,7 @@ import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { JwtEnrollGuard } from 'src/auth/jwtEnroll.guard';
 
 @Module({
     imports: [
@@ -46,7 +47,7 @@ import { diskStorage } from 'multer';
         }),
     ],
     controllers: [UserController],
-    providers: [UserService, JwtAuthGuard],
+    providers: [UserService, JwtAuthGuard, JwtEnrollGuard],
     exports: [UserService],
 })
 export class UserModule {}

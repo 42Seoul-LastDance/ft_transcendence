@@ -8,27 +8,27 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
 @Injectable()
-export class JwtAccessGuard implements CanActivate {
+export class JwtEnrollGuard implements CanActivate {
     constructor(private jwtService: JwtService) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
         const token = this.extractTokenFromHeader(request);
         if (!token) {
-            console.log('tempJwt: no token');
-            throw new UnauthorizedException('no token');
+            console.log('enrollJwt: no token');
+            throw new UnauthorizedException('enrollJwt: no token');
         }
         try {
             const payload = await this.jwtService.verifyAsync(token, {
-                secret: process.env.JWT_TEMP_SECRET,
+                secret: process.env.JWT_ENROLL_SECRET,
             });
 
             request['authDto'] = [payload];
         } catch (error) {
-            console.log('tempJwt: token not right');
-            throw new UnauthorizedException("can't verify token");
+            console.log('enrollJwt: token not right');
+            throw new UnauthorizedException("enrollJwt: can't verify token");
         }
-        console.log('tempJwt guard okay');
+        console.log('enrollJwt guard okay');
         return true;
     }
 

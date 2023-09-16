@@ -18,7 +18,7 @@ import { UserService } from 'src/user/user.service';
 import { RegenerateAuthGuard } from './regenerateAuth.guard';
 import { JwtAuthGuard } from './jwtAuth.guard';
 import { MailService } from 'src/mail/mail.service';
-import { JwtAccessGuard } from './jwtAccess.guard';
+import { Jwt2faGuard } from './jwt2fa.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -78,31 +78,22 @@ export class AuthController {
         //생각한 로직 (신규 유저 바로 등록 안하는 로직) ==========================
         let user;
         try {
-            user = await this.userService.findUserById(req.user.id);
+            user = await this.userService.getUserBySlackId(req.user.slackId);
         } catch (error) {
             if (error.getStatus() == 404) {
                 //JwtAccess 토큰 발급 후 신규 유저 등록 페이지로 진행
                 console.log('new user: redirect to enroll page');
-                res.status(HttpStatus.OK);
-                const tempJwt = await this.authService.generateTempToken(
+                const enrollJwt = await this.authService.generateEnrollToken(
                     req.user,
                 );
                 res.status(HttpStatus.OK);
-                res.cookie('temp_token', tempJwt, {
+                res.cookie('enroll_token', enrollJwt, {
                     // httpOnly: true,
-                    // maxAge: +process.env.COOKIE_MAX_AGE,
-                    maxAge: 270000, //테스트용으로 숫자 길게 맘대로 해둠
+                    maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
                     sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
                     secure: false,
                 });
-                res.cookie('enroll', true, {
-                    // httpOnly: true,
-                    // maxAge: +process.env.COOKIE_MAX_AGE,
-                    maxAge: 270000, //테스트용으로 숫자 길게 맘대로 해둠
-                    sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                    secure: false,
-                });
-                return res.redirect('/'); //!test용 추후 수정 예정
+                return res.redirect(process.env.SITE_ADDR + '/register'); //!test용 추후 수정 예정
             } else throw new InternalServerErrorException('from 42callback');
         }
         // ==================================================== End of 생각한 로직
@@ -113,16 +104,17 @@ export class AuthController {
             console.log('2fa true, go to email!');
 
             //temp_token 발행 후 메일 발송하는 핸들러로 리다이렉션
-            const tempJwt = await this.authService.generateTempToken(req.user);
+            const secondFaJwt = await this.authService.generate2faToken(
+                req.user,
+            );
             res.status(HttpStatus.OK);
-            res.cookie('temp_token', tempJwt, {
+            res.cookie('2fa_token', secondFaJwt, {
                 // httpOnly: true,
-                // maxAge: +process.env.COOKIE_MAX_AGE,
-                maxAge: 100000000, //테스트용으로 숫자 길게 맘대로 해둠
+                maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠
                 sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
                 secure: false,
             });
-            return res.redirect('/auth/require2fa');
+            return res.redirect(process.env.SITE_ADDR + '/2fa'); // TODO: 프론트의 2fa입력폼 페이지로 리다이렉션
         } else {
             //2차 인증 없이 jwt 발급 후 메인으로 리다이렉트
             console.log('no need to 2fa, redirect to main page');
@@ -143,12 +135,12 @@ export class AuthController {
                 sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
                 secure: false,
             });
-            return res.redirect('/');
+            return res.redirect(process.env.SITE_ADDR);
         }
     }
 
     @Get('require2fa')
-    @UseGuards(JwtAccessGuard)
+    @UseGuards(Jwt2faGuard)
     // @UseGuards(JwtAuthGuard) //!test용 - user.sub 받아오려고 일단 진행중
     async twofactorAuthentication(@Req() req, @Res() res: Response) {
         // 메일 보내기
@@ -166,7 +158,7 @@ export class AuthController {
     }
 
     @Get('verify2fa')
-    @UseGuards(JwtAccessGuard)
+    @UseGuards(Jwt2faGuard)
     // @UseGuards(JwtAuthGuard) //!test용 - user.sub 받아오려고 일단 진행중
     async verify2fa(
         @Req() req,
@@ -200,7 +192,7 @@ export class AuthController {
             });
             res.clearCookie('enroll');
             res.clearCookie('temp_token');
-            return res.redirect('/');
+            return res.redirect(process.env.SITE_ADDR);
         } else throw new UnauthorizedException('verify failed');
     }
 
