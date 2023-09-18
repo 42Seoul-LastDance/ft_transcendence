@@ -1,9 +1,13 @@
 'use client'
 import React, { useState } from 'react';
 import InputBox from '../single/InputBox';
-import Button from '../single/Button';
 
-const InputForm: React.FC = () => {
+interface InputFormProps{
+	onClick : Function,
+	disabled : boolean,
+}
+
+const InputForm: React.FC<InputFormProps> = ({ onClick, disabled }) => {
   const [inputValue, setInputValue] = useState<string>('');
   const [submittedValue, setSubmittedValue] = useState<string | null>(null);
 
@@ -19,7 +23,7 @@ const InputForm: React.FC = () => {
     <div>
       <h2>Input Form</h2>
       <InputBox value={inputValue} onChange={handleInputChange} />
-      <Button onClick={handleSubmit} />
+      <button onClick={handleSubmit} />
       {submittedValue !== null && (
         <div>
           <h3>Submitted Value:</h3>

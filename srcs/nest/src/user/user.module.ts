@@ -4,7 +4,7 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { User } from './user.entity';
 import { UserRepository } from './user.repository';
-import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
+import { JwtEnrollGuard } from 'src/auth/jwtEnroll.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -46,7 +46,7 @@ import { diskStorage } from 'multer';
         }),
     ],
     controllers: [UserController],
-    providers: [UserService, JwtAuthGuard],
+    providers: [UserService, JwtEnrollGuard],
     exports: [UserService],
 })
 export class UserModule {}

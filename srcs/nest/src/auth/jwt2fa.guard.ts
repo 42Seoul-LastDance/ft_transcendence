@@ -1,37 +1,34 @@
-// import { Injectable } from '@nestjs/common';
-// import { AuthGuard } from '@nestjs/passport';
-
-// @Injectable()
-// export class JwtAuthGuard extends AuthGuard('jwt') {}
-
 import {
     Injectable,
     CanActivate,
     UnauthorizedException,
     ExecutionContext,
-    Redirect,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
 @Injectable()
-export class JwtAuthGuard implements CanActivate {
+export class Jwt2faGuard implements CanActivate {
     constructor(private jwtService: JwtService) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
         const token = this.extractTokenFromHeader(request);
         if (!token) {
-            throw new UnauthorizedException('no token');
+            console.log('2faJwt: no token');
+            throw new UnauthorizedException('2faJwt: no token');
         }
         try {
             const payload = await this.jwtService.verifyAsync(token, {
-                secret: process.env.JWT_SECRET_KEY,
+                secret: process.env.JWT_2FA_SECRET,
             });
-            request['user'] = payload;
+
+            request['authDto'] = [payload];
         } catch (error) {
-            throw new UnauthorizedException("can't verify token");
+            console.log('2faJwt: token not right');
+            throw new UnauthorizedException("2faJwt: can't verify token");
         }
+        console.log('2faJwt guard okay');
         return true;
     }
 

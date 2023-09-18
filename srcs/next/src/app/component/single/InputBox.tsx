@@ -11,12 +11,7 @@ const InputBox: React.FC<InputBoxProps> = ({ value, onChange }) => {
   };
 
   return (
-    <input
-      type="text"
-      placeholder="Enter text..."
-      value={value}
-      onChange={handleInputChange}
-    />
+    <input type="text" placeholder="Enter text..." value={value} onChange={handleInputChange}/>
   );
 };
 
