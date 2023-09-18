@@ -75,23 +75,14 @@ export class AuthController {
         //! (주현) 신규 유저면 우선 등록해두는게 맞는지 잘 모르겠어요. (회원가입창에서 등록 눌러야 회원 등록돼야한다고 생각)
         //!     => 대세에 따르겠습니다 (하지만 일단 로직은 구현해둠ㅎ)
         //생각한 로직 (신규 유저 바로 등록 안하는 로직) ==========================
-        let user;
-        try {
-            user = await this.userService.getUserBySlackId(req.user.slackId);
-        } catch (error) {
-            if (error.getStatus() == 404) {
-                //JwtAccess 토큰 발급 후 신규 유저 등록 페이지로 진행
-                console.log('new user: redirect to enroll page');
-                this.authService.signEnrollToken(res, req.user);
-                return res.redirect(process.env.SITE_ADDR + '/register'); //!test용 추후 수정 예정
-            } else throw new InternalServerErrorException('from 42callback');
-        }
+        const user = await this.authService.checkUserIfExists(res, req.user);
+        if (!user)
+            return res.redirect(process.env.SITE_ADDR + '/register');
         // ==================================================== End of 생각한 로직
 
         if (user.require2fa) {
             res.status(HttpStatus.OK);
             console.log('2fa true, go to email!');
-
             this.authService.sign2faToken(res, req.user);
             this.authService.sendMail(res, req.authDto.sub);
             return res.redirect(process.env.SITE_ADDR + '/2fa'); //  * 프론트의 2fa입력폼 페이지
@@ -103,27 +94,26 @@ export class AuthController {
         }
     }
 
-    @Get('require2fa')
-    @UseGuards(Jwt2faGuard)
-    // @UseGuards(JwtAuthGuard) //!test용 - user.sub 받아오려고 일단 진행중
-    async twofactorAuthentication(@Req() req, @Res() res: Response) {
-        // 메일 보내기
-        try {
-            this.mailService.sendMail(req.authDto.sub);
-            res.status(HttpStatus.OK);
-        } catch (error) {
-            return new InternalServerErrorException(
-                'from twofactorAuthentication',
-            );
-            }
-        return res.status(200).json({
-            message: '2FA 코드가 이메일로 전송되었습니다. 코드를 확인해주세요.',
-        });
-    }
+    // @Get('require2fa')
+    // @UseGuards(Jwt2faGuard)
+    // // @UseGuards(JwtAuthGuard) //!test용 - user.sub 받아오려고 일단 진행중
+    // async twofactorAuthentication(@Req() req, @Res() res: Response) {
+    //     // 메일 보내기
+    //     try {
+    //         this.mailService.sendMail(req.authDto.sub);
+    //         res.status(HttpStatus.OK);
+    //     } catch (error) {
+    //         return new InternalServerErrorException(
+    //             'from twofactorAuthentication',
+    //         );
+    //         }
+    //     return res.status(200).json({
+    //         message: '2FA 코드가 이메일로 전송되었습니다. 코드를 확인해주세요.',
+    //     });
+    // }
 
     @Get('verify2fa')
     @UseGuards(Jwt2faGuard)
-    // @UseGuards(JwtAuthGuard) //!test용 - user.sub 받아오려고 일단 진행중
     async verify2fa(
         @Req() req,
         @Query('code') code: string,

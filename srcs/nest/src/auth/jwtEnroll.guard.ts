@@ -23,7 +23,7 @@ export class JwtEnrollGuard implements CanActivate {
                 secret: process.env.JWT_ENROLL_SECRET,
             });
 
-            request['authDto'] = [payload];
+            request['authDto'] = payload;
         } catch (error) {
             console.log('enrollJwt: token not right');
             throw new UnauthorizedException("enrollJwt: can't verify token");

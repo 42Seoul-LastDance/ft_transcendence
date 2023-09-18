@@ -23,7 +23,7 @@ export class Jwt2faGuard implements CanActivate {
                 secret: process.env.JWT_2FA_SECRET,
             });
 
-            request['authDto'] = [payload];
+            request['authDto'] = payload;
         } catch (error) {
             console.log('2faJwt: token not right');
             throw new UnauthorizedException("2faJwt: can't verify token");

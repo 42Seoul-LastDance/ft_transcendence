@@ -5,6 +5,7 @@ import { Auth42Dto } from './dto/auth42.dto';
 import { Request } from 'express';
 import { User } from 'src/user/user.entity';
 import { MailService } from 'src/mail/mail.service';
+import { UserInfoDto } from 'src/user/dto/userInfo.dto';
 
 @Injectable()
 export class AuthService {
@@ -238,7 +239,7 @@ export class AuthService {
         });
         res.status(HttpStatus.OK);
     }
-    
+
     async sendMail(@Res() res, id){
         try {
             this.mailService.sendMail(id);
@@ -253,4 +254,17 @@ export class AuthService {
         });
     }
 
+    async checkUserIfExists(@Res() res, user) : Promise<User> {
+        try {
+            const found = await this.userService.getUserBySlackId(user.slackId);
+            return found;
+        } catch (error) {
+            if (error.getStatus() == 404) {
+                //JwtAccess 토큰 발급 후 신규 유저 등록 페이지로 진행
+                console.log('new user: redirect to enroll page');
+                this.signEnrollToken(res, user);
+                return null;
+            } else throw new InternalServerErrorException('from 42callback');
+        }
+    }
 }
