@@ -1,15 +1,17 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Res, HttpStatus, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 import { Auth42Dto } from './dto/auth42.dto';
 import { Request } from 'express';
 import { User } from 'src/user/user.entity';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private jwtService: JwtService,
         private userService: UserService,
+        private mailService: MailService,
     ) {}
 
     async generateJwt(payload): Promise<string> {
@@ -105,6 +107,8 @@ export class AuthService {
         return returnObject;
     }
 
+
+    
     //TODO : signIn 함수의 책임 -> Auth42Dto를 받아서 User 객체 반환
     //TODO : 함수명이 이게 맞나? -> signIn도 하고 signUp도 하는데
     //* signIn 함수 원본 지킴이
@@ -179,4 +183,74 @@ export class AuthService {
         });
         return token;
     }
+
+    async signEnrollToken(@Res() res, payload){
+        const enrollJwt = await this.generateEnrollToken(
+            payload,
+        );
+        res.status(HttpStatus.OK);
+        res.cookie('enroll_token', enrollJwt, {
+            // httpOnly: true,
+            
+        });
+    }
+
+    async sign2faToken(@Res() res, payload){
+        const secondFaJwt = await this.generate2faToken(
+            payload,
+        );
+        res.status(HttpStatus.OK);
+        res.cookie('2fa_token', secondFaJwt, {
+            // httpOnly: true,
+            maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠
+            sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+            secure: false,
+        });
+    }
+    
+    async signjwtToken(@Res() res, payload){
+        const { jwt, refreshToken } = await this.generateToken(
+            payload,
+        );
+        res.status(HttpStatus.OK);
+        res.cookie('access_token', jwt, {
+            // httpOnly: true,
+            maxAge: +process.env.COOKIE_MAX_AGE, 
+            sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+            secure: false,
+        });
+        res.cookie('refresh_token', refreshToken, {
+            // httpOnly: true,
+            // maxAge: +process.env.COOKIE_MAX_AGE,
+            maxAge: 100000000, //테스트용으로 숫자 길게 맘대로 해둠
+            sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+            secure: false,
+        });
+    }
+    
+    async signRegeneratejwt(@Res() res, payload){
+        const regeneratedToken = await this.regenerateJwt(payload);
+        res.cookie('access_token', regeneratedToken, {
+            // httpOnly: true,
+            maxAge: +process.env.COOKIE_MAX_AGE,
+            sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+            secure: false,
+        });
+        res.status(HttpStatus.OK);
+    }
+    
+    async sendMail(@Res() res, id){
+        try {
+            this.mailService.sendMail(id);
+            res.status(HttpStatus.OK);
+        } catch (error) {
+            return new InternalServerErrorException(
+                'from twofactorAuthentication',
+            );
+            }
+        return res.status(200).json({
+            message: '2FA 코드가 이메일로 전송되었습니다. 코드를 확인해주세요.',
+        });
+    }
+
 }

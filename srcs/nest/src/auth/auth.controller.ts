@@ -17,7 +17,6 @@ import { UserService } from 'src/user/user.service';
 // import { RegenerateJwtGuard } from './regenerate-auth.guard';
 import { RegenerateAuthGuard } from './regenerateAuth.guard';
 import { JwtAuthGuard } from './jwtAuth.guard';
-import { MailService } from 'src/mail/mail.service';
 import { Jwt2faGuard } from './jwt2fa.guard';
 
 @Controller('auth')
@@ -83,59 +82,24 @@ export class AuthController {
             if (error.getStatus() == 404) {
                 //JwtAccess 토큰 발급 후 신규 유저 등록 페이지로 진행
                 console.log('new user: redirect to enroll page');
-                const enrollJwt = await this.authService.generateEnrollToken(
-                    req.user,
-                );
-                res.status(HttpStatus.OK);
-                res.cookie('enroll_token', enrollJwt, {
-                    // httpOnly: true,
-                    maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-                    sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                    secure: false,
-                });
+                this.authService.signEnrollToken(res, req.user);
                 return res.redirect(process.env.SITE_ADDR + '/register'); //!test용 추후 수정 예정
             } else throw new InternalServerErrorException('from 42callback');
         }
         // ==================================================== End of 생각한 로직
 
         if (user.require2fa) {
-            //프론트에서 처리를 할것인가 아니면 백에서 리다이렉션??
             res.status(HttpStatus.OK);
             console.log('2fa true, go to email!');
 
-            //temp_token 발행 후 메일 발송하는 핸들러로 리다이렉션
-            const secondFaJwt = await this.authService.generate2faToken(
-                req.user,
-            );
-            res.status(HttpStatus.OK);
-            res.cookie('2fa_token', secondFaJwt, {
-                // httpOnly: true,
-                maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠
-                sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                secure: false,
-            });
-            return res.redirect(process.env.SITE_ADDR + '/2fa'); // TODO: 프론트의 2fa입력폼 페이지로 리다이렉션
+            this.authService.sign2faToken(res, req.user);
+            this.authService.sendMail(res, req.authDto.sub);
+            return res.redirect(process.env.SITE_ADDR + '/2fa'); //  * 프론트의 2fa입력폼 페이지
         } else {
             //2차 인증 없이 jwt 발급 후 메인으로 리다이렉트
             console.log('no need to 2fa, redirect to main page');
-            const { jwt, refreshToken } = await this.authService.generateToken(
-                req.user,
-            );
-            res.status(HttpStatus.OK);
-            res.cookie('access_token', jwt, {
-                // httpOnly: true,
-                maxAge: +process.env.COOKIE_MAX_AGE,
-                sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                secure: false,
-            });
-            res.cookie('refresh_token', refreshToken, {
-                // httpOnly: true,
-                // maxAge: +process.env.COOKIE_MAX_AGE,
-                maxAge: 100000000, //테스트용으로 숫자 길게 맘대로 해둠
-                sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                secure: false,
-            });
-            return res.redirect(process.env.SITE_ADDR);
+            this.authService.signjwtToken(res, req.user);
+            return res.redirect(process.env.SITE_ADDR); // *성공 후 메인페이지
         }
     }
 
@@ -151,7 +115,7 @@ export class AuthController {
             return new InternalServerErrorException(
                 'from twofactorAuthentication',
             );
-        }
+            }
         return res.status(200).json({
             message: '2FA 코드가 이메일로 전송되었습니다. 코드를 확인해주세요.',
         });
@@ -169,27 +133,10 @@ export class AuthController {
             req.authDto.sub,
             code,
         );
-
         if (isAuthenticated) {
             //jwt 발급 후 메인페이지 리다이렉트
             console.log('2fa verified, redirect to main page');
-            const { jwt, refreshToken } = await this.authService.generateToken(
-                req.authDto,
-            );
-            res.status(HttpStatus.OK);
-            res.cookie('access_token', jwt, {
-                // httpOnly: true,
-                maxAge: +process.env.COOKIE_MAX_AGE,
-                sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                secure: false,
-            });
-            res.cookie('refresh_token', refreshToken, {
-                // httpOnly: true,
-                // maxAge: +process.env.COOKIE_MAX_AGE,
-                maxAge: 100000000, //테스트용으로 숫자 길게 맘대로 해둠
-                sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                secure: false,
-            });
+            this.authService.signjwtToken(res, req.authDto);
             res.clearCookie('enroll');
             res.clearCookie('temp_token');
             return res.redirect(process.env.SITE_ADDR);
@@ -243,14 +190,7 @@ export class AuthController {
     @Get('/regenerateToken')
     @UseGuards(RegenerateAuthGuard) //TODO Regenerate-jwt strategy bearer로 하는건지 확인 필요
     async regenerateToken(@Req() req, @Res() res) {
-        const regeneratedToken = await this.authService.regenerateJwt(req);
-        res.cookie('access_token', regeneratedToken, {
-            // httpOnly: true,
-            maxAge: +process.env.COOKIE_MAX_AGE,
-            sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-            secure: false,
-        });
-        res.status(HttpStatus.OK);
+        this.authService.signRegeneratejwt(res, req);
         return res.send();
     }
 
