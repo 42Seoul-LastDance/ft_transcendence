@@ -11,7 +11,7 @@ import { User } from './user.entity';
 import { UserRepository } from './user.repository';
 import { Auth42Dto } from 'src/auth/dto/auth42.dto';
 import * as bcrypt from 'bcryptjs';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync, unlinkSync } from 'fs';
 import { extname } from 'path';
 import { UserProfileDto } from './dto/userProfile.dto';
 
@@ -61,18 +61,21 @@ export class UserService {
         return user;
     }
 
-    async registerUser(authDto: Auth42Dto): Promise<User> {
+    async registerUser(
+        authDto: Auth42Dto,
+        username: string,
+        filename: string,
+    ): Promise<User> {
         try {
-            const { email, slackId, image_url, displayname } = authDto;
-
+            const { email, slackId } = authDto;
             const newUser = this.userRepository.create({
-                username: displayname, //!random name으로 변경필요
-                email,
-                profileurl: 'default.png',
-                slackId,
+                username: username, //!random name으로 변경필요
+                email: email,
+                profileurl: filename ? filename : 'default.png',
+                slackId: slackId,
                 role: 'GENERIC',
                 require2fa: false,
-                status: 'online',
+                status: 'offline', //이건 socket 연결시 online 되는 로직일듯?
                 exp: 0,
                 level: 0,
             } as User);
@@ -112,7 +115,7 @@ export class UserService {
             await this.userRepository.save(user);
             return user;
         } catch (error) {
-            throw new InternalServerErrorException('from updateUsername');
+            throw new InternalServerErrorException('from update2fa');
         }
     }
 
@@ -122,11 +125,18 @@ export class UserService {
     ): Promise<User> {
         try {
             const user = await this.getUserBySlackId(slackId);
+            //* default 이미지가 아니었을 경우 기존 이미지 삭제
+            if (user.profileurl != 'default.png') {
+                const filePath =
+                    __dirname + '/../../profile/' + user.profileurl;
+                if (existsSync(filePath))
+                    unlinkSync(__dirname + '/../../profile/' + user.profileurl);
+            }
             user.profileurl = img;
-            await this.userRepository.save(user); // TODO: 기존 파일을 찾아서 default.png가 아니라면 삭제 하는 로직 추가 필요
+            await this.userRepository.save(user);
             return user;
         } catch (error) {
-            throw new InternalServerErrorException('from updateUsername');
+            throw new InternalServerErrorException('from updateProfileImage');
         }
     }
 
@@ -218,7 +228,7 @@ export class UserService {
             id: user.id,
             username: user.username,
             slackId: user.slackId,
-            profileurl: user.profileurl,
+            // profileurl: user.profileurl,
             exp: user.exp,
             level: user.level,
         };

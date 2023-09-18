@@ -4,6 +4,7 @@ import { Injectable, Res } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-oauth2';
 import axios from 'axios';
+import { Response } from 'express';
 // import { UserInfoDto } from 'src/user/dto/user-info.dto';
 // import { userRole } from 'src/user/user-role.enum';
 
@@ -60,8 +61,8 @@ export class FortytwoStrategy extends PassportStrategy(Strategy, 'fortytwo') {
             };
             return desiredFields;
         } catch (error) {
-            //rediection to login page
-            return res.redirect(process.env.SITE_ADDR); //! 이 왜 오류?
+            // redirect to front login page
+            return res.redirect(process.env.FRONT_ADDR);
         }
     }
 }

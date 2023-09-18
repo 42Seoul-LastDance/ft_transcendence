@@ -6,15 +6,14 @@ import {
     Req,
     Res,
     UseGuards,
-    InternalServerErrorException,
     UnauthorizedException,
     Query,
+    InternalServerErrorException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { FortytwoAuthGuard } from './fortytwo.guard';
 import { UserService } from 'src/user/user.service';
-// import { RegenerateJwtGuard } from './regenerate-auth.guard';
 import { RegenerateAuthGuard } from './regenerateAuth.guard';
 import { JwtAuthGuard } from './jwtAuth.guard';
 import { Jwt2faGuard } from './jwt2fa.guard';
@@ -24,26 +23,12 @@ export class AuthController {
     constructor(
         private authService: AuthService,
         private userService: UserService,
-        private mailService: MailService,
     ) {}
     // * 1. 현재 클라이언트가 유효한 jwt 토큰을 가지고 있는지 확인 (메인 페이지에서)
     // * 2. 유효하지 않다면 `/42login`으로 보내서 oauth 인증 (로그인 페이지 -> 42 intra)
     // * 3. oauth 인증 후 해당 유저가 가입되어 있지 않으면 저장 (default 2fa : true)
     // * 4. 2fa:true 라면 nodemailer를 통해 2fa 인증
     // * 5. 2fa 인증 후 (or 가입되어 있는데 2fa:false 라면) 토큰과 함께 메인 페이지 리다이렉션
-
-    @Get('/login')
-    @UseGuards(JwtAuthGuard)
-    async login(@Res() res: Response) {
-        // 메인페이지 로그인 버튼과 연결.
-        // 이미 클라이언트가 유효한 access token(jwt)을 소유하고 있으면 통과 -> 메인으로 이동
-        return res.redirect('/');
-    }
-
-    //로그인 관련 부분 남은 일
-    //1. 2fa 연결 ======================= 오늘1
-    //2. 신규 가입 페이지 연결 ======================= 오늘2
-    //2-1. 이미지 파일 업로드 -> multer!  ========== 오늘 3
 
     //추가로 같이 했으면 하는 일
     //1. 파이프 관련 내용 ======================= 오늘 juhoh 정리예정
@@ -75,22 +60,72 @@ export class AuthController {
         //! (주현) 신규 유저면 우선 등록해두는게 맞는지 잘 모르겠어요. (회원가입창에서 등록 눌러야 회원 등록돼야한다고 생각)
         //!     => 대세에 따르겠습니다 (하지만 일단 로직은 구현해둠ㅎ)
         //생각한 로직 (신규 유저 바로 등록 안하는 로직) ==========================
-        const user = await this.authService.checkUserIfExists(res, req.user);
-        if (!user)
-            return res.redirect(process.env.SITE_ADDR + '/register');
-        // ==================================================== End of 생각한 로직
 
-        if (user.require2fa) {
+        let user;
+        try {
+            user = await this.userService.getUserBySlackId(req.user.slackId);
+        } catch (error) {
+            if (error.getStatus() == 404) {
+                //JwtAccess 토큰 발급 후 신규 유저 등록 페이지로 진행
+                console.log('new user: redirect to enroll page');
+                const enrollJwt = await this.authService.generateEnrollToken(
+                    req.user,
+                );
+                res.status(HttpStatus.OK);
+                res.cookie('enroll_token', enrollJwt, {
+                    // httpOnly: true,
+                    // maxAge: +process.env.COOKIE_MAX_AGE,
+                    maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+                    sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+                    secure: false,
+                    domain: process.env.FRONT_ADDR + '/register', //이것도 안댐 ㅠ 로그에는 가드 오케이 인데 어떤게 문제인가요??-> 음 이유는 모르겠는데 cookie가 없대요.
+                    //guard okay는 ㅍ론트에서  별도처리 햇을때래요! 저희 이제 집....... 가려구요....
+                });
+                return res.redirect(process.env.FRONT_ADDR + '/register');
+            } else throw new InternalServerErrorException('from 42callback');
+        }
+        /*
+        쿠키는 항상 특정 도메인(쿠키를 설정하는 서버의 도메인)과 연결된다는 점을 기억하세요.
+        빠른 리디렉션으로 인해 쿠키가 OAuth 페이지에 설정되는 것처럼 보이더라도 
+        쿠키는 실제로 내 도메인과 연결되어 있으며 내 도메인으로만 전송될 수 있습니다.
+        */
+        // const ifExists = await this.authService.checkUserIfExists(
+        //     res,
+        //     req.user,
+        // ); //그럼 그냥 cookie 설정을 여기서 해보죠
+        // if (!ifExists) {
+        //     //JwtAccess 토큰 발급 후 신규 유저 등록 페이지로 진행
+        //     console.log('new user: redirect to enroll page');
+        //     // await this.signEnrollToken(res, user);
+        //     const enrollJwt = await this.authService.generateEnrollToken(
+        //         req.user,
+        //     );
+        //     res.status(HttpStatus.OK);
+        //     res.cookie('enroll_token', enrollJwt, {
+        //         // httpOnly: true,
+        //         maxAge: +process.env.JWT_ENROLL_COOKIE_TIME,
+        //         secure: false,
+        //     });
+        //     // console.log(res);    //cookie 잘 담겨있음 세상음
+        //     return res.redirect(process.env.FRONT_ADDR + '/register');
+        // }
+        // 지금 쿠키가 42 login url에 들어잇는걸 확인햇어요!! 오잉....
+        //그래서 이게 왜 그런지 알아보는 중..
+        // ==================================================== End of 생각한 로직
+        const founduser = await this.userService.getUserBySlackId(
+            req.user.slackId,
+        );
+        if (founduser.require2fa) {
             res.status(HttpStatus.OK);
             console.log('2fa true, go to email!');
-            this.authService.sign2faToken(res, req.user);
+            await this.authService.sign2faToken(res, req.user);
             this.authService.sendMail(res, req.authDto.sub);
-            return res.redirect(process.env.SITE_ADDR + '/2fa'); //  * 프론트의 2fa입력폼 페이지
+            return res.redirect(process.env.FRONT_ADDR + '/2fa'); //  * 프론트의 2fa입력폼 페이지
         } else {
             //2차 인증 없이 jwt 발급 후 메인으로 리다이렉트
             console.log('no need to 2fa, redirect to main page');
-            this.authService.signjwtToken(res, req.user);
-            return res.redirect(process.env.SITE_ADDR); // *성공 후 메인페이지
+            await this.authService.signjwtToken(res, req.user);
+            return res.redirect(process.env.FRONT_ADDR + '/main'); // *성공 후 메인페이지
         }
     }
 
@@ -127,9 +162,8 @@ export class AuthController {
             //jwt 발급 후 메인페이지 리다이렉트
             console.log('2fa verified, redirect to main page');
             this.authService.signjwtToken(res, req.authDto);
-            res.clearCookie('enroll');
-            res.clearCookie('temp_token');
-            return res.redirect(process.env.SITE_ADDR);
+            res.clearCookie('2fa_token');
+            return res.redirect(process.env.FRONT_ADDR + '/main');
         } else throw new UnauthorizedException('verify failed');
     }
 

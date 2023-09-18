@@ -14,9 +14,9 @@ export class UserProfileDto {
     @IsString()
     username: string;
 
-    @IsNotEmpty()
-    @IsString()
-    profileurl: string;
+    // @IsNotEmpty()
+    // @IsString()
+    // profileurl: string;
 
     @IsNotEmpty()
     @IsNumber()

@@ -1,8 +1,14 @@
-import { Injectable, UnauthorizedException, Res, HttpStatus, InternalServerErrorException } from '@nestjs/common';
+import {
+    Injectable,
+    UnauthorizedException,
+    Res,
+    HttpStatus,
+    InternalServerErrorException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 import { Auth42Dto } from './dto/auth42.dto';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { User } from 'src/user/user.entity';
 import { MailService } from 'src/mail/mail.service';
 import { UserInfoDto } from 'src/user/dto/userInfo.dto';
@@ -108,8 +114,6 @@ export class AuthService {
         return returnObject;
     }
 
-
-    
     //TODO : signIn 함수의 책임 -> Auth42Dto를 받아서 User 객체 반환
     //TODO : 함수명이 이게 맞나? -> signIn도 하고 signUp도 하는데
     //* signIn 함수 원본 지킴이
@@ -185,21 +189,19 @@ export class AuthService {
         return token;
     }
 
-    async signEnrollToken(@Res() res, payload){
-        const enrollJwt = await this.generateEnrollToken(
-            payload,
-        );
+    async signEnrollToken(@Res() res: Response, payload) {
+        const enrollJwt = await this.generateEnrollToken(payload);
         res.status(HttpStatus.OK);
         res.cookie('enroll_token', enrollJwt, {
             // httpOnly: true,
-            
+            maxAge: +process.env.JWT_ENROLL_COOKIE_TIME,
+            secure: false,
         });
+        return res;
     }
 
-    async sign2faToken(@Res() res, payload){
-        const secondFaJwt = await this.generate2faToken(
-            payload,
-        );
+    async sign2faToken(@Res() res: Response, payload) {
+        const secondFaJwt = await this.generate2faToken(payload);
         res.status(HttpStatus.OK);
         res.cookie('2fa_token', secondFaJwt, {
             // httpOnly: true,
@@ -208,15 +210,13 @@ export class AuthService {
             secure: false,
         });
     }
-    
-    async signjwtToken(@Res() res, payload){
-        const { jwt, refreshToken } = await this.generateToken(
-            payload,
-        );
+
+    async signjwtToken(@Res() res: Response, payload) {
+        const { jwt, refreshToken } = await this.generateToken(payload);
         res.status(HttpStatus.OK);
         res.cookie('access_token', jwt, {
             // httpOnly: true,
-            maxAge: +process.env.COOKIE_MAX_AGE, 
+            maxAge: +process.env.COOKIE_MAX_AGE,
             sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
             secure: false,
         });
@@ -228,8 +228,8 @@ export class AuthService {
             secure: false,
         });
     }
-    
-    async signRegeneratejwt(@Res() res, payload){
+
+    async signRegeneratejwt(@Res() res: Response, payload) {
         const regeneratedToken = await this.regenerateJwt(payload);
         res.cookie('access_token', regeneratedToken, {
             // httpOnly: true,
@@ -240,7 +240,7 @@ export class AuthService {
         res.status(HttpStatus.OK);
     }
 
-    async sendMail(@Res() res, id){
+    async sendMail(@Res() res: Response, id: number) {
         try {
             this.mailService.sendMail(id);
             res.status(HttpStatus.OK);
@@ -248,22 +248,22 @@ export class AuthService {
             return new InternalServerErrorException(
                 'from twofactorAuthentication',
             );
-            }
+        }
         return res.status(200).json({
             message: '2FA 코드가 이메일로 전송되었습니다. 코드를 확인해주세요.',
         });
     }
 
-    async checkUserIfExists(@Res() res, user) : Promise<User> {
+    async checkUserIfExists(
+        @Res() res: Response,
+        user: Auth42Dto,
+    ): Promise<boolean> {
         try {
-            const found = await this.userService.getUserBySlackId(user.slackId);
-            return found;
+            await this.userService.getUserBySlackId(user.slackId);
+            return true;
         } catch (error) {
             if (error.getStatus() == 404) {
-                //JwtAccess 토큰 발급 후 신규 유저 등록 페이지로 진행
-                console.log('new user: redirect to enroll page');
-                this.signEnrollToken(res, user);
-                return null;
+                return false;
             } else throw new InternalServerErrorException('from 42callback');
         }
     }
