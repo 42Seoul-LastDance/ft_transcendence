@@ -11,8 +11,7 @@ import { User } from './user.entity';
 import { UserRepository } from './user.repository';
 import { Auth42Dto } from 'src/auth/dto/auth42.dto';
 import * as bcrypt from 'bcryptjs';
-import { UserInfoDto } from './dto/userInfo.dto';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync, unlinkSync } from 'fs';
 import { extname } from 'path';
 import { UserProfileDto } from './dto/userProfile.dto';
 
@@ -52,38 +51,31 @@ export class UserService {
         return user;
     }
 
-    //registerUser 원본
-    // async registerUser(userDto: Auth42Dto): Promise<User> {
-    //     try {
-    //         //*  Dto에 없는 내용은 entity에 저장되어있는 default 값으로 세팅된다.
-    //         const newUser = this.userRepository.create(userDto);
-    //         const user = await this.userRepository.save(newUser);
-    //         // console.log('register user in UserService:', newUser);
-    //         return user;
-    //     } catch (error) {
-    //         console.log('error in registerUser ', error);
-    //         throw new InternalServerErrorException('from registerUser');
-    //     }
-    // }
+    async getUserByUsername(name: string): Promise<User> {
+        const user = await this.userRepository.findOne({
+            where: { username: name },
+        });
+        if (!user) {
+            throw new NotFoundException();
+        }
+        return user;
+    }
 
-    //registerUSer 수정본 (Auth42Dto, UserInfoDto 모두 받아 진행)
     async registerUser(
         authDto: Auth42Dto,
-        userInfoDto: UserInfoDto,
+        username: string,
+        filename: string,
     ): Promise<User> {
         try {
-            //oath 로그인 시 정보
-            const { email, slackId, image_url } = authDto;
-            //회원가입 시 정보
-            const { username, profileurl, require2fa } = userInfoDto;
+            const { email, slackId } = authDto;
             const newUser = this.userRepository.create({
-                username,
-                email,
-                profileurl: profileurl ? profileurl : image_url,
-                slackId,
+                username: username, //!random name으로 변경필요
+                email: email,
+                profileurl: filename ? filename : 'default.png',
+                slackId: slackId,
                 role: 'GENERIC',
-                require2fa,
-                status: 'online',
+                require2fa: false,
+                status: 'offline', //이건 socket 연결시 online 되는 로직일듯?
                 exp: 0,
                 level: 0,
             } as User);
@@ -97,18 +89,54 @@ export class UserService {
         }
     }
 
-    async updateUserInfo(userId: number, userInfoDto: UserInfoDto) {
-        const user = await this.findUserById(userId);
-        user.username = userInfoDto.username || user.username;
-        user.profileurl = userInfoDto.profileurl || user.profileurl;
-        user.require2fa = userInfoDto.require2fa || user.require2fa;
+    async updateUsernameBySlackId(
+        slackId: string,
+        username: string,
+    ): Promise<User> {
         try {
+            const user = await this.getUserBySlackId(slackId);
+            user.username = username;
             await this.userRepository.save(user);
             return user;
         } catch (error) {
             if (error.code == '23505')
                 throw new ConflictException('Existing username');
-            else throw new InternalServerErrorException('from updateUserInfo');
+            else throw new InternalServerErrorException('from updateUsername');
+        }
+    }
+
+    async update2faConfBySlackId(
+        slackId: string,
+        is2fa: boolean,
+    ): Promise<User> {
+        try {
+            const user = await this.getUserBySlackId(slackId);
+            user.require2fa = is2fa;
+            await this.userRepository.save(user);
+            return user;
+        } catch (error) {
+            throw new InternalServerErrorException('from update2fa');
+        }
+    }
+
+    async updateProfileImageBySlackId(
+        slackId: string,
+        img: string,
+    ): Promise<User> {
+        try {
+            const user = await this.getUserBySlackId(slackId);
+            //* default 이미지가 아니었을 경우 기존 이미지 삭제
+            if (user.profileurl != 'default.png') {
+                const filePath =
+                    __dirname + '/../../profile/' + user.profileurl;
+                if (existsSync(filePath))
+                    unlinkSync(__dirname + '/../../profile/' + user.profileurl);
+            }
+            user.profileurl = img;
+            await this.userRepository.save(user);
+            return user;
+        } catch (error) {
+            throw new InternalServerErrorException('from updateProfileImage');
         }
     }
 
@@ -166,6 +194,9 @@ export class UserService {
         return found;
     }
 
+    /*
+    로그아웃 용
+     **/
     async removeRefreshToken(user): Promise<any> {
         // TODO: 프론트 쿠키 관리 로직이 추가되면 수정해야 함
         // TODO: 함수 명이랑 로직 다시 정리필요해보입니다!
@@ -194,8 +225,12 @@ export class UserService {
 
         const userProfileDto: UserProfileDto = {
             //TODO UserProfileDto 업데이트하고 추가로 진행
+            id: user.id,
             username: user.username,
             slackId: user.slackId,
+            // profileurl: user.profileurl,
+            exp: user.exp,
+            level: user.level,
         };
 
         return userProfileDto;

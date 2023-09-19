@@ -1,15 +1,24 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+    Injectable,
+    UnauthorizedException,
+    Res,
+    HttpStatus,
+    InternalServerErrorException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 import { Auth42Dto } from './dto/auth42.dto';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { User } from 'src/user/user.entity';
+import { MailService } from 'src/mail/mail.service';
+import { UserInfoDto } from 'src/user/dto/userInfo.dto';
 
 @Injectable()
 export class AuthService {
     constructor(
         private jwtService: JwtService,
         private userService: UserService,
+        private mailService: MailService,
     ) {}
 
     async generateJwt(payload): Promise<string> {
@@ -45,20 +54,21 @@ export class AuthService {
         if (!token) {
             throw new UnauthorizedException('no token ');
         }
-        const payload = await this.jwtService.verifyAsync(token, {
-            secret: process.env.JWT_SECRET_KEY,
-        }); // ! 로직 확인 필요 : try 블록 밖에 있어도 되는 친구인가?
+        let payload;
         try {
+            payload = await this.jwtService.verifyAsync(token, {
+                secret: process.env.JWT_SECRET_KEY,
+            });
             await this.userService.verifyRefreshToken(payload, token);
         } catch {
             throw new UnauthorizedException('not verified token');
         }
 
-        const userEmail = (await this.userService.findUserById(payload.id))
-            .email;
+        const user = await this.userService.findUserById(payload.id);
         const newPayload = {
             sub: payload.id,
-            email: userEmail,
+            email: user.email,
+            slackId: user.slackId,
         };
         const newAccessToken = await this.generateJwt(newPayload);
 
@@ -146,33 +156,115 @@ export class AuthService {
     //     return returnObject;
     // }
 
-    async generateTempJwt(payload): Promise<string> {
+    async generateEnrollJwt(payload): Promise<string> {
         return await this.jwtService.signAsync(payload, {
-            secret: process.env.JWT_TEMP_SECRET,
-            expiresIn: process.env.JWT_TEMP_EXPIRATION_TIME,
+            secret: process.env.JWT_ENROLL_SECRET,
+            expiresIn: process.env.JWT_ENROLL_TIME,
         });
     }
 
-    async generateTempToken(authDto: Auth42Dto): Promise<string> {
-        // let id;
-        // try {
-        //     id = await this.userService.getUserIdByEmail(authDto.email);
-        // } catch (error) {
-        //     if (error.getStatus() == 404) id = -1;
-        //     else
-        //         throw new InternalServerErrorException(
-        //             'from generateTempToken',
-        //         );
-        // }
-
-        const tempJwt = await this.generateTempJwt({
-            // sub: id,
+    async generateEnrollToken(authDto: Auth42Dto): Promise<string> {
+        const enrollToken = await this.generateEnrollJwt({
             email: authDto.email,
             slackId: authDto.slackId,
             image_url: authDto.image_url,
             displayname: authDto.displayname,
             accesstoken: authDto.accesstoken,
         });
-        return tempJwt;
+        return enrollToken;
+    }
+
+    async generate2faJwt(payload): Promise<string> {
+        return await this.jwtService.signAsync(payload, {
+            secret: process.env.JWT_2FA_SECRET,
+            expiresIn: process.env.JWT_2FA_TIME,
+        });
+    }
+
+    async generate2faToken(authDto: Auth42Dto): Promise<string> {
+        const user = await this.userService.findUserByEmail(authDto.email);
+        const token = await this.generate2faJwt({
+            sub: user.id,
+        });
+        return token;
+    }
+
+    async signEnrollToken(@Res() res: Response, payload) {
+        const enrollJwt = await this.generateEnrollToken(payload);
+        res.status(HttpStatus.OK);
+        res.cookie('enroll_token', enrollJwt, {
+            // httpOnly: true,
+            maxAge: +process.env.JWT_ENROLL_COOKIE_TIME,
+            secure: false,
+        });
+        return res;
+    }
+
+    async sign2faToken(@Res() res: Response, payload) {
+        const secondFaJwt = await this.generate2faToken(payload);
+        res.status(HttpStatus.OK);
+        res.cookie('2fa_token', secondFaJwt, {
+            // httpOnly: true,
+            maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠
+            sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+            secure: false,
+        });
+    }
+
+    async signjwtToken(@Res() res: Response, payload) {
+        const { jwt, refreshToken } = await this.generateToken(payload);
+        res.status(HttpStatus.OK);
+        res.cookie('access_token', jwt, {
+            // httpOnly: true,
+            maxAge: +process.env.COOKIE_MAX_AGE,
+            sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+            secure: false,
+        });
+        res.cookie('refresh_token', refreshToken, {
+            // httpOnly: true,
+            // maxAge: +process.env.COOKIE_MAX_AGE,
+            maxAge: 100000000, //테스트용으로 숫자 길게 맘대로 해둠
+            sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+            secure: false,
+        });
+    }
+
+    async signRegeneratejwt(@Res() res: Response, payload) {
+        const regeneratedToken = await this.regenerateJwt(payload);
+        res.cookie('access_token', regeneratedToken, {
+            // httpOnly: true,
+            maxAge: +process.env.COOKIE_MAX_AGE,
+            sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+            secure: false,
+        });
+        res.status(HttpStatus.OK);
+    }
+
+    async sendMail(@Res() res: Response, id: number) {
+        try {
+            this.mailService.sendMail(id);
+            res.status(HttpStatus.OK);
+        } catch (error) {
+            return new InternalServerErrorException(
+                'from twofactorAuthentication',
+            );
+        }
+        return res.status(200).json({
+            message: '2FA 코드가 이메일로 전송되었습니다. 코드를 확인해주세요.',
+        });
+    }
+
+    async checkUserIfExists(
+        @Res() res: Response,
+        user: Auth42Dto,
+    ): Promise<boolean> {
+        try {
+            await this.userService.getUserBySlackId(user.slackId);
+            return true;
+        } catch (error) {
+            if (error.getStatus() == 404) {
+                return false;
+            } else throw new InternalServerErrorException('from 42callback');
+        }
     }
 }
