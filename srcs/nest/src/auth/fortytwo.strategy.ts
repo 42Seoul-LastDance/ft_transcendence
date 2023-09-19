@@ -1,6 +1,6 @@
 import { Auth42Dto } from './dto/auth42.dto';
 import { AuthService } from './auth.service';
-import { Injectable, Res } from '@nestjs/common';
+import { Get, Injectable, Res } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-oauth2';
 import axios from 'axios';
@@ -62,7 +62,8 @@ export class FortytwoStrategy extends PassportStrategy(Strategy, 'fortytwo') {
             return desiredFields;
         } catch (error) {
             // redirect to front login page
-            return res.redirect(process.env.FRONT_ADDR);
+            console.log('front main?');
+            // return res.redirect(process.env.FRONT_ADDR);
         }
     }
 }

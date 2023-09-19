@@ -78,10 +78,10 @@ export class AuthController {
                     maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
                     sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
                     secure: false,
-                    domain: process.env.FRONT_ADDR + '/register', //이것도 안댐 ㅠ 로그에는 가드 오케이 인데 어떤게 문제인가요??-> 음 이유는 모르겠는데 cookie가 없대요.
-                    //guard okay는 ㅍ론트에서  별도처리 햇을때래요! 저희 이제 집....... 가려구요....
+                    //domain: process.env.FRONT_ADDR + '/register',
                 });
-                return res.redirect(process.env.FRONT_ADDR + '/register');
+
+                // return res.redirect(process.env.FRONT_ADDR + '/register');
             } else throw new InternalServerErrorException('from 42callback');
         }
         /*
@@ -120,7 +120,7 @@ export class AuthController {
             console.log('2fa true, go to email!');
             await this.authService.sign2faToken(res, req.user);
             this.authService.sendMail(res, req.authDto.sub);
-            return res.redirect(process.env.FRONT_ADDR + '/2fa'); //  * 프론트의 2fa입력폼 페이지
+            return res.redirect(process.env.FRONT_ADDR + '/tfa'); //  * 프론트의 2fa입력폼 페이지
         } else {
             //2차 인증 없이 jwt 발급 후 메인으로 리다이렉트
             console.log('no need to 2fa, redirect to main page');

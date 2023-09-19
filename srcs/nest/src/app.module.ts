@@ -6,6 +6,7 @@ import { User } from './user/user.entity';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
+import { EventsModule } from './socket/events.module';
 
 @Module({
     imports: [
@@ -22,6 +23,7 @@ import { MailModule } from './mail/mail.module';
         UserModule,
         AuthModule,
         MailModule,
+        EventsModule,
     ],
     controllers: [AppController],
     providers: [AppService],

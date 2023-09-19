@@ -1,24 +1,23 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as express from 'express';
-// import { HttpExceptionFilter } from './http-exception.filter';
+import { SocketIoAdapter } from './adapters/socket-io.adapters';
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule, { cors: true });
 
     app.enableCors({
-        allowedHeaders:
-            'Authorization, X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, Access-Control-Allow-Origin',
-        origin: '*',
+        origin: true,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
+        allowedHeaders:
+            'Authorization, X-Requested-With, X-HTTP-Method-Override, Content-Type',
     });
+
+    // app.useWebSocketAdapter(new SocketIoAdapter(app));
 
     //정적파일 미들웨어 추가
     app.use(express.static('public'));
-
-    // global-scoped filter
-    // app.useGlobalFilters(new HttpExceptionFilter());
 
     await app.listen(3000);
 }
