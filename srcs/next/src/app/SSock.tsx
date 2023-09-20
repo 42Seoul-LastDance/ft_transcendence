@@ -1,13 +1,48 @@
-// import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
+import { useAppDispatch } from './Test/store';
 
-// export const socket = io('http://10.14.4.2:3000', {
-//     withCredentials: false,
-// });
+var dmSocket: Socket;
+var chatSocket: Socket;
+var gameSocket: Socket;
 
-// export const initSocket = () => {
-//     try {
-//         socket.connect();
-//     } catch (error) {
-//         console.log('socket connect error: ', error);
-//     }
-// };
+export const getDmSocket = (): Socket => {
+    if (!dmSocket || !dmSocket.connected) {
+        console.log('getDmSocket()');
+        dmSocket = io('http://10.14.4.1:3000/', {
+            withCredentials: false,
+        });
+        dmSocket.connect();
+        dmSocket.on('getMessage', (str) => {
+            console.log('msg from server : ', str);
+        });
+    }
+    return dmSocket;
+};
+
+export const getChatSocket = (): Socket => {
+    if (!chatSocket || !chatSocket.connected) {
+        console.log('getChatSocket()');
+        chatSocket = io('http://10.14.4.1:3000/RoomChat', {
+            withCredentials: false,
+        });
+        chatSocket.connect();
+        chatSocket.on('getMessage', (str) => {
+            console.log('msg from server : ', str);
+        });
+    }
+    return chatSocket;
+};
+
+export const getGameSocket = (): Socket => {
+    if (!gameSocket || !gameSocket.connected) {
+        console.log('getgameSocket()');
+        gameSocket = io('http://10.14.4.1:3000/', {
+            withCredentials: false,
+        });
+        gameSocket.connect();
+        gameSocket.on('getMessage', (str) => {
+            console.log('msg from server : ', str);
+        });
+    }
+    return gameSocket;
+};

@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as express from 'express';
-import { SocketIoAdapter } from './adapters/socket-io.adapters';
+// import { SocketIoAdapter } from './adapters/socket-io.adapters';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule, { cors: true });

@@ -1,36 +1,36 @@
 'use client';
-// import Game from "./Game";
-// import ReactDOM from 'react-dom/client';
-// import App from './App';
-// import InputForm from './component/multi/InputForm';
-// import HandleLoginButton from './component/single/HandleLoginButton';
-// import AxiosComponent from 'AxiosComponent';
-import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
+import { getDmSocket } from './SSock';
+import { useEffect } from 'react';
+import ChatRoomList from './Chat/ChatButton';
+import Link from 'next/link';
+import Button from '@mui/material/Button';
 
-interface MyResponse {
-    str: string;
-}
+// var socket = getDmSocket();
 
-const socket = io('http://10.14.4.2:3000', {
-    withCredentials: false,
-});
-socket.connect();
+// socket.on('getMessage', (msg) => {
+//     console.log('msg from server: ', msg);
+// });
 
-const SocketEvent = () => {
-    socket.emit('sendMessage', '안녕 친구들🚴🏿‍♂️🚗🚎');
+// const socketEvent = () => {
+//     socket.emit('sendMessage', '안녕 친구들🚴🏿‍♂️🚗🚎');
+// };
+
+const TestButton = () => {
+    return (
+        <Link href="/Test">
+            <Button variant="contained">5억년 버튼</Button>
+        </Link>
+    );
 };
 
 export default function Home() {
-    socket.on('getMessage', (str) => {
-        console.log('msg from server : ', str);
-    });
-
     return (
         <main>
-            <p>ㅋㅋㅋㅋ케소케ㄱ연ㄱ스테스트</p>
-            <button onClick={SocketEvent}> 5억년 버튼 </button>
+            <ChatRoomList />
+            <TestButton />
+            {/* <button onClick={socketEvent}> 안녕 친구들 </button> */}
         </main>
     );
 }
