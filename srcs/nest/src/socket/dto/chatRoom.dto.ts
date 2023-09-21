@@ -1,18 +1,15 @@
-import { IsBoolean, IsNumber, IsString, IsArray } from 'class-validator';
-import { ClientDto } from './client.dto';
+import { IsBoolean, IsString, IsArray, IsEnum } from 'class-validator';
+import { roomStatus } from '../room.enum';
 
 export class ChatRoomDto {
-    // @IsNotEmpty()
-    @IsNumber()
-    id: number;
-
-    // @IsNotEmpty()
     @IsString()
-    roomname: string;
+    roomName: string;
 
-    // @IsNotEmpty()
     @IsString()
-    ownername: string;
+    ownerName: string;
+
+    @IsEnum(roomStatus)
+    status: roomStatus;
 
     @IsString()
     password: string;
@@ -27,8 +24,11 @@ export class ChatRoomDto {
     memberList: Array<string> = [];
 
     @IsArray()
+    inviteList: Array<string> = [];
+
+    @IsArray()
     banList: Array<string> = [];
 
     @IsArray()
-    muteList: Map<string, Date> = [];
+    muteList: Array<string> = [];
 }

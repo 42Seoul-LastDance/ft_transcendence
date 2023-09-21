@@ -1,60 +1,55 @@
 import {
-    MessageBody,
     OnGatewayConnection,
     OnGatewayDisconnect,
     SubscribeMessage,
     WebSocketGateway,
     WebSocketServer,
-    // ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-// import { ChatroomDto } from './chatroom.dto';
 import { ChatRoomService } from './chatRoom.service';
-// import { SocketIoAdapter } from 'src/adapters/socket-io.adapters';
 import { RoomInfoDto } from './dto/roominfo.dto';
-import { ClientDto } from './dto/client.dto';
 @WebSocketGateway({
     port: 3000,
     cors: {
         origin: true,
         withCredentials: true,
     },
-    // query :
     namespace: 'RoomChat',
-}) // 데코레이터 인자로 포트 줄 수 있음
-export class ChatRoomGateway
-    implements OnGatewayConnection, OnGatewayDisconnect
-{
-    // 생성자로 서비스 넣고 로직 분리 가능
-    clientList = new Map();
-    constructor(private chatroomService: ChatRoomService) {
-        // this.client = new Map<string, any>();
-        // this.idx_client = 0;
-    }
+})
+export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
+    constructor(private chatroomService: ChatRoomService) {}
 
     @WebSocketServer()
     server: Server;
 
+    // * 커넥션 핸들링 ========================================================
     handleConnection(socket: Socket) {
-        //jwt 토큰에서 가져온 정보도 추가
-        // client['nickname'] = 'user ' + this.idx_client++;
-        // this.clientList[socket.id] = clientDto;
         console.log('token: ', socket.handshake.query['username']);
-        // [Object: null prototype] {
-        //     username: 'kwsong',
-        //     id: '1234',
-        //     EIO: '4',
-        //     transport: 'polling',
-        //     t: 'OgryZ66'
-        // }
+        this.chatroomService.addNewUser(socket);
         console.log(socket.id, ': new connection.');
     }
 
     handleDisconnect(socket: Socket) {
-        this.clientList.delete(socket.id);
+        //TODO :(username-> Socket.room : string) PastRoom.banList에서 해당 유저 삭제
+        this.chatroomService.leavePastRoom(socket, this.chatroomService.getUserName(socket));
+        this.chatroomService.deleteUser(socket);
         console.log(socket.id, ': lost connection.');
     }
 
+    // * Getter ===========================================================
+    // @SubscribeMessage('getBlockUser')
+    // getBlockUser() {}
+
+    @SubscribeMessage('getChatRoomList')
+    getChatRoomList(socket: Socket) {
+        // ”roomname”: string,
+        // ”isLocked” : boolean,
+        // ”status” : roomStatus,
+        const chatRoomList = this.chatroomService.getChatRoomList();
+        socket.emit('getChatRoomList', chatRoomList);
+    }
+
+    // * Message ===========================================================
     // //메시지가 전송되면 모든 유저에게 메시지 전송
     // @SubscribeMessage('sendMessage')
     // sendMessage(client: Socket, message: string): void {
@@ -68,34 +63,18 @@ export class ChatRoomGateway
     //     });
     // }
 
-    //채팅방 리스트 전달
-    @SubscribeMessage('getChatRoomList')
-    getChatRoomList(client: Socket) {
-        // ”roomname”: string,
-        // ”isLocked” : boolean,
-        // ”status” : roomStatus,
-        const chatRoomList = this.chatroomService.getChatRoomList();
-        client.emit('getChatRoomList', chatRoomList);
-    }
-
-    //채팅방 생성
+    // * ChatRoom Method ===========================================================
     @SubscribeMessage('createChatRoom')
-    createChatRoom(client: Socket, payload: JSON) {
-        this.chatroomService.createChatRoom(
-            client,
-            Object.assign(new RoomInfoDto(), payload),
-        );
-        client.emit('createChatRoom');
+    createChatRoom(socket: Socket, payload: JSON) {
+        this.chatroomService.createChatRoom(socket, Object.assign(new RoomInfoDto(), payload));
+
+        socket.emit('createChatRoom');
     }
 
-    // //채팅방 들어가기
-    // @SubscribeMessage('enterChatRoom')
-    // enterChatRoom(client: Socket, roomId: string) {
-    //     // this.rooms[+roomId].member += client.id;
-    //     // this.rooms[+roomId]['member'] = client.id;
-    //     // client.rooms.clear();
-    //     // client.join(roomId);
-    // }
+    @SubscribeMessage('joinPublicChatRoom')
+    joinPublicChatRoom(socket: Socket, payload: JSON) {
+        this.chatroomService.joinPublicChatRoom(socket, payload['roomName'], payload['password']);
+    }
 
     // //채팅방 나가기
     // @SubscribeMessage('exitChatRoom')
@@ -112,10 +91,26 @@ export class ChatRoomGateway
     //     // client.join(roomId);
     // }
 
-    // //* 채팅방 권한 설정 =========================================
-    // //admin 설정 -> 책봉, 해제
-    // @SubscribeMessage('updateAdmin')
-    // updateAdmin(client: Socket, roomId: string) {
-    //     // client.join(roomId);
-    // }
+    // * 채팅방 패스워드 관련 =================================================
+    // @SubscribeMessage('setRoomPassword')
+    // setRoomPassword() {}
+
+    // @SubscribeMessage('unsetRoomPassword')
+    // unsetRoomPassword() {}
+
+    // @SubscribeMessage('changeRoomPassword')
+    // changeRoomPassword() {}
+
+    // * Owner & Operator =====================================================
+    // @SubscribeMessage('grantUser')
+    // grantUser() {}
+
+    // @SubscribeMessage('kickUser')
+    // kickUser() {}
+
+    // @SubscribeMessage('muteUser')
+    // muteUser() {}
+
+    // @SubscribeMessage('banUser')
+    // banUser() {}
 }

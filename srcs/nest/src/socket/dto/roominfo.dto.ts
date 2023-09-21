@@ -3,7 +3,7 @@ import { roomStatus } from '../room.enum';
 
 export class RoomInfoDto {
     @IsString()
-    roomname: string;
+    roomName: string;
 
     @IsString()
     username: string;
@@ -12,7 +12,7 @@ export class RoomInfoDto {
     password: string | null;
 
     @IsBoolean()
-    isLocked: boolean;
+    requirePassword: boolean;
 
     @IsEnum(roomStatus)
     status: roomStatus;

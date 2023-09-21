@@ -3,6 +3,8 @@ import { Socket } from 'socket.io';
 import { ChatRoomDto } from './dto/chatRoom.dto';
 import { RoomInfoDto } from './dto/roominfo.dto';
 import { roomStatus } from './room.enum';
+// import * as schedule from 'node-schedule';
+
 /*
 1. 채팅방 개설
 2. 채팅방 나가기
@@ -11,117 +13,163 @@ import { roomStatus } from './room.enum';
 */
 @Injectable()
 export class ChatRoomService {
-    private publicRoomList: Map<string, RoomDto> = new Map<
-        string,
-        ChatRoomDto
-    >();
-    private privateRoomList: Map<string, RoomDto> = new Map<
-        string,
-        ChatRoomDto
-    >();
-    private idx_room: number = 0;
+    private publicRoomList: Map<string, ChatRoomDto> = new Map<string, ChatRoomDto>();
+    private privateRoomList: Map<string, ChatRoomDto> = new Map<string, ChatRoomDto>();
+    private userList: Map<string, Socket> = new Map<string, Socket>(); //{username, Socket}
+    private socketList: Map<string, string> = new Map<string, string>(); //{socket id , username}
+    private blockList: Map<string, Array<string>> = new Map<string, Array<string>>(); //{socket id , blockUserList}
+
     constructor() {}
 
-    createChatRoom(
-        client: Socket,
-        roomInfoDto: RoomInfoDto,
-        // json: JSON,
-    ): void {
-        const roomDto: ChatRoomDto = new RoomDto();
-        //TODO : chat Room 중복 체크
-        roomDto.id = this.idx_room++;
-        roomDto.roomname = roomInfoDto.roomname;
-        roomDto.owner = roomInfoDto.username;
-        roomDto.isLocked = roomInfoDto.isLocked;
-        roomDto.member.push(roomDto.owner);
-        if (roomInfoDto.status == roomStatus.PRIVATE) {
-            this.privateRoomList.set(roomInfoDto.roomname, roomDto);
-        } else {
-            this.publicRoomList.set(roomInfoDto.roomname, roomDto);
-        }
-        client.rooms.clear();
-        client.join('' + roomDto.id);
-        client.emit(
-            'getMessage',
-            `"${client.id}"님이 "${roomDto.roomname}"방을 만들었습니다~`,
-        );
-        //.to('' + roomDto.id) => 글쓴 사람을 제외한 다른 사람들한테만 보이는지 확인
+    getUserName(socket: Socket): string | undefined {
+        return this.socketList[socket.id];
     }
 
-    joinChatRoom(client: Socket, roomInfoDto: RoomInfoDto) {
-        let targetRoom;
-        //TODO : 없는 chatRoom 확인
-        if (roomInfoDto.status == roomStatus.PUBLIC)
-            targetRoom = this.publicRoomList.get(roomInfoDto.roomname);
-        else targetRoom = this.privateRoomList.get(roomInfoDto.roomname);
+    addNewUser(socket: Socket) {
+        const userName = socket.handshake.query['username'].toString();
+        this.socketList.set(socket.id, userName);
+        this.userList.set(userName, socket);
+        socket.rooms.clear();
+    }
 
-        if (targetRoom === undefined) {
-            //없는 방! => error 처리
-            //
-        }
-        // client.rooms.clear();
-        client.join(roomInfoDto.roomname);
-        // targetRoom.member.push(client.id);
-        //     client.to(roomInfoDto.roomname).emit('getMessage',
-        //          `"${client.id}"님이 방에 접속하셨습니다.`,
-        //     );
-        // }
+    deleteUser(socket: Socket) {
+        this.userList.delete(this.socketList[socket.id]);
+        this.socketList.delete(socket.id);
+    }
+
+    //result, reason
+    emitFailReason(socket: Socket, event: string, reason: string) {
+        const response = {
+            result: false,
+            reason: reason,
+        };
+        socket.emit(event, response);
     }
 
     getChatRoomList(): Map<string, ChatRoomDto> {
         return this.publicRoomList;
     }
 
-    getChatRoom(roomInfoDto: RoomInfoDto): ChatRoomDto {
-        //public, private 방 분기 필요
-        if (roomInfoDto.status == roomStatus.PRIVATE)
-            return this.privateRoomList[roomInfoDto.roomname];
-        else return this.publicRoomList[roomInfoDto.roomname];
+    createChatRoom(
+        socket: Socket,
+        roomInfoDto: RoomInfoDto,
+        // json: JSON,
+    ): void {
+        const roomDto: ChatRoomDto = new ChatRoomDto();
+        //TODO : chat Room 중복 체크
+
+        roomDto.roomName = roomInfoDto.roomName;
+        roomDto.ownerName = roomInfoDto.username;
+        roomDto.requirePassword = roomInfoDto.requirePassword;
+        roomDto.memberList.push(roomDto.ownerName);
+
+        if (roomInfoDto.status == roomStatus.PRIVATE) this.privateRoomList.set(roomInfoDto.roomName, roomDto);
+        else this.publicRoomList.set(roomInfoDto.roomName, roomDto);
+        if (roomInfoDto.status == roomStatus.PRIVATE) this.joinPrivateChatRoom(socket, roomDto.roomName);
+        else this.joinPublicChatRoom(socket, roomDto.roomName, roomDto.password);
+
+        //.to('' + roomDto.id) => 글쓴 사람을 제외한 다른 사람들한테만 보이는지 확인
     }
 
-    deleteChatRoom(roomInfoDto: RoomInfoDto) {
-        this.privateRoomList.delete(roomInfoDto.roomname);
+    leavePastRoom(socket: Socket, userName: string) {
+        const pastRoomName = this.userList[userName].socket.rooms[0];
+        if (pastRoomName !== undefined) {
+            //기존에 유저가 있던 채널이 있었다면
+            const pastRoom = this.publicRoomList.get(pastRoomName);
+            const condition = (element) => element === pastRoomName;
+            let idx = pastRoom.memberList.findIndex(condition);
+            pastRoom.memberList.splice(idx, 1);
+            idx = pastRoom.muteList.findIndex(condition);
+            if (idx !== -1) pastRoom.muteList.splice(idx, 1);
+            socket.leave(pastRoomName);
+            //TODO : 해당 채널의 유저가 0명일 경우, Map에서 삭제
+        }
     }
 
-    // const roomId = `room:${uuidv4()}`;
-    // const nickname: string = client.data.nickname;
-    // this.chatRoomList[roomId] = {
-    //     roomId,
-    //     cheifId: client.id,
-    //     roomName,
-    // };
-    // client.data.roomId = roomId;
-    // client.rooms.clear();
-    // client.join(roomId);
-    // client.emit('getMessage', {
-    //     id: null,
-    //     nickname: '안내',
-    //     message:
-    //         '"' + nickname + '"님이 "' + roomName + '"방을 생성하였습니다.',
-    // });
+    joinPublicChatRoom(socket: Socket, roomName: string, password: string): void {
+        const targetRoom = this.publicRoomList.get(roomName);
+        const userName = this.getUserName(socket);
+        if (targetRoom == undefined) {
+            this.emitFailReason(socket, 'joinPublicChatRoom', 'Room does not exists.');
+            return;
+        }
+        if (targetRoom.banList.find((currName) => userName === currName) !== undefined) {
+            this.emitFailReason(socket, 'joinPublicChatRoom', 'user is banned.');
+            return;
+        }
+        if (targetRoom.requirePassword == true && password !== targetRoom.password) {
+            this.emitFailReason(socket, 'joinPublicChatRoom', 'wrong password');
+            return;
+        }
 
-    // enterChatRoom(client: Socket, roomId: string) {
-    //     client.data.roomId = roomId;
-    //     client.rooms.clear();
-    //     client.join(roomId);
-    //     const { nickname } = client.data;
-    //     const { roomName } = this.getChatRoom(roomId);
-    //     client.to(roomId).emit('getMessage', {
-    //         id: null,
-    //         nickname: '안내',
-    //         message: `"${nickname}"님이 "${roomName}"방에 접속하셨습니다.`,
-    //     });
-    // }
+        this.leavePastRoom(socket, userName);
+        //!test
+        console.log('test: must be none. ', socket.rooms);
+        // socket.rooms.clear(); // ? 기존에 있던 방 나간다. docs -> 자기 client id?
 
-    // exitChatRoom(client: Socket, roomId: string) {
-    //     client.data.roomId = `room:lobby`;
-    //     client.rooms.clear();
-    //     client.join(`room:lobby`);
-    //     const { nickname } = client.data;
-    //     client.to(roomId).emit('getMessage', {
-    //         id: null,
-    //         nickname: '안내',
-    //         message: '"' + nickname + '"님이 방에서 나갔습니다.',
-    //     });
+        //user의 Channel 변경
+        socket.join(roomName);
+        //ChannelList에서 user 추가
+        targetRoom.memberList.push(userName);
+        socket.to(roomName).emit('joinPublicChatRoom', `"${userName}"님이 "${targetRoom.roomName}"방에 접속했습니다`);
+    }
+
+    joinPrivateChatRoom(socket: Socket, roomName: string): void {
+        const targetRoom = this.privateRoomList.get(roomName);
+        const userName = this.getUserName(socket);
+        if (targetRoom == undefined) {
+            this.emitFailReason(socket, 'joinPrivateChatRoom', 'Room does not exists.');
+            return;
+        }
+        if (targetRoom.banList.find((currName) => userName === currName) !== undefined) {
+            this.emitFailReason(socket, 'joinPrivateChatRoom', 'user is banned.');
+            return;
+        }
+        if (targetRoom.inviteList.find((currName) => userName === currName) === undefined) {
+            this.emitFailReason(socket, 'joinPrivateChatRoom', 'user is not invited.');
+            return;
+        }
+
+        socket.rooms.clear(); // ? 기존에 있던 방 나간다. docs -> 자기 client id?
+        this.leavePastRoom(socket, userName);
+
+        //user의 Channel 변경
+        socket.join(roomName);
+        //ChannelList에서 user 추가
+        targetRoom.memberList.push(userName);
+        socket.to(roomName).emit('joinPrivateChatRoom', `"${userName}"님이 "${targetRoom.roomName}"방에 접속했습니다`);
+    }
+
+    kickUser(socket: Socket, roomName: string, targetName: string) {
+        // Kick을 시도하는 룸에 타겟 유저가 존재하는지 검사
+        const userName = this.getUserName(socket);
+        //!test
+        if (socket.rooms[0] != roomName)
+            console.log('test failed. user 가 속해있는 room이 1개 이상이거나 맞지 않습니다.');
+
+        socket.to(roomName).emit('kickUser', `"${userName}"님이 "${targetName}"님을 강퇴하였습니다.`);
+        this.leavePastRoom(socket, targetName);
+    }
+
+    muteUser(socket: Socket, status: roomStatus, roomName: string, targetName: string, time: number) {
+        //TODO : test  : op가 아니어도 된다면?! (front에서 혹시 잘못 띄우는지 확인)
+
+        //TODO : test . mute  가 잘 사라지나.
+        const removeMuteUser = (targetName, roomDto) => {
+            roomDto.muteList.delete(targetName);
+        };
+        let room: ChatRoomDto;
+        if (status === roomStatus.PRIVATE) room = this.privateRoomList.get(roomName);
+        else room = this.publicRoomList.get(roomName);
+
+        room.muteList.push(targetName);
+        setTimeout(() => {
+            removeMuteUser(targetName, room);
+        }, time * 1000);
+    }
+
+    // sendMessage(roomname: string, status:roomStatsus, username: string) {
+    //     //TODO : muteList 검사
+    //     //TODO : blockList 검사. 
     // }
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class ClientManager {
+export class ClientService {
     constructor() {}
     //blockList
 }

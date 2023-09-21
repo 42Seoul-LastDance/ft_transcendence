@@ -3,6 +3,7 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import mySlice from './mySlice';
 import tokenSlice from './tokenSlice';
 import userSlice from './userSlice';
+import roomSlice from './roomSlice';
 
 const store = configureStore({
     reducer: {

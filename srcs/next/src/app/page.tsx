@@ -1,36 +1,31 @@
 'use client';
-import axios from 'axios';
-import { io, Socket } from 'socket.io-client';
-import { getDmSocket } from './SSock';
-import { useEffect } from 'react';
-import ChatRoomList from './Chat/ChatButton';
+
+import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Button from '@mui/material/Button';
-
-// var socket = getDmSocket();
-
-// socket.on('getMessage', (msg) => {
-//     console.log('msg from server: ', msg);
-// });
-
-// const socketEvent = () => {
-//     socket.emit('sendMessage', '안녕 친구들🚴🏿‍♂️🚗🚎');
-// };
-
-const TestButton = () => {
-    return (
-        <Link href="/Test">
-            <Button variant="contained">5억년 버튼</Button>
-        </Link>
-    );
-};
+import Divider from '@mui/material/Divider';
 
 export default function Home() {
+    const backAddr = 'https://10.14.6.5:4242';
+    console.log(backAddr);
+    const router = useRouter();
+
     return (
         <main>
-            <ChatRoomList />
-            <TestButton />
-            {/* <button onClick={socketEvent}> 안녕 친구들 </button> */}
+            <h1>42Login!</h1>
+            {/* <Button variant="contained" onClick={redirect('/register')}>
+                register
+            </Button> */}
+            <Divider />
+            <Button
+                variant="contained"
+                onClick={() => {
+                    router.push('/chat');
+                }}
+            >
+                chat
+            </Button>
         </main>
     );
 }

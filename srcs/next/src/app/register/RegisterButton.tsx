@@ -9,6 +9,7 @@ import { userState } from '../redux/userSlice';
 import { RootState } from '../redux/store';
 import store from '../redux/store';
 import { redirect, useRouter } from 'next/navigation';
+import ipaddr from '../page';
 
 const RegisterButtonContent = () => {
     const name = useSelector((state: userState) => state.name);
@@ -78,9 +79,7 @@ const RegisterButton = () => {
     return (
         <Provider store={store}>
             <CookiesProvider>
-                {/* <Link href="/main"> */}
                 <RegisterButtonContent />
-                {/* //</Link> */}
             </CookiesProvider>
         </Provider>
     );
