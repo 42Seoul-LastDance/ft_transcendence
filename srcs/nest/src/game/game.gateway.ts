@@ -8,9 +8,6 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { GameService } from './game.service';
-// import { GameRoomDto } from './gameRoom.dto';
-// import { GameRoomInfoDto } from './roominfo.dto';
-// import { ClientDto } from './client.dto';
 @WebSocketGateway({
     port: 3000,
     cors: {
@@ -20,30 +17,17 @@ import { GameService } from './game.service';
     namespace: 'Game',
 }) // 데코레이터 인자로 포트 줄 수 있음
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    //플레이어
-    //플레이어 방 (게임룸) => 대전, 친선 구분 필요?
-    //큐
-    clientList = new Map<string, any>();
-    constructor(private gameService: GameService) {
-        // this.client = new Map<string, any>();
-        // // this.rooms = new Map<number, any>();
-        // this.idx_client = 0;
-        // // this.idx_room = 0;
-    }
+    constructor(private gameService: GameService) {}
 
     @WebSocketServer()
     server: Server;
 
-    handleConnection(socket: Socket) {
-        //jwt 토큰에서 가져온 정보도 추가
-        // client['nickname'] = 'user ' + this.idx_client++;
-        // this.clientList[socket.id] = clientDto;
-        console.log(socket.id, ': new connection.');
+    handleConnection(client: Socket) {
+        console.log(client.id, ': new connection.');
     }
 
-    handleDisconnect(socket: Socket) {
-        this.clientList.delete(socket.id);
-        console.log(socket.id, ': lost connection.');
+    handleDisconnect(client: Socket) {
+        console.log(client.id, ': lost connection.');
     }
 
     // //메시지가 전송되면 모든 유저에게 메시지 전송
@@ -59,7 +43,20 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     //     });
     // }
 
-    //* Game 시작과 종료 ======================================
+    //* Match Game ======================================
+    //큐 등록
+    @SubscribeMessage('pushQueue')
+    pushQueue(client: Socket, clientInfo: JSON) {
+        this.gameService.pushQueue(
+            client,
+            +clientInfo['gameMode'],
+            clientInfo['username'],
+        );
+
+        console.log('pushQueue:', clientInfo['username']);
+        // client.emit('pushQueue');
+    }
+
     //게임 시작
     @SubscribeMessage('StartGame')
     startGame(client: Socket, msg: string) {
@@ -82,5 +79,15 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         // this.gameService.overGame(client);
         console.log(client.id, ':', msg);
         client.emit('GameOver');
+    }
+
+    //* In Game ======================================
+    //패들 움직임
+    @SubscribeMessage('movePaddle')
+    movePaddle(client: Socket, paddlePos: JSON) {
+        // 상대에게 패들위치 전달
+        // this.gameService.movePaddle(client, paddlePos);
+        // console.log(client.id, ':', msg);
+        client.emit('movePaddle');
     }
 }
