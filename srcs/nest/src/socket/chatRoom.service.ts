@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { RoomDto } from './room.dto';
-import { RoomInfoDto } from './roominfo.dto';
+import { ChatRoomDto } from './dto/chatRoom.dto';
+import { RoomInfoDto } from './dto/roominfo.dto';
 import { roomStatus } from './room.enum';
 /*
 1. 채팅방 개설
@@ -11,10 +11,15 @@ import { roomStatus } from './room.enum';
 */
 @Injectable()
 export class ChatRoomService {
-    private publicRoomList: Map<string, RoomDto> = new Map<string, RoomDto>();
-    private privateRoomList: Map<string, RoomDto> = new Map<string, RoomDto>();
+    private publicRoomList: Map<string, RoomDto> = new Map<
+        string,
+        ChatRoomDto
+    >();
+    private privateRoomList: Map<string, RoomDto> = new Map<
+        string,
+        ChatRoomDto
+    >();
     private idx_room: number = 0;
-
     constructor() {}
 
     createChatRoom(
@@ -22,47 +27,52 @@ export class ChatRoomService {
         roomInfoDto: RoomInfoDto,
         // json: JSON,
     ): void {
-        const roomDto: RoomDto = new RoomDto();
-        // console.log('roomInfoDto:', roomInfoDto);
+        const roomDto: ChatRoomDto = new RoomDto();
+        //TODO : chat Room 중복 체크
         roomDto.id = this.idx_room++;
         roomDto.roomname = roomInfoDto.roomname;
         roomDto.owner = roomInfoDto.username;
-        // roomDto.password = roomInfoDto.password;
         roomDto.isLocked = roomInfoDto.isLocked;
-        // console.log('username: ', username);
-        // console.log('owner', roomDto.owner);
         roomDto.member.push(roomDto.owner);
-        // console.log('roomname:', roomDto.roomname);
         if (roomInfoDto.status == roomStatus.PRIVATE) {
-            // console.log('private: ', roomDto);
             this.privateRoomList.set(roomInfoDto.roomname, roomDto);
         } else {
-            // console.log('public: ', roomDto);
-            this.privateRoomList.set(roomInfoDto.roomname, roomDto);
+            this.publicRoomList.set(roomInfoDto.roomname, roomDto);
         }
-        // if(roomInfoDto.)
         client.rooms.clear();
         client.join('' + roomDto.id);
         client.emit(
             'getMessage',
-            `"${client.id}"님이 "${roomDto.roomname}"방에 접속하셨습니다.`,
+            `"${client.id}"님이 "${roomDto.roomname}"방을 만들었습니다~`,
         );
         //.to('' + roomDto.id) => 글쓴 사람을 제외한 다른 사람들한테만 보이는지 확인
     }
 
     joinChatRoom(client: Socket, roomInfoDto: RoomInfoDto) {
-        // const targetRoom = this.publicRoomList.get(roomInfoDto.roomname);
-        // if (targetRoom === undefined)
-        //     // 있으면;
-        //     //error
-        //     client.join(roomInfoDto.roomname);
+        let targetRoom;
+        //TODO : 없는 chatRoom 확인
+        if (roomInfoDto.status == roomStatus.PUBLIC)
+            targetRoom = this.publicRoomList.get(roomInfoDto.roomname);
+        else targetRoom = this.privateRoomList.get(roomInfoDto.roomname);
+
+        if (targetRoom === undefined) {
+            //없는 방! => error 처리
+            //
+        }
+        // client.rooms.clear();
+        client.join(roomInfoDto.roomname);
+        // targetRoom.member.push(client.id);
+        //     client.to(roomInfoDto.roomname).emit('getMessage',
+        //          `"${client.id}"님이 방에 접속하셨습니다.`,
+        //     );
+        // }
     }
 
-    getChatRoomList(): Map<string, RoomDto> {
+    getChatRoomList(): Map<string, ChatRoomDto> {
         return this.publicRoomList;
     }
 
-    getChatRoom(roomInfoDto: RoomInfoDto): RoomDto {
+    getChatRoom(roomInfoDto: RoomInfoDto): ChatRoomDto {
         //public, private 방 분기 필요
         if (roomInfoDto.status == roomStatus.PRIVATE)
             return this.privateRoomList[roomInfoDto.roomname];

@@ -8,13 +8,11 @@ var gameSocket: Socket;
 export const getDmSocket = (): Socket => {
     if (!dmSocket || !dmSocket.connected) {
         console.log('getDmSocket()');
-        dmSocket = io('http://10.14.4.1:3000/', {
+        dmSocket = io('http://10.14.6.6:3000/', {
             withCredentials: false,
         });
         dmSocket.connect();
-        dmSocket.on('getMessage', (str) => {
-            console.log('msg from server : ', str);
-        });
+        console.log('DM socket connect');
     }
     return dmSocket;
 };
@@ -22,13 +20,18 @@ export const getDmSocket = (): Socket => {
 export const getChatSocket = (): Socket => {
     if (!chatSocket || !chatSocket.connected) {
         console.log('getChatSocket()');
-        chatSocket = io('http://10.14.4.1:3000/RoomChat', {
+        chatSocket = io('http://10.14.6.6:3000/RoomChat', {
             withCredentials: false,
+            auth: {
+                token: 'myToken',
+            },
+            query: {
+                username: 'kwsong',
+                id: '1234',
+            },
         });
         chatSocket.connect();
-        chatSocket.on('getMessage', (str) => {
-            console.log('msg from server : ', str);
-        });
+        console.log('chat socket connect');
     }
     return chatSocket;
 };
@@ -36,13 +39,11 @@ export const getChatSocket = (): Socket => {
 export const getGameSocket = (): Socket => {
     if (!gameSocket || !gameSocket.connected) {
         console.log('getgameSocket()');
-        gameSocket = io('http://10.14.4.1:3000/', {
+        gameSocket = io('http://10.14.6.6:3000/', {
             withCredentials: false,
         });
         gameSocket.connect();
-        gameSocket.on('getMessage', (str) => {
-            console.log('msg from server : ', str);
-        });
+        console.log('game socket connect');
     }
     return gameSocket;
 };

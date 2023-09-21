@@ -20,7 +20,7 @@ const TestAdd = () => {
     try {
         socket = getChatSocket();
         if (!socket.hasListeners('create ChatRoom')) {
-            socket.on('create ChatRoom', () => {
+            socket.on('createChatRoom', () => {
                 dispatch(push({ name: inputName.current }));
             });
         }

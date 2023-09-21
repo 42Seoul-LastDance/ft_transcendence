@@ -11,42 +11,42 @@ import { Server, Socket } from 'socket.io';
 // import { ChatroomDto } from './chatroom.dto';
 import { ChatRoomService } from './chatRoom.service';
 // import { SocketIoAdapter } from 'src/adapters/socket-io.adapters';
-import { RoomDto } from './room.dto';
-import { RoomInfoDto } from './roominfo.dto';
-import { ClientDto } from './client.dto';
+import { RoomInfoDto } from './dto/roominfo.dto';
+import { ClientDto } from './dto/client.dto';
 @WebSocketGateway({
     port: 3000,
     cors: {
         origin: true,
         withCredentials: true,
     },
+    // query :
     namespace: 'RoomChat',
 }) // 데코레이터 인자로 포트 줄 수 있음
 export class ChatRoomGateway
     implements OnGatewayConnection, OnGatewayDisconnect
 {
     // 생성자로 서비스 넣고 로직 분리 가능
-    // client: Map<string, any>;
-
-    // connectedClients: { [socketId: string]: boolean } = {};
     clientList = new Map();
-    // Map<number, ClientDto>;
-    privateRoomList = Array<RoomDto>;
-    publicRoomList = Array<RoomDto>;
     constructor(private chatroomService: ChatRoomService) {
         // this.client = new Map<string, any>();
-        // // this.rooms = new Map<number, any>();
         // this.idx_client = 0;
-        // // this.idx_room = 0;
     }
 
     @WebSocketServer()
     server: Server;
 
-    handleConnection(socket: Socket, clientDto: ClientDto) {
+    handleConnection(socket: Socket) {
         //jwt 토큰에서 가져온 정보도 추가
         // client['nickname'] = 'user ' + this.idx_client++;
-        this.clientList[socket.id] = clientDto;
+        // this.clientList[socket.id] = clientDto;
+        console.log('token: ', socket.handshake.query['username']);
+        // [Object: null prototype] {
+        //     username: 'kwsong',
+        //     id: '1234',
+        //     EIO: '4',
+        //     transport: 'polling',
+        //     t: 'OgryZ66'
+        // }
         console.log(socket.id, ': new connection.');
     }
 
@@ -54,13 +54,6 @@ export class ChatRoomGateway
         this.clientList.delete(socket.id);
         console.log(socket.id, ': lost connection.');
     }
-
-    // //events라는 유형의 message를 받게되면 handleEvent 함수를 작동시킨다
-    // //return 을 통해 응답할 수 있다.
-    // @SubscribeMessage('events')
-    // handleEvent(@MessageBody() data: number): number {
-    //     return data;
-    // }
 
     // //메시지가 전송되면 모든 유저에게 메시지 전송
     // @SubscribeMessage('sendMessage')
@@ -78,19 +71,23 @@ export class ChatRoomGateway
     //채팅방 리스트 전달
     @SubscribeMessage('getChatRoomList')
     getChatRoomList(client: Socket) {
-        this.chatroomService.getChatRoomList();
-        client.emit('getChatRoomList');
+        // ”roomname”: string,
+        // ”isLocked” : boolean,
+        // ”status” : roomStatus,
+        const chatRoomList = this.chatroomService.getChatRoomList();
+        client.emit('getChatRoomList', chatRoomList);
     }
 
     //채팅방 생성
     @SubscribeMessage('createChatRoom')
-    createChatRoom(client: Socket, json: JSON) {
+    createChatRoom(client: Socket, payload: JSON) {
         this.chatroomService.createChatRoom(
             client,
-            Object.assign(new RoomInfoDto(), json),
+            Object.assign(new RoomInfoDto(), payload),
         );
-        client.emit('create ChatRoom');
+        client.emit('createChatRoom');
     }
+
     // //채팅방 들어가기
     // @SubscribeMessage('enterChatRoom')
     // enterChatRoom(client: Socket, roomId: string) {
