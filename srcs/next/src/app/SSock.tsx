@@ -8,7 +8,7 @@ var gameSocket: Socket;
 export const getDmSocket = (): Socket => {
     if (!dmSocket || !dmSocket.connected) {
         console.log('getDmSocket()');
-        dmSocket = io('http://10.14.4.1:3000/', {
+        dmSocket = io('http://10.14.6.3:3000/', {
             withCredentials: false,
         });
         dmSocket.connect();
@@ -22,7 +22,7 @@ export const getDmSocket = (): Socket => {
 export const getChatSocket = (): Socket => {
     if (!chatSocket || !chatSocket.connected) {
         console.log('getChatSocket()');
-        chatSocket = io('http://10.14.4.1:3000/RoomChat', {
+        chatSocket = io('http://10.14.6.3:3000/RoomChat', {
             withCredentials: false,
         });
         chatSocket.connect();
@@ -36,7 +36,7 @@ export const getChatSocket = (): Socket => {
 export const getGameSocket = (): Socket => {
     if (!gameSocket || !gameSocket.connected) {
         console.log('getgameSocket()');
-        gameSocket = io('http://10.14.4.1:3000/', {
+        gameSocket = io('http://10.14.6.3:3000/Game', {
             withCredentials: false,
         });
         gameSocket.connect();

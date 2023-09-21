@@ -5,8 +5,6 @@ import { Unity, useUnityContext } from 'react-unity-webgl';
 import { getGameSocket } from './SSock';
 import { Socket } from 'socket.io-client';
 
-const socket: Socket = getGameSocket();
-
 function Game() {
     const {
         unityProvider,
@@ -21,17 +19,21 @@ function Game() {
     });
 
     const [gameOver, setGameOver] = useState<boolean | undefined>(undefined);
-
+	const socket: Socket = getGameSocket();
+	console.log('is connected ', socket.connect)
     // react to unity
     socket.on('StartGame', () => {
         sendMessage('GameManager', 'StartGame');
+		console.log('! StartGame Event Detected');
     });
     socket.on('RestartGame', () => {
         sendMessage('GameManager', 'RestartGame');
         setGameOver(false);
+		console.log('! GameManager Event Detected');
     });
     socket.on('GameOver', () => {
         setGameOver(true);
+		console.log('! GameOver Event Detected');
     });
 
     // unity to react
@@ -54,6 +56,7 @@ function Game() {
                 <button
                     onClick={() => {
                         socket.emit('StartGame', 'hi');
+						console.log('Start Button Clicked');
                     }}
                 >
                     시작
@@ -61,6 +64,7 @@ function Game() {
                 <button
                     onClick={() => {
                         socket.emit('RestartGame', 'hi');
+						console.log('Restart Button Clicked');
                     }}
                 >
                     재시작

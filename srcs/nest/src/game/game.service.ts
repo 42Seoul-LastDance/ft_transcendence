@@ -11,61 +11,37 @@ export class GameService {
 
     constructor() {}
 
-    createChatRoom(
-        client: Socket,
-        roomInfoDto: RoomInfoDto,
-        // json: JSON,
-    ): void {
-        const roomDto: RoomDto = new RoomDto();
-        // console.log('roomInfoDto:', roomInfoDto);
-        roomDto.id = this.idx_room++;
-        roomDto.roomname = roomInfoDto.roomname;
-        roomDto.owner = roomInfoDto.username;
-        // roomDto.password = roomInfoDto.password;
-        roomDto.isLocked = roomInfoDto.isLocked;
-        // console.log('username: ', username);
-        // console.log('owner', roomDto.owner);
-        roomDto.member.push(roomDto.owner);
-        // console.log('roomname:', roomDto.roomname);
-        if (roomInfoDto.status == roomStatus.PRIVATE) {
-            // console.log('private: ', roomDto);
-            this.privateRoomList.set(roomInfoDto.roomname, roomDto);
-        } else {
-            // console.log('public: ', roomDto);
-            this.privateRoomList.set(roomInfoDto.roomname, roomDto);
-        }
-        // if(roomInfoDto.)
-        client.rooms.clear();
-        client.join('' + roomDto.id);
-        client.emit(
-            'getMessage',
-            `"${client.id}"님이 "${roomDto.roomname}"방에 접속하셨습니다.`,
-        );
-        //.to('' + roomDto.id) => 글쓴 사람을 제외한 다른 사람들한테만 보이는지 확인
+    startGame(client: Socket, json: JSON): void {
+        //room 세팅?
+        // client.rooms.clear();
+        // client.join('' + roomDto.id);
+        // client.to('' + roomDto.id).emit(
+        //     'getMessage',
+        //     `"${client.id}"님이 "${roomDto.roomname}"방에 접속하셨습니다.`,
+        // );
     }
 
-    joinChatRoom(client: Socket, roomInfoDto: RoomInfoDto) {
-        // const targetRoom = this.publicRoomList.get(roomInfoDto.roomname);
-        // if (targetRoom === undefined)
-        //     // 있으면;
-        //     //error
-        //     client.join(roomInfoDto.roomname);
+    restartGame(client: Socket, json: JSON): void {
+        //room 세팅?
+        // client.rooms.clear();
+        // client.join('' + roomDto.id);
+        // client.to('' + roomDto.id).emit(
+        //     'getMessage',
+        //     `"${client.id}"님이 "${roomDto.roomname}"방에 접속하셨습니다.`,
+        // );
     }
 
-    getChatRoomList(): Map<string, RoomDto> {
-        return this.publicRoomList;
+    overGame(client: Socket, json: JSON): void {
+        //room 세팅?
+        // client.rooms.clear();
+        // client.join('' + roomDto.id);
+        // client.to('' + roomDto.id).emit(
+        //     'getMessage',
+        //     `"${client.id}"님이 "${roomDto.roomname}"방에 접속하셨습니다.`,
+        // );
     }
 
-    getChatRoom(roomInfoDto: RoomInfoDto): RoomDto {
-        //public, private 방 분기 필요
-        if (roomInfoDto.status == roomStatus.PRIVATE)
-            return this.privateRoomList[roomInfoDto.roomname];
-        else return this.publicRoomList[roomInfoDto.roomname];
-    }
-
-    deleteChatRoom(roomInfoDto: RoomInfoDto) {
-        this.privateRoomList.delete(roomInfoDto.roomname);
-    }
+    
 
     // const roomId = `room:${uuidv4()}`;
     // const nickname: string = client.data.nickname;
