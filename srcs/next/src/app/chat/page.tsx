@@ -1,6 +1,9 @@
 'use client'
 
 import React, { useState } from 'react';
+import { Provider, useSelector } from 'react-redux';
+import store, { RootState } from '../redux/store';
+
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
@@ -13,7 +16,7 @@ interface TabPanelProps {
   value: number;
 }
 
-function CustomTabPanel(props: TabPanelProps) {
+const CustomTabPanel = (props: TabPanelProps) => {
   const { children, value, index, ...other } = props;
 
   return (
@@ -41,6 +44,7 @@ export default function BasicTabs() {
   };
 
   return (
+    <Provider store={store}>
     <Box sx={{ width: '100%' }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
@@ -59,6 +63,7 @@ export default function BasicTabs() {
         Item Three
       </CustomTabPanel>
     </Box>
+    </Provider>
   );
 }
 

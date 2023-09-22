@@ -1,5 +1,5 @@
 import { IsBoolean, IsString, IsArray, IsEnum } from 'class-validator';
-import { roomStatus } from '../room.enum';
+import { RoomStatus } from '../roomStatus.enum';
 
 export class ChatRoomDto {
     @IsString()
@@ -8,11 +8,11 @@ export class ChatRoomDto {
     @IsString()
     ownerName: string;
 
-    @IsEnum(roomStatus)
-    status: roomStatus;
+    @IsEnum(RoomStatus)
+    status: RoomStatus;
 
     @IsString()
-    password: string;
+    password: string | null;
 
     @IsBoolean()
     requirePassword: boolean;

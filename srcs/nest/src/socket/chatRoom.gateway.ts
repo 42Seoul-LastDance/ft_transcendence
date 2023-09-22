@@ -14,6 +14,7 @@ import { RoomInfoDto } from './dto/roominfo.dto';
         origin: true,
         withCredentials: true,
     },
+    transport: ['websocket'],
     namespace: 'RoomChat',
 })
 export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -30,15 +31,17 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     handleDisconnect(socket: Socket) {
-        //TODO :(username-> Socket.room : string) PastRoom.banList에서 해당 유저 삭제
         this.chatroomService.leavePastRoom(socket, this.chatroomService.getUserName(socket));
         this.chatroomService.deleteUser(socket);
         console.log(socket.id, ': lost connection.');
     }
 
     // * Getter ===========================================================
-    // @SubscribeMessage('getBlockUser')
-    // getBlockUser() {}
+    @SubscribeMessage('getBlockUser')
+    getBlockUser(socket: Socket) {
+        const blockList = this.chatroomService.getUserBlockList(socket);
+        socket.emit('getBlockUser', blockList);
+    }
 
     @SubscribeMessage('getChatRoomList')
     getChatRoomList(socket: Socket) {
@@ -47,27 +50,26 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         // ”status” : roomStatus,
         const chatRoomList = this.chatroomService.getChatRoomList();
         socket.emit('getChatRoomList', chatRoomList);
+        // Object.fromEntries(chatRoomList)
     }
 
     // * Message ===========================================================
     // //메시지가 전송되면 모든 유저에게 메시지 전송
-    // @SubscribeMessage('sendMessage')
-    // sendMessage(client: Socket, message: string): void {
-    //     console.log('function called ', this.clientList.size);
-    //     //for문 어케씀
-    //     this.clientList.forEach((element) => {
-    //         console.log(element.nickname);
-    //         if (element.connected) {
-    //             element.emit('getMessage', message);
-    //         }
-    //     });
-    // }
+    @SubscribeMessage('sendMessage')
+    sendMessage(socket: Socket, payload: JSON): void {
+        this.chatroomService.sendMessage(
+            socket,
+            payload['roomName'],
+            payload['status'],
+            payload['userName'],
+            payload['content'],
+        );
+    }
 
     // * ChatRoom Method ===========================================================
     @SubscribeMessage('createChatRoom')
     createChatRoom(socket: Socket, payload: JSON) {
         this.chatroomService.createChatRoom(socket, Object.assign(new RoomInfoDto(), payload));
-
         socket.emit('createChatRoom');
     }
 
@@ -108,9 +110,25 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // @SubscribeMessage('kickUser')
     // kickUser() {}
 
-    // @SubscribeMessage('muteUser')
-    // muteUser() {}
+    @SubscribeMessage('muteUser')
+    muteUser(socket: Socket, payload: JSON) {
+        this.chatroomService.muteUser(
+            socket,
+            payload['status'],
+            payload['roomName'],
+            payload['targetName'],
+            payload['time'],
+        );
+    }
 
     // @SubscribeMessage('banUser')
     // banUser() {}
+
+    // * Block & Unblock =======================================================
+
+    @SubscribeMessage('blockUser')
+    blockUser() {}
+
+    @SubscribeMessage('unBlockUser')
+    unBlockUser() {}
 }

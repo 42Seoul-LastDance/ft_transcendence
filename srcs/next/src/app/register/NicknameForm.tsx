@@ -22,7 +22,7 @@ const NicknameFormContent = () => {
         if (!isClickable) return;
         try {
             const response = await axios.get(
-                `http://10.14.3.1:3000/users/username/${userName}`,
+                `http://10.14.6.7:3000/users/username/${userName}`,
             );
             dispatch(setAvailable(true));
         } catch (error) {
@@ -38,6 +38,8 @@ const NicknameFormContent = () => {
 
     const dataOnChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const inputName = event.target.value;
+
+        
         if (inputName.trim() !== '') {
             setViewName(inputName);
             setIsClickable(true);

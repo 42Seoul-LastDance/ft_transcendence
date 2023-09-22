@@ -4,12 +4,14 @@ export interface userState {
     name: string;
     imageUrl: string | null;
     isAvailable: boolean | null;
+    token: string;
 }
 
 const initialState: userState = {
     name: '',
     imageUrl: null,
     isAvailable: null,
+    token: '',
 };
 
 const userSlice = createSlice({
@@ -25,6 +27,8 @@ const userSlice = createSlice({
         setAvailable: (state, action: PayloadAction<boolean>) => {
             state.isAvailable = action.payload;
         },
+        // getToken: (state, action: PayloadAction<string>) => {   
+        // }
     },
 });
 

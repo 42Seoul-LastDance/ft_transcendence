@@ -1,4 +1,4 @@
-export enum roomStatus {
+export enum RoomStatus {
     PRIVATE = 'PRIVATE',
     PUBLIC = 'PUBLIC',
 }

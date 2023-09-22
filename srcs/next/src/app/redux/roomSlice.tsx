@@ -1,30 +1,46 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
 
+export enum RoomStatus {
+    PRIVATE = 'PRIVATE',
+    PUBLIC = 'PUBLIC',
+}
 export interface Room {
-    id: number;
-    name: string;
+    username: string;
+    roomname: string;
+    password: string | null;
+    requirePassword: boolean;
+    status: RoomStatus;
 }
 
-interface RoomState {
-    roomState: Room[];
+export interface RoomArray {
+    roomArray: Room[];
 }
 
-const initialState: RoomState = {
-    roomState: [],
+const initialState: RoomArray = {
+    roomArray: [],
 };
 
-export const roomSlice = createSlice({
+const roomSlice = createSlice({
     name: 'room',
     initialState,
     reducers: {
-        push: (state, action: PayloadAction<{ name: string }>) => {
-            state.roomState.push({
-                id: state.roomState.length,
-                name: action.payload.name,
+        push: (state, action: PayloadAction<{
+            username: string; 
+            roomname: string;
+            password: string | null;
+            requirePassword: boolean;
+            status: RoomStatus;
+            }>) => {
+            state.roomArray.push({
+                username: action.payload.username,
+                roomname: action.payload.roomname,
+                password: action.payload.password,
+                requirePassword: action.payload.requirePassword,
+                status: action.payload.status,
             });
         },
     },
 });
 
-export default roomSlice.reducer;
+export default roomSlice;
 export const { push } = roomSlice.actions;
