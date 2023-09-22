@@ -3,39 +3,32 @@ import { Socket } from 'socket.io';
 export interface Vector {
     x: number;
     y: number;
-}
-
-export interface WaitRoom {
-    id: number;
-    gameType: number;
-    gameMode: number;
-    hostUsername: string;
-    hostSocket: string;
-    hostReady: boolean;
-    guestUsername: string;
-    guestSocket: string;
-    guestReady: boolean;
+    z: number;
 }
 
 export interface GameRoom {
+    //when create (waiting)
     id: number;
-    gameType: number;
-    gameMode: number;
-    hostUsername: string;
-    hostSocket: string;
-    guestUsername: string;
-    guestSocket: string;
-    startTime: Date;
-    endTime: Date;
-    winner: number;
-    loser: number;
-    endGameStatus: number;
+    gameType: number; //enum
+    gameMode: number; //enum
+    gameStatus: number; //enum
+    socket?: [Socket, Socket];
+    ready?: [boolean, boolean];
+    //when game starts
+    startTime?: Date;
+    score?: [number, number];
+    //when ends
+    endTime?: Date;
+    winner?: number;
+    loser?: number;
+    endGameStatus?: number;
 }
 
 export interface Player {
     username: string;
-    socketId: string;
     socket: Socket;
-    gameType: number;
-    gameMode: number;
+    gameType: number; //enum
+    gameMode: number; //enum
+    side?: number; //enum
+    roomId?: number;
 }

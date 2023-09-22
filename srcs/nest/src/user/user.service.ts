@@ -17,10 +17,7 @@ import { UserProfileDto } from './dto/userProfile.dto';
 
 @Injectable()
 export class UserService {
-    constructor(
-        @InjectRepository(User)
-        private userRepository: UserRepository,
-    ) {}
+    constructor(private userRepository: UserRepository) {}
 
     async findUserByEmail(email: string): Promise<User> {
         const user = await this.userRepository.findOne({

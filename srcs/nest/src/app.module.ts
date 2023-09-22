@@ -7,6 +7,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { EventsModule } from './socket/events.module';
+import { Game } from './game/game.entity';
 
 @Module({
     imports: [
@@ -17,7 +18,7 @@ import { EventsModule } from './socket/events.module';
             username: process.env.POSTGRES_USER_ID,
             password: process.env.POSTGRES_USER_PASSWORD,
             database: process.env.DB_NAME,
-            entities: [User], // Your entities here
+            entities: [User, Game], // Your entities here
             synchronize: true,
         }),
         UserModule,

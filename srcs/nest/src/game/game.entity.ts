@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { IsDate, IsNumber } from 'class-validator';
+import { IsNumber } from 'class-validator';
 
 @Entity({ name: 'game', schema: 'public' })
 export class Game {
@@ -38,12 +38,10 @@ export class Game {
     @IsNumber()
     gameMode: number;
 
-    @Column()
-    @IsDate()
+    @Column({ type: 'timestamp' })
     startTime: Date;
 
-    @Column()
-    @IsDate()
+    @Column({ type: 'timestamp' })
     endTime: Date;
 
     @Column()
