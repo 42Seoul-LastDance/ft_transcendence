@@ -38,7 +38,7 @@ export const getGameSocket = (): Socket => {
         gameSocket = io('http://10.14.6.6:3000/Game', {
             withCredentials: false,
         });
-        gameSocket.connect();
+        // gameSocket.connect();
     } else console.log('getGameSocket() : Old socket');
     return gameSocket;
 };

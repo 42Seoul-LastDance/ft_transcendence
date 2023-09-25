@@ -10,6 +10,7 @@ import { setIsChanged } from '../Redux/socketSlice';
 import { setSide } from '../Redux/matchSlice';
 import { Unity, useUnityContext } from 'react-unity-webgl';
 import Matching from './Matching';
+import {SocketProvider} from '../SocketContext';
 import Game from './Game';
 
 const GameHomeContent = () => {
@@ -39,7 +40,9 @@ const GameHome = () => {
     return (
         <>
             <Provider store={store}>
-                <GameHomeContent />
+				<SocketProvider>
+	                <GameHomeContent />
+				</SocketProvider>
             </Provider>
         </>
     );

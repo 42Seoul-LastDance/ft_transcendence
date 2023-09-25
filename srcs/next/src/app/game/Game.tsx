@@ -8,6 +8,7 @@ import { useAppSelector, store } from '../Redux/store';
 import { Provider, useDispatch } from 'react-redux';
 import { setIsChanged } from '../Redux/socketSlice';
 import { setIsMatched } from '../Redux/matchSlice';
+import { useSocket } from '../SocketContext';
 
 interface MatchingProps {
     socket: Socket | undefined;
@@ -33,14 +34,13 @@ const Game = () => {
     const isMathched = useAppSelector((state) => state.match.isMatched);
     const isChanged = useAppSelector((state) => state.socket.isChanged);
     const isCustomGame = useAppSelector((state) => state.match.isCustom);
-    var socket: Socket = getGameSocket();
 
     useEffect(() => {
-        socket = getGameSocket();
         return () => {
-            disconnectGameSocket();
+			dispatch(setIsMatched({ isMatched: true }));
         };
     }, []);
+    const socket = useSocket();
 
     // react to unity
     if (!socket.hasListeners('startGame')) {

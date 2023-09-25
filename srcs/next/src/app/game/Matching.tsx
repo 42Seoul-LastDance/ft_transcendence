@@ -8,6 +8,7 @@ import { Provider, useDispatch } from 'react-redux';
 import { store, useAppSelector } from '../Redux/store';
 import { setIsMatched, setSide } from '../Redux/matchSlice';
 import { setIsChanged } from '../Redux/socketSlice';
+import { useSocket } from '../SocketContext';
 
 enum GameMode {
     NONE = -1,
@@ -25,14 +26,8 @@ const Matching = () => {
     const isChanged = useAppSelector((state) => state.socket.isChanged);
     const isCustomGame = useAppSelector((state) => state.match.isCustom);
     const dispatch = useDispatch();
-    var socket: Socket = getGameSocket();
 
-    useEffect(() => {
-        socket = getGameSocket();
-        return () => {
-            disconnectGameSocket();
-        };
-    }, []);
+    const socket = useSocket();
 
     if (!socket.hasListeners('handShake')) {
         socket.on('handShake', () => {
