@@ -1,51 +1,47 @@
-import React from 'react';
+'use client';
+
+import * as React from 'react';
 import Button from '@mui/material/Button';
-import { getChatSocket } from '../SSock';
-import { Socket } from 'socket.io-client';
-import { RoomStatus } from '../redux/roomSlice';
+import Typography from '@mui/material/Typography';
+import Modal from '@mui/material/Modal';
+import Divider from '@mui/material/Divider';
+import Box from '@mui/material/Box';
+import Fab from '@mui/material/Fab';
+import AddIcon from '@mui/icons-material/Add';
+import CreateRoomForm from './createRoomForm';
+
+const style: React.CSSProperties = {
+  position: 'absolute',
+  top: '30%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 400,
+  bgcolor: 'background.paper',
+  border: '2px solid #000',
+  boxShadow: 24,
+  p: 4,
+};
 
 const CreateRoomButton: React.FC = () => {
-
-  const makePublic = () => { 
-    console.log('makePublic');
-    const chatSocket: Socket = getChatSocket();
-
-    chatSocket.emit('sendMessage', {
-      roomName: 'default room',
-      status: 'PUBLIC',
-      userName: 'kwsong',
-      content: 'hello world!',
-    });
-    
-    chatSocket.on('sendMessage', (content: string) => {
-        // console.log('who am I ? :' , chatSocket.id );
-      console.log(content);
-    })
-  };
-
-  const makePrivate = () => {
-    console.log('makePrivate');
-    const chatSocket: Socket = getChatSocket();
-
-    chatSocket.emit('getChatRoomList', 'getChatRoomList');
-
-    chatSocket.on('getChatRoomList', (data) => {
-      console.log('getChatRoomList 여 기  를  확  인  해  보  세  요요: ', data); // 'temp'를 '{}'로 변경하여 복사
-    });
-  }
+  const [open, setOpen] = React.useState(false);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
   return (
     <div>
-      <Button 
-        variant="contained"
-        onClick={makePublic} // 함수 이름만 넘기면 됩니다.
-      > public
-      </Button>
-      <Button 
-        variant="contained"
-        onClick={makePrivate} // 함수 이름만 넘기면 됩니다.
-      > private
-      </Button>
+      <Box sx={{ '& > :not(style)': { m: 1 } }}>
+        <Fab color="primary" aria-label="add" onClick={handleOpen}>
+          <AddIcon />
+        </Fab>
+      </Box>
+      <Modal open={open} onClose={handleClose}>
+        <Box sx={style}>
+          <Typography id="modal-modal-title" variant="h6" component="h6">
+            방 만들기
+          </Typography>
+          <CreateRoomForm />
+        </Box>
+      </Modal>
     </div>
   );
 };
