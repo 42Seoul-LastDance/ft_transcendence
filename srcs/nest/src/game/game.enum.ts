@@ -17,7 +17,7 @@ export enum PlayerSide {
 }
 
 export enum GameEndStatus {
-    NORNAL = 0,
+    NORMAL = 0,
     CHEATING = 1,
     DISCONNECT = 2,
     NONE = -1,
@@ -26,5 +26,15 @@ export enum GameEndStatus {
 export enum GameStatus {
     WAIT = 0,
     GAME = 1,
+    NONE = -1,
+}
+
+export enum Emoji {
+    HI = 0,
+    THUMBUP = 1,
+    SUNGLASSES = 2,
+    FANFARE = 3,
+    TONGUE = 4,
+    BADWORDS = 5,
     NONE = -1,
 }

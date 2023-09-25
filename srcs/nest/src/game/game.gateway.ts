@@ -27,8 +27,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         console.log('new connection, player enrolled:', client.id);
     }
 
-    handleDisconnect(client: Socket) {
-        this.gameService.handleDisconnect(client.id);
+    async handleDisconnect(client: Socket) {
+        await this.gameService.handleDisconnect(client.id);
         this.gameService.deletePlayer(client.id);
         console.log('lost connection, player deleted:', client.id);
     }
@@ -55,6 +55,33 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     //* Friend Game ======================================
+    @SubscribeMessage('inviteGame')
+    async inviteGame(client: Socket, gameInfo: JSON) {
+        await this.gameService.inviteGame(
+            client.id,
+            +gameInfo['gameMode'],
+            gameInfo['username'],
+            gameInfo['friendname'],
+        );
+    }
+
+    @SubscribeMessage('agreeInvite')
+    async agreeInvite(client: Socket, gameInfo: JSON) {
+        await this.gameService.agreeInvite(
+            client.id,
+            gameInfo['username'],
+            gameInfo['friendname'],
+        );
+    }
+
+    @SubscribeMessage('denyInvite')
+    denyInvite(client: Socket, gameInfo: JSON) {
+        this.gameService.denyInvite(
+            client.id,
+            gameInfo['username'],
+            gameInfo['friendname'],
+        );
+    }
 
     //* Game Room ======================================
     @SubscribeMessage('getReady')
@@ -80,5 +107,12 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         //TESTCODE
         console.log('scorePoint:', client.id);
         await this.gameService.scorePoint(client.id, +gameInfo['side']);
+    }
+
+    @SubscribeMessage('sendEmoji')
+    sendEmoji(client: Socket, emoji: string) {
+        //TODO emoji 숫자로 오는지 확인
+        console.log('sendEmoji: ', emoji);
+        this.gameService.sendEmoji(client.id, +emoji);
     }
 }

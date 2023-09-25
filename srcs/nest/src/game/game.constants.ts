@@ -7,3 +7,6 @@ export const MAXF: number = 0.7;
 
 //scorePoint()
 export const MAXSCORE: number = 5;
+
+//TimeZone
+export const TIMEZONE: string = 'Asia/Seoul';

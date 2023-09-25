@@ -4,11 +4,12 @@ import React, { Fragment, useState, useCallback, useEffect } from 'react';
 import { Unity, useUnityContext } from 'react-unity-webgl';
 import { getGameSocket } from '../../SSock';
 import { Socket } from 'socket.io-client';
+import { useRouter } from 'next/navigation';
 import { useAppSelector, store } from '../../Redux/store';
 import { Provider } from 'react-redux';
 
 // var socket: Socket;
-var socket: Socket = getGameSocket();
+const socket: Socket = getGameSocket();
 
 const RoomHomeContent = () => {
     const {
@@ -23,52 +24,70 @@ const RoomHomeContent = () => {
         codeUrl: '/build/Socket.wasm.unityweb',
     });
 
-    // useEffect(() => {
-    //     socket = getGameSocket();
-    // }, []);
+    const [gameOver, setGameOver] = useState<boolean>(false);
+    const router = useRouter();
 
-    const [gameOver, setGameOver] = useState<boolean | undefined>(undefined);
-
+    // sendMessage(
+    //     'GameManager',
+    //     'SetMySide',
+    //     useAppSelector((state) => state.match.side),
+    // );
     // react to unity
-    socket.on('movePaddle', (json: JSON) => {
-        sendMessage('Paddle', 'MoveOpponentPaddle', JSON.stringify(json));
-        console.log('! MovePaddle Event Detected');
-    });
+    if (!socket.hasListeners('kickout')) {
+        socket.on('kickout', () => {
+            console.log('! kickout Event Detected');
+            router.push('../../');
+        });
+    }
+    if (!socket.hasListeners('movePaddle')) {
+        socket.on('movePaddle', (json: JSON) => {
+            sendMessage('Paddle', 'MoveOpponentPaddle', JSON.stringify(json));
+            console.log('! movePaddle Event Detected');
+        });
+    }
+    if (!socket.hasListeners('startGame')) {
+        socket.on('startGame', (json: JSON) => {
+            sendMessage('GameManager', 'StartGame', JSON.stringify(json));
+            console.log('! startGame Event Detected');
+        });
+    }
+    if (!socket.hasListeners('gameOver')) {
+        socket.on('gameOver', (json: JSON) => {
+            sendMessage('GameManager', 'GameOver', JSON.stringify(json));
+            setGameOver(true);
+            console.log('! gameOver Event Detected');
+        });
+    }
 
-    socket.on('startGame', (json: JSON) => {
-        sendMessage('GameManager', 'StartGame', JSON.stringify(json));
-        console.log('! MovePaddle Event Detected');
-    });
-
-    socket.on('gameOver', (json: JSON) => {
-        sendMessage('GameManager', 'GameOver', JSON.stringify(json));
-        console.log('! MovePaddle Event Detected');
-    });
+    // const handleGameOver = useCallback(() => {
+    //     //setGameOver(true);
+    //     socket.emit('GameOver', 'hi');
+    // }, [setGameOver]);
+    // useEffect(() => {
+    //     addEventListener('GameOver', handleGameOver);
+    //     return () => {
+    //         removeEventListener('GameOver', handleGameOver);
+    //     };
+    // }, [addEventListener, removeEventListener, handleGameOver]);
 
     // unity to react
-    const handleGameOver = useCallback(() => {
-        //setGameOver(true);
-        socket.emit('GameOver', 'hi');
-    }, [setGameOver]);
-
-    useEffect(() => {
-        addEventListener('GameOver', handleGameOver);
-        return () => {
-            removeEventListener('GameOver', handleGameOver);
-        };
-    }, [addEventListener, removeEventListener, handleGameOver]);
-
-    const side = useAppSelector((state) => state.match.side);
-    sendMessage('GameManager', 'SetMySide');
+    // const handleUnityExeception = useCallback(() => {
+    //     console.log('!!! UnityException !!!');
+    // }, []);
+    // useEffect(() => {
+    //     addEventListener('UnityException', handleUnityExeception);
+    //     return () => {
+    //         removeEventListener('UnityException', handleUnityExeception);
+    //     };
+    // }, [addEventListener, removeEventListener, handleUnityExeception]);
 
     return (
-        <Fragment>
+        <>
             <div className="Game">
                 {gameOver === true && <p>{`Game Over!`}</p>}
                 <button
                     onClick={() => {
                         socket.emit('getReady');
-                        console.log('getReady Button Clicked');
                     }}
                 >
                     Get Ready
@@ -78,7 +97,7 @@ const RoomHomeContent = () => {
                     style={{ width: 1280, height: 720 }}
                 />
             </div>
-        </Fragment>
+        </>
     );
 };
 

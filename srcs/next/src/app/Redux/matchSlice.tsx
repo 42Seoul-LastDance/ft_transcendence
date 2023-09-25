@@ -1,24 +1,29 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
 
 interface MatchState {
-    isStarted: boolean;
+    isCustom: boolean;
+    isMatched: boolean;
     side: string;
 }
 
 const initialState: MatchState = {
-    isStarted: false,
+    isCustom: false,
+    isMatched: false,
     side: '',
 };
 
 export const matchSlice = createSlice({
-    name: 'room',
+    name: 'match',
     initialState,
     reducers: {
-        start: (state) => {
-            state.isStarted = true;
+        setIsCustom: (state, action: PayloadAction<{ isCustom: boolean }>) => {
+            state.isCustom = action.payload.isCustom;
         },
-        stop: (state) => {
-            state.isStarted = false;
+        setIsMatched: (
+            state,
+            action: PayloadAction<{ isMatched: boolean }>,
+        ) => {
+            state.isMatched = action.payload.isMatched;
         },
         setSide: (state, action: PayloadAction<{ side: string }>) => {
             state.side = action.payload.side;
@@ -27,4 +32,4 @@ export const matchSlice = createSlice({
 });
 
 export default matchSlice.reducer;
-export const { start, stop, setSide } = matchSlice.actions;
+export const { setIsMatched, setSide, setIsCustom } = matchSlice.actions;

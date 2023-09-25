@@ -1,5 +1,4 @@
 import { io, Socket } from 'socket.io-client';
-import { useAppDispatch } from './Test/store';
 
 var dmSocket: Socket;
 var chatSocket: Socket;
@@ -15,7 +14,7 @@ export const getDmSocket = (): Socket => {
         dmSocket.on('getMessage', (str) => {
             console.log('msg from server : ', str);
         });
-    }
+    } else console.log('getDmSocket() : Old socket');
     return dmSocket;
 };
 
@@ -29,20 +28,44 @@ export const getChatSocket = (): Socket => {
         chatSocket.on('getMessage', (str) => {
             console.log('msg from server : ', str);
         });
-    }
+    } else console.log('getChatSocket() : Old socket');
     return chatSocket;
 };
 
 export const getGameSocket = (): Socket => {
     if (!gameSocket || !gameSocket.connected) {
-        console.log('getgameSocket()');
+        console.log('getGameSocket() : New socket');
         gameSocket = io('http://10.14.6.6:3000/Game', {
             withCredentials: false,
         });
         gameSocket.connect();
-        gameSocket.on('getMessage', (str) => {
-            console.log('msg from server : ', str);
-        });
-    }
+    } else console.log('getGameSocket() : Old socket');
     return gameSocket;
+};
+
+export const disconnectDmSocket = () => {
+    if (!dmSocket || !dmSocket.connected) {
+        console.log('disconnectDmSocket() : not connected');
+    } else {
+        dmSocket.disconnect();
+        console.log('disconnectDmSocket() : disconnect');
+    }
+};
+
+export const disconnectGameSocket = () => {
+    if (!gameSocket || !gameSocket.connected) {
+        console.log('disconnectGameSocket() : not connected');
+    } else {
+        gameSocket.disconnect();
+        console.log('disconnectGameSocket() : disconnect');
+    }
+};
+
+export const disconnectChatSocket = () => {
+    if (!chatSocket || !chatSocket.connected) {
+        console.log('disconnectChatSocket() : not connected');
+    } else {
+        chatSocket.disconnect();
+        console.log('disconnectChatSocket() : disconnect');
+    }
 };

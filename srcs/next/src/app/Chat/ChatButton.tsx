@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { getSocket } from '../SSock';
 import { Tab, RadioGroup } from '@headlessui/react';
 
 function MyRadioGroup() {

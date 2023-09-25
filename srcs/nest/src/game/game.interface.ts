@@ -12,25 +12,30 @@ export interface GameRoom {
     gameType: number; //enum
     gameMode: number; //enum
     gameStatus: number; //enum
-    socket?: [Socket, Socket];
-    ready?: [boolean, boolean];
+    socket?: [Socket | undefined, Socket | undefined];
+    ready?: [boolean | undefined, boolean | undefined];
     //when game starts
-    startTime?: Date;
-    score?: [number, number];
+    startTime?: Date | undefined;
+    score?: [number | undefined, number | undefined];
+    ballHitX?: number | undefined;
+    ballHitY?: number | undefined;
+    ballHitZ?: number | undefined;
     //when ends
-    endTime?: Date;
-    winner?: number;
-    loser?: number;
-    winnerScore?: number;
-    loserScore?: number;
-    endGameStatus?: number;
+    endTime?: Date | undefined;
+    winner?: number | undefined;
+    loser?: number | undefined;
+    winnerScore?: number | undefined;
+    loserScore?: number | undefined;
+    endGameStatus?: number | undefined;
 }
 
 export interface Player {
     socket: Socket;
-    userId?: number;
-    gameType?: number; //enum
-    gameMode?: number; //enum
-    side?: number; //enum
-    roomId?: number;
+    username?: string | undefined;
+    userId?: number | undefined;
+    gameType?: number | undefined; //enum
+    gameMode?: number | undefined; //enum
+    side?: number | undefined; //enum
+    roomId?: number | undefined;
+    friend?: string | undefined;
 }

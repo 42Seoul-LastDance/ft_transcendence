@@ -10,13 +10,15 @@ import {
     PlayerSide,
     GameStatus,
     GameEndStatus,
+    Emoji,
 } from './game.enum';
-import { MIN, MAX, MINF, MAXF, MAXSCORE } from './game.constants';
+import { MIN, MAX, MINF, MAXF, MAXSCORE, TIMEZONE } from './game.constants';
 import { GameRoom, Player } from './game.interface';
 import { Game } from './game.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GameRepository } from './game.repository';
 import { UserService } from 'src/user/user.service';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class GameService {
@@ -30,54 +32,47 @@ export class GameService {
     private playerList: Map<string, Player> = new Map<string, Player>(); //socket.id
     //Queue
     private matchQueue: [string, string] = [undefined, undefined]; //socket.id
-    private friendGameList: Map<number, string> = new Map<number, string>(); //userId, socket.id
+    private friendGameList: Map<string, string> = new Map<string, string>(); //username, socket.id
     //Room
     private gameRoomIdx: number = 0;
     private gameRoomList: Map<number, GameRoom> = new Map<number, GameRoom>(); //room.id
 
+    //PlayerList에 등록
     createPlayer(playerSocket: Socket) {
-        //PlayerList에 등록
         const player: Player = {
             socket: playerSocket,
         };
         this.playerList.set(playerSocket.id, player);
     }
 
-    handleDisconnect(playerId: string) {
+    //disconnect 시 처리
+    async handleDisconnect(playerId: string) {
         const player = this.playerList.get(playerId);
         if (player.userId === undefined) return;
         if (player.roomId === undefined) {
             // in Queue => queue에서 제거
             if (player.gameType === GameType.MATCH) {
-                //ranking
                 if (this.matchQueue[player.gameMode] === player.socket.id)
                     this.matchQueue[player.gameMode] = undefined;
                 else throw new BadRequestException('player not in the queue');
-            } else {
-                //friendly
-                const userId = player.userId;
-                if (this.friendGameList.get(userId)) {
-                    this.friendGameList.delete(userId);
+            } else if (player.gameType === GameType.FRIEND) {
+                if (this.friendGameList.get(player.username)) {
+                    this.friendGameList.delete(player.username);
                 } else throw new BadRequestException('friend: bad request');
             }
         } else {
+            //in room (waiting or game)
             const gameRoom = this.gameRoomList.get(player.roomId);
             if (gameRoom.gameStatus === GameStatus.WAIT) {
-                //in waiting Room => 랭킹일 경우 상대방 다시 Q에 집어 넣음
-                if (gameRoom.gameType === GameType.MATCH) {
-                    const rival: Player = this.playerList.get(
-                        gameRoom.socket[(player.side + 1) % 2].id,
-                    );
-                    [rival.side, rival.roomId] = [undefined, undefined];
-                    this.pushQueue(
-                        rival.socket.id,
-                        gameRoom.gameMode,
-                        undefined,
-                    );
-                }
+                //in waiting Room => 상대방에게 대기방 나가기 이벤트 발생!
+                const rival: Player = this.playerList.get(
+                    gameRoom.socket[(player.side + 1) % 2].id,
+                );
+                this.resetPlayer(rival);
+                rival.socket.emit('kickout');
             } else if (gameRoom.gameStatus === GameStatus.GAME) {
                 //게임중 => 게임 강제종료
-                this.finishGame(
+                await this.finishGame(
                     gameRoom.id,
                     (player.side + 1) % 2,
                     GameEndStatus.DISCONNECT,
@@ -99,23 +94,15 @@ export class GameService {
         gameMode: number,
         username: string,
     ): Promise<void> {
-        const player: Player = this.playerList.get(playerId);
-        if (player.roomId)
-            throw new BadRequestException('player already in gameRoom');
-        //! TESTCODE
-        if (username === 'kwsong') player.userId = 1234;
-        else if (username) {
-            player.userId = (
-                await this.userService.getUserByUsername(username)
-            ).id;
+        await this.updatePlayer(playerId, username, gameMode, GameType.MATCH);
+        if (this.matchQueue[gameMode]) {
+            const playerQ = this.matchQueue[gameMode];
+            this.matchQueue[gameMode] = undefined;
+            this.makeGameRoom(playerQ, playerId, GameType.MATCH, gameMode);
+        } else {
+            console.log('waiting in queue:', playerId);
+            this.matchQueue[gameMode] = playerId;
         }
-        player.gameMode = gameMode;
-        player.gameType = GameType.MATCH;
-
-        if (gameMode === GameMode.NONE)
-            throw new BadRequestException('gameMode invalid');
-        if (this.matchQueue[gameMode]) this.makeGameRoom(gameMode, playerId);
-        else this.matchQueue[gameMode] = playerId;
     }
 
     popQueue(playerId: string): void {
@@ -126,6 +113,57 @@ export class GameService {
         else throw new BadRequestException('player was not in Queue');
     }
 
+    //* Friend Game ======================================
+    async inviteGame(
+        playerId: string,
+        gameMode: number,
+        username: string,
+        friend: string,
+    ) {
+        await this.updatePlayer(
+            playerId,
+            username,
+            gameMode,
+            GameType.FRIEND,
+            friend,
+        );
+        this.friendGameList.set(username, playerId);
+        console.log('inviteGame:', username, 'waiting for', friend);
+    }
+
+    async agreeInvite(playerId: string, username: string, friend: string) {
+        //queue에 초대한 친구 있는지 확인
+        const hostId = this.friendGameList.get(friend);
+        if (hostId && this.playerList.get(hostId).friend === username) {
+            //friendlist에서 해당 큐 제외
+            this.friendGameList.delete(friend);
+            //player update
+            const gameMode = this.playerList.get(hostId).gameMode;
+            await this.updatePlayer(
+                playerId,
+                username,
+                gameMode,
+                GameType.FRIEND,
+                friend,
+            );
+            console.log('invite connected:', username, '&', friend);
+            //방파줌. 즐겜!
+            this.makeGameRoom(hostId, playerId, GameType.FRIEND, gameMode);
+        } else {
+            // 초대한 친구 없거나 초대한 사람이 내가 아니야!! => kickout 발동!
+            this.playerList.get(playerId).socket.emit('kickout');
+        }
+    }
+
+    denyInvite(playerId: string, username: string, friend: string) {
+        //queue에 초대한 친구 있는지 확인
+        const hostId = this.friendGameList.get(friend);
+        if (hostId && this.playerList.get(hostId).friend === username) {
+            this.friendGameList.delete(friend);
+            this.playerList.get(hostId).socket.emit('denyInvite');
+        } else throw new BadRequestException('no invitation to deny');
+    }
+
     //* Game Room ======================================
     getReady(playerId: string): void {
         const roomId = this.playerList.get(playerId).roomId;
@@ -134,14 +172,17 @@ export class GameService {
         this.gameRoomList.get(roomId).ready[side] = true;
         if (this.gameRoomList.get(roomId).ready[rivalSide]) {
             //둘 다 게임 준비 완료!
-            this.startGame(roomId);
+            this.updateGame(roomId);
             const [leftPlayer, rightPlayer] =
                 this.gameRoomList.get(roomId).socket;
-            const gameInfo = this.getBallStartDir();
-            gameInfo['isFirst'] = true;
+            const gameInfo = this.getBallStartDir(roomId);
             //TODO ballDirection 잘 가는지 확인 필요! (JSON 관련)111
+            gameInfo['isFirst'] = true;
+            gameInfo['side'] = PlayerSide.LEFT;
             leftPlayer.emit('startGame', gameInfo);
+            gameInfo['side'] = PlayerSide.RIGHT;
             rightPlayer.emit('startGame', gameInfo);
+            console.log('>>>>>> emit startGame done');
         }
     }
 
@@ -166,8 +207,19 @@ export class GameService {
         this.gameRoomList.get(roomId).score[side] += 1;
         if (this.gameRoomList.get(roomId).score[side] === MAXSCORE) {
             //if game ends
-            await this.finishGame(roomId, side, GameEndStatus.NORNAL);
+            await this.finishGame(roomId, side, GameEndStatus.NORMAL);
         } else this.continueGame(roomId);
+    }
+
+    sendEmoji(playerId: string, emoji: number) {
+        if (emoji < Emoji.HI || Emoji.BADWORDS < emoji)
+            throw new BadRequestException('wrong emoji sent');
+        const player = this.playerList.get(playerId);
+        const side = player.side;
+        const rivalSocket = this.gameRoomList.get(player.roomId).socket[
+            (side + 1) % 2
+        ];
+        rivalSocket.emit('sendEmoji', { type: emoji });
     }
 
     //* other functions ======================================
@@ -175,8 +227,9 @@ export class GameService {
     //득점 후 계속 진행
     continueGame(roomId: number) {
         const [player1, player2] = this.gameRoomList.get(roomId).socket;
-        const gameInfo = this.getBallStartDir();
+        const gameInfo = this.getBallStartDir(roomId);
         gameInfo['isFirst'] = false;
+        gameInfo['side'] = PlayerSide.NONE; //아무값
         //TODO ballDirection 잘 가는지 확인 필요! (JSON 관련)222
         player1.emit('scorePoint', gameInfo);
         player2.emit('scorePoint', gameInfo);
@@ -191,32 +244,38 @@ export class GameService {
         //gameRoom 업데이트
         this.updateGameRoom(roomId, winnerSide, endGameStatus);
         //플레이어들에게 결과 전달
-        const [player1, player2] = this.gameRoomList.get(roomId).socket;
+        const [player1Socket, player2Socket] =
+            this.gameRoomList.get(roomId).socket;
         const gameResult = {
             winner: winnerSide,
             leftScore: this.gameRoomList.get(roomId).score[PlayerSide.LEFT],
             rightScore: this.gameRoomList.get(roomId).score[PlayerSide.RIGHT],
-            reason: GameEndStatus.NORNAL,
+            reason: endGameStatus,
         };
         //TODO gameResult 잘 전달되는지 확인 필요! (JSON 관련)
-        player1.emit('gameOver', gameResult);
-        player2.emit('gameOver', gameResult);
-        //DB에 저장하고 gameRoom 없애기
+        player1Socket.emit('gameOver', gameResult);
+        player2Socket.emit('gameOver', gameResult);
+        //DB에 저장
         await this.createGameData(roomId);
+        //gameRoom 처리
         if (
             this.gameRoomList.get(roomId).gameType === GameType.FRIEND &&
-            endGameStatus === GameEndStatus.NORNAL
+            endGameStatus === GameEndStatus.NORMAL
         ) {
+            //친선경기 => reset gameRoom for restart
             this.resetGameRoom(roomId);
-            //reset gameRoom for restart
-        } else this.gameRoomList.delete(roomId);
+        } else {
+            //그 외 => player reset && delete room
+            this.resetPlayer(this.playerList.get(player1Socket.id));
+            this.resetPlayer(this.playerList.get(player2Socket.id));
+            if (this.gameRoomList.get(roomId)) this.gameRoomList.delete(roomId);
+        }
     }
 
     resetGameRoom(roomId: number) {
         this.gameRoomList.get(roomId).ready = [false, false];
         this.gameRoomList.get(roomId).gameStatus = GameStatus.WAIT;
         this.gameRoomList.get(roomId).score = [0, 0];
-        //이 아래는 필요 없을지도..?
         this.gameRoomList.get(roomId).startTime = undefined;
         this.gameRoomList.get(roomId).endTime = undefined;
         this.gameRoomList.get(roomId).winner = undefined;
@@ -225,7 +284,9 @@ export class GameService {
     }
     //게임 종료시 gameRoom 업데이트
     updateGameRoom(roomId: number, side: number, endGameStatus: number) {
-        this.gameRoomList.get(roomId).endTime = new Date();
+        this.gameRoomList.get(roomId).endTime = DateTime.now()
+            .setZone(TIMEZONE)
+            .toJSDate();
         this.gameRoomList.get(roomId).winner = side;
         this.gameRoomList.get(roomId).loser = (side + 1) % 2;
         this.gameRoomList.get(roomId).endGameStatus = endGameStatus;
@@ -237,29 +298,19 @@ export class GameService {
             this.gameRoomList.get(roomId).loserScore = 0;
         }
     }
-
-    async getPlayerUserIds(room: GameRoom): Promise<[number, number]> {
-        const winner = this.playerList[room.socket[room.winner].id];
-        const loser = this.playerList[room.socket[room.loser].id];
-        const winnerUserId = (
-            await this.userService.getUserByUsername(winner.username)
-        ).id;
-        const lowerUserId = (
-            await this.userService.getUserByUsername(loser.username)
-        ).id;
-        return [winnerUserId, lowerUserId];
-    }
     //DB에 게임 결과 저장
     async createGameData(roomId: number) {
         try {
             const room = this.gameRoomList.get(roomId);
-            const [winnerUserId, lowerUserId] =
-                await this.getPlayerUserIds(room);
+            const [winnerUserId, loserUserId] = [
+                this.playerList.get(room.socket[room.winner].id).userId,
+                this.playerList.get(room.socket[room.loser].id).userId,
+            ];
             const newGameData = this.gameRepository.create({
                 winnerId: winnerUserId,
                 winnerScore: room.score[room.winner],
                 winnerSide: room.winner,
-                loserId: lowerUserId,
+                loserId: loserUserId,
                 loserScore: room.score[room.loser],
                 loserSide: room.loser,
                 gameType: room.gameType,
@@ -279,15 +330,16 @@ export class GameService {
     }
 
     //gameRoom 만들기
-    makeGameRoom(gameMode: number, player2Id: string) {
-        //player1 and queue setting
-        const player1Id = this.matchQueue[gameMode];
-        this.matchQueue[gameMode] = undefined;
-
+    makeGameRoom(
+        player1Id: string,
+        player2Id: string,
+        gameType: number,
+        gameMode: number,
+    ) {
         //waitRoom 만들기
         const gameRoom: GameRoom = {
             id: this.gameRoomIdx,
-            gameType: GameType.MATCH,
+            gameType: gameType,
             gameMode: gameMode,
             gameStatus: GameStatus.WAIT,
             ready: [false, false],
@@ -301,55 +353,96 @@ export class GameService {
 
     // players enter the gameRoom
     enterGameRoom(gameRoom: GameRoom, player1Id: string, player2Id: string) {
-        //TODO: random => left / right
-        const left = player1Id;
-        const right = player2Id;
-
+        let left: string, right: string;
+        if (Math.floor(Math.random() * 2)) {
+            left = player1Id;
+            right = player2Id;
+        } else {
+            left = player2Id;
+            right = player1Id;
+        }
         gameRoom.socket = [
             this.playerList.get(left).socket,
             this.playerList.get(right).socket,
         ];
-        gameRoom.ready = [false, false];
 
         //Player 업데이트 && emit('handShake')
         console.log('enterGameRoom:', gameRoom.id);
-        this.updatePlayer(left, PlayerSide.LEFT, gameRoom.id);
-        this.updatePlayer(right, PlayerSide.RIGHT, gameRoom.id);
-        this.playerList.get(left).socket.emit('handShake', {
-            side: PlayerSide.LEFT,
-        });
-        this.playerList.get(right).socket.emit('handShake', {
-            side: PlayerSide.RIGHT,
-        });
+        this.handShake(left, PlayerSide.LEFT, gameRoom.id);
+        this.handShake(right, PlayerSide.RIGHT, gameRoom.id);
+    }
+    //gameRoom 진입 시 Player 정보 업데이트
+    handShake(playerId: string, side: number, roomId: number): void {
+        this.playerList.get(playerId).roomId = roomId;
+        this.playerList.get(playerId).side = side;
+        this.playerList.get(playerId).socket.emit('handShake');
     }
 
     //game 시작 시 => gameRoom 업데이트
-    startGame(gameRoomId: number) {
-        this.gameRoomList[gameRoomId].gameStatus = GameStatus.GAME;
-        this.gameRoomList[gameRoomId].startTime = new Date();
-        this.gameRoomList[gameRoomId].score = [0, 0];
+    updateGame(gameRoomId: number) {
+        this.gameRoomList.get(gameRoomId).gameStatus = GameStatus.GAME;
+        this.gameRoomList.get(gameRoomId).startTime = DateTime.now()
+            .setZone(TIMEZONE)
+            .toJSDate();
+        this.gameRoomList.get(gameRoomId).score = [0, 0];
         //TESTCODE: startTime
-        console.log(this.gameRoomList[gameRoomId].startTime);
+        // console.log('startTime:', this.gameRoomList.get(gameRoomId).startTime);
     }
 
-    //gameRoom 진입 시 Player 정보 업데이트
-    updatePlayer(playerId: string, side: number, roomId: number): void {
-        this.playerList.get(playerId).roomId = roomId;
-        this.playerList.get(playerId).side = side;
+    async updatePlayer(
+        playerId: string,
+        username: string,
+        gameMode: number,
+        gameType: number,
+        friend?: string | undefined,
+    ) {
+        const player: Player = this.playerList.get(playerId);
+        if (player.roomId)
+            throw new BadRequestException('player already in gameRoom');
+
+        //! TESTCODE
+        if (username === 'kwsong') player.userId = 1234;
+        else {
+            player.username = username;
+            player.userId = (
+                await this.userService.getUserByUsername(username)
+            ).id;
+        }
+        if (friend) player.friend = friend;
+        player.gameType = gameType;
+        player.gameMode = gameMode;
+        if (gameMode === GameMode.NONE)
+            throw new BadRequestException('gameMode invalid');
     }
 
     //game 각 라운드 시작 시 공 방향 세팅
-    getBallStartDir(): any {
+    getBallStartDir(roomId: number): any {
         const dirX = (Math.random() * (MAX - MIN) + MIN) * -2 + 1;
         const dirZ =
             ((Math.random() * (MAX - MIN) + MIN) * -2 + 1) *
             (Math.random() * (MAXF - MINF) + MINF);
+        this.firstBallHit(roomId, dirX, dirZ);
         return {
-            ballDirection: {
-                x: dirX,
-                y: 0,
-                z: dirZ,
-            },
+            x: dirX,
+            y: 0,
+            z: dirZ,
         };
+    }
+    //시작 시 첫 ball hit point
+    firstBallHit(roomId: number, dirX: number, dirZ: number) {
+        // this.gameRoomList.get(roomId).ballHitX =
+        // this.gameRoomList.get(roomId).ballHitY =
+        // this.gameRoomList.get(roomId).ballHitZ =
+    }
+    //충돌 이후 다음 ball hit point
+    nextBallHit(roomId: number) {}
+
+    //게임 중단/종료 시 플레이어 리셋
+    resetPlayer(player: Player) {
+        player.gameType = undefined;
+        player.gameMode = undefined;
+        player.side = undefined;
+        player.roomId = undefined;
+        player.friend = undefined;
     }
 }
