@@ -68,9 +68,7 @@ export class AuthController {
             if (error.getStatus() == 404) {
                 //JwtAccess 토큰 발급 후 신규 유저 등록 페이지로 진행
                 console.log('new user: redirect to enroll page');
-                const enrollJwt = await this.authService.generateEnrollToken(
-                    req.user,
-                );
+                const enrollJwt = await this.authService.generateEnrollToken(req.user);
                 res.status(HttpStatus.OK);
                 res.cookie('enroll_token', enrollJwt, {
                     // httpOnly: true,
@@ -112,9 +110,7 @@ export class AuthController {
         // 지금 쿠키가 42 login url에 들어잇는걸 확인햇어요!! 오잉....
         //그래서 이게 왜 그런지 알아보는 중..
         // ==================================================== End of 생각한 로직
-        const founduser = await this.userService.getUserBySlackId(
-            req.user.slackId,
-        );
+        const founduser = await this.userService.getUserBySlackId(req.user.slackId);
         if (founduser.require2fa) {
             res.status(HttpStatus.OK);
             console.log('2fa true, go to email!');
@@ -149,15 +145,8 @@ export class AuthController {
 
     @Get('verify2fa')
     @UseGuards(Jwt2faGuard)
-    async verify2fa(
-        @Req() req,
-        @Query('code') code: string,
-        @Res() res: Response,
-    ) {
-        const isAuthenticated = await this.userService.verifyUser2faCode(
-            req.authDto.sub,
-            code,
-        );
+    async verify2fa(@Req() req, @Query('code') code: string, @Res() res: Response) {
+        const isAuthenticated = await this.userService.verifyUser2faCode(req.authDto.sub, code);
         if (isAuthenticated) {
             //jwt 발급 후 메인페이지 리다이렉트
             console.log('2fa verified, redirect to main page');

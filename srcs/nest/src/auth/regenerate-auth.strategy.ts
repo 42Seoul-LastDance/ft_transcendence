@@ -5,10 +5,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()
-export class RegenerateJwtStrategy extends PassportStrategy(
-    Strategy,
-    'regenerate-jwt',
-) {
+export class RegenerateJwtStrategy extends PassportStrategy(Strategy, 'regenerate-jwt') {
     constructor(private readonly userService: UserService) {
         super({
             secretOrKey: process.env.JWT_SECRET_KEY,

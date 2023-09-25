@@ -61,11 +61,7 @@ export class UserService {
         return user;
     }
 
-    async registerUser(
-        authDto: Auth42Dto,
-        username: string,
-        filename: string,
-    ): Promise<User> {
+    async registerUser(authDto: Auth42Dto, username: string, filename: string): Promise<User> {
         try {
             const { email, slackId } = authDto;
             const newUser = this.userRepository.create({
@@ -83,32 +79,24 @@ export class UserService {
             // console.log('register user in UserService:', newUser);
             return user;
         } catch (error) {
-            if (error.code == '23505')
-                throw new ConflictException('Existing username');
+            if (error.code == '23505') throw new ConflictException('Existing username');
             else throw new InternalServerErrorException('from registerUser');
         }
     }
 
-    async updateUsernameBySlackId(
-        slackId: string,
-        username: string,
-    ): Promise<User> {
+    async updateUsernameBySlackId(slackId: string, username: string): Promise<User> {
         try {
             const user = await this.getUserBySlackId(slackId);
             user.username = username;
             await this.userRepository.save(user);
             return user;
         } catch (error) {
-            if (error.code == '23505')
-                throw new ConflictException('Existing username');
+            if (error.code == '23505') throw new ConflictException('Existing username');
             else throw new InternalServerErrorException('from updateUsername');
         }
     }
 
-    async update2faConfBySlackId(
-        slackId: string,
-        is2fa: boolean,
-    ): Promise<User> {
+    async update2faConfBySlackId(slackId: string, is2fa: boolean): Promise<User> {
         try {
             const user = await this.getUserBySlackId(slackId);
             user.require2fa = is2fa;
@@ -119,18 +107,13 @@ export class UserService {
         }
     }
 
-    async updateProfileImageBySlackId(
-        slackId: string,
-        img: string,
-    ): Promise<User> {
+    async updateProfileImageBySlackId(slackId: string, img: string): Promise<User> {
         try {
             const user = await this.getUserBySlackId(slackId);
             //* default 이미지가 아니었을 경우 기존 이미지 삭제
             if (user.profileurl != 'default.png') {
-                const filePath =
-                    __dirname + '/../../profile/' + user.profileurl;
-                if (existsSync(filePath))
-                    unlinkSync(__dirname + '/../../profile/' + user.profileurl);
+                const filePath = __dirname + '/../../profile/' + user.profileurl;
+                if (existsSync(filePath)) unlinkSync(__dirname + '/../../profile/' + user.profileurl);
             }
             user.profileurl = img;
             await this.userRepository.save(user);
@@ -152,14 +135,12 @@ export class UserService {
     async verifyRefreshToken(payload, token: string): Promise<void> {
         //userRepository 에서 payload.id (userid) 에 해당하는 refresh token 꺼내서 같은 지 비교.
         try {
-            const storedToken = (await this.findUserById(payload.id))
-                .refreshToken;
+            const storedToken = (await this.findUserById(payload.id)).refreshToken;
             if (!(storedToken && (await bcrypt.compare(token, storedToken)))) {
                 throw new UnauthorizedException();
             }
         } catch (error) {
-            if (error.getStatus() == 404)
-                throw new NotFoundException('from verifyRefreshToken');
+            if (error.getStatus() == 404) throw new NotFoundException('from verifyRefreshToken');
             throw new UnauthorizedException('from verifyRefreshToken');
         }
     }
@@ -236,17 +217,12 @@ export class UserService {
         return userProfileDto;
     }
 
-    async getUserProfileImage(
-        userId: number,
-    ): Promise<{ image: Buffer; mimeType: string }> {
+    async getUserProfileImage(userId: number): Promise<{ image: Buffer; mimeType: string }> {
         const user = await this.findUserById(userId);
         const profileImgTarget = user.profileurl || 'default.png';
         const imagePath = __dirname + '/../../profile/' + profileImgTarget;
         const image = readFileSync(imagePath); // 이미지 파일을 읽어옴
-        if (!image)
-            throw new InternalServerErrorException(
-                `could not read ${imagePath}`,
-            );
+        if (!image) throw new InternalServerErrorException(`could not read ${imagePath}`);
         const mimeType = 'image/' + extname(profileImgTarget).substring(1);
         return { image, mimeType };
     }

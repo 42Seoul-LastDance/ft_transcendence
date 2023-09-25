@@ -1,10 +1,4 @@
-import {
-    Injectable,
-    CanActivate,
-    UnauthorizedException,
-    ExecutionContext,
-    BadRequestException,
-} from '@nestjs/common';
+import { Injectable, CanActivate, UnauthorizedException, ExecutionContext, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
@@ -36,8 +30,7 @@ export class RegenerateAuthGuard implements CanActivate {
         const cookies = reqCookie.split(' ');
 
         for (const cookie of cookies) {
-            if (cookie.startsWith('refresh_token='))
-                return cookie.slice('refresh_token='.length);
+            if (cookie.startsWith('refresh_token=')) return cookie.slice('refresh_token='.length);
         }
         // "refresh_token" 헤더가 없거나 문자열이 아닌 경우 null을 반환합니다.
         return null;

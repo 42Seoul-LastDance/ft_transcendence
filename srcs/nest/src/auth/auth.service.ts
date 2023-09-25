@@ -1,10 +1,4 @@
-import {
-    Injectable,
-    UnauthorizedException,
-    Res,
-    HttpStatus,
-    InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException, Res, HttpStatus, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 import { Auth42Dto } from './dto/auth42.dto';
@@ -83,9 +77,7 @@ export class AuthService {
      */
     async signUser(user: Auth42Dto): Promise<User> {
         try {
-            const userExists = await this.userService.findUserByEmail(
-                user.email,
-            );
+            const userExists = await this.userService.findUserByEmail(user.email);
             return userExists;
         } catch (error) {
             if (error.getStatus() == 404) {
@@ -96,9 +88,7 @@ export class AuthService {
         }
     }
 
-    async generateToken(
-        authDto: Auth42Dto,
-    ): Promise<{ jwt: string; refreshToken: string }> {
+    async generateToken(authDto: Auth42Dto): Promise<{ jwt: string; refreshToken: string }> {
         const id = await this.userService.getUserIdByEmail(authDto.email);
         const jwt = await this.generateJwt({
             sub: id,
@@ -245,19 +235,14 @@ export class AuthService {
             this.mailService.sendMail(id);
             res.status(HttpStatus.OK);
         } catch (error) {
-            return new InternalServerErrorException(
-                'from twofactorAuthentication',
-            );
+            return new InternalServerErrorException('from twofactorAuthentication');
         }
         return res.status(200).json({
             message: '2FA 코드가 이메일로 전송되었습니다. 코드를 확인해주세요.',
         });
     }
 
-    async checkUserIfExists(
-        @Res() res: Response,
-        user: Auth42Dto,
-    ): Promise<boolean> {
+    async checkUserIfExists(@Res() res: Response, user: Auth42Dto): Promise<boolean> {
         try {
             await this.userService.getUserBySlackId(user.slackId);
             return true;

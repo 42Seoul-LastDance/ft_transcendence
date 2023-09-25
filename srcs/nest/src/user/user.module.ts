@@ -31,10 +31,7 @@ import { JwtEnrollGuard } from 'src/auth/jwtEnroll.guard';
                         };
                         if (mimeTypeMap[file.mimetype]) {
                             // 확장자 체크
-                            callback(
-                                null,
-                                `${name}${mimeTypeMap[file.mimetype]}`,
-                            );
+                            callback(null, `${name}${mimeTypeMap[file.mimetype]}`);
                         } else {
                             callback(new UnprocessableEntityException(), null);
                         }

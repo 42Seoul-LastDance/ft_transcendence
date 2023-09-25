@@ -95,10 +95,7 @@ export class UserController {
     async updateUsername(@Req() req, @Body('username') username: string) {
         const user = await this.userService.getUserByUsername(username);
         if (user) throw new BadRequestException('already used username');
-        await this.userService.updateUsernameBySlackId(
-            req.user.slackId,
-            username,
-        );
+        await this.userService.updateUsernameBySlackId(req.user.slackId, username);
     }
 
     @Patch('/update/tfa')
@@ -110,14 +107,8 @@ export class UserController {
     @Patch('/update/profileImage')
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(FileInterceptor('image_url'))
-    async updateProfileImage(
-        @Req() req,
-        @UploadedFile() file: Express.Multer.File,
-    ) {
-        await this.userService.updateProfileImageBySlackId(
-            req.user.slackId,
-            file.filename,
-        );
+    async updateProfileImage(@Req() req, @UploadedFile() file: Express.Multer.File) {
+        await this.userService.updateProfileImageBySlackId(req.user.slackId, file.filename);
     }
     //* EOF user info update ===============================================================
 
@@ -126,20 +117,15 @@ export class UserController {
     async getProfile(@Param('id', ParseIntPipe) id: number, @Res() res) {
         //누구의 profile을 보고 싶은지 id로 조회.
         // * 무조건 있는 유저를 조회하긴 할텐데, userProfile도 검사 한 번 하는게 좋지 않을까요?
-        const userProfile: UserProfileDto =
-            await this.userService.getUserProfile(id);
+        const userProfile: UserProfileDto = await this.userService.getUserProfile(id);
         return res.status(200).json(userProfile);
     }
 
     @Get('/profileImg/:id')
     @UseGuards(JwtAuthGuard)
-    async getProfileImage(
-        @Res() res: Response,
-        @Param('id', ParseIntPipe) id: number,
-    ) {
+    async getProfileImage(@Res() res: Response, @Param('id', ParseIntPipe) id: number) {
         try {
-            const { image, mimeType } =
-                await this.userService.getUserProfileImage(id);
+            const { image, mimeType } = await this.userService.getUserProfileImage(id);
             res.setHeader('Content-Type', mimeType); // 이미지의 MIME 타입 설정
             res.send(image); // 이미지 파일을 클라이언트로 전송
         } catch (error) {
@@ -156,8 +142,7 @@ export class UserController {
             const user = await this.userService.getUserByUsername(name);
             if (user) throw new BadRequestException('username exist');
         } catch (error) {
-            if (error.getStatus() == 404)
-                throw new NotFoundException('no such user');
+            if (error.getStatus() == 404) throw new NotFoundException('no such user');
             else throw new InternalServerErrorException();
         }
     }

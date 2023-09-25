@@ -62,7 +62,7 @@ export class ChatRoomService {
         socket.emit(event, response);
     }
 
-    emitSuccess(socket: Socket, event: string){
+    emitSuccess(socket: Socket, event: string) {
         const response = {
             result: false,
             reason: null,
@@ -77,10 +77,7 @@ export class ChatRoomService {
         return json;
     }
 
-    createChatRoom(
-        socket: Socket,
-        roomInfoDto: RoomInfoDto,
-    ): void {
+    createChatRoom(socket: Socket, roomInfoDto: RoomInfoDto): void {
         const roomDto: ChatRoomDto = new ChatRoomDto();
         //TODO : chat Room 중복 체크
 
@@ -101,7 +98,8 @@ export class ChatRoomService {
         console.log('socket: ', socket);
         const pastRoomName = this.userList[userName]?.socket.rooms[0];
         console.log('pastRoomName: ', pastRoomName);
-        if (pastRoomName !== undefined) {//기존에 유저가 있던 채널이 있었다면
+        if (pastRoomName !== undefined) {
+            //기존에 유저가 있던 채널이 있었다면
             const pastRoom = this.publicRoomList.get(pastRoomName);
             const condition = (element) => element === pastRoomName;
             let idx = pastRoom.memberList.findIndex(condition);
@@ -253,13 +251,12 @@ export class ChatRoomService {
 
         console.log('successfully sent message.');
         socket.to(roomName).emit('sendMessage', content);
-
     }
 
     inviteUser(socket: Socket, roomName: string, username: string) {
         //1. input으로 username받아서 일치하는 사람을 초대한다.
         //2. roomName 에 해당하는 room의 inviteList에 추가.
-    
+
         const room = this.privateRoomList[roomName];
         if (room === undefined) this.emitFailReason(socket, 'inviteUser', 'such private room does not exists.');
         if (room.inviteList.find(username) !== undefined) {
@@ -270,7 +267,7 @@ export class ChatRoomService {
         this.emitSuccess(socket, 'inviteUser');
     }
 
-    banUser(socket: Socket, roomName: string, roomStatus: RoomStatus, targetName: string ){
+    banUser(socket: Socket, roomName: string, roomStatus: RoomStatus, targetName: string) {
         let room: ChatRoomDto;
         if (roomStatus === RoomStatus.PRIVATE) room = this.privateRoomList[roomName];
         else room = this.publicRoomList.get(roomName);
@@ -286,12 +283,12 @@ export class ChatRoomService {
         this.emitSuccess(socket, 'banUser');
     }
 
-    unbanUser(socket: Socket, roomName: string, roomStatus: RoomStatus, targetName:string){
+    unbanUser(socket: Socket, roomName: string, roomStatus: RoomStatus, targetName: string) {
         let room: ChatRoomDto;
         if (roomStatus === RoomStatus.PRIVATE) room = this.privateRoomList.get(roomName);
         else room = this.publicRoomList.get(roomName);
 
-        const condition = (curName) => { 
+        const condition = (curName) => {
             curName === targetName;
         };
         const idx = room.banList.findIndex(condition);
@@ -300,7 +297,7 @@ export class ChatRoomService {
         this.emitSuccess(socket, 'unbanUser');
     }
 
-    grantUser(socket: Socket, roomName: string, roomStatus: RoomStatus, targetName: string){
+    grantUser(socket: Socket, roomName: string, roomStatus: RoomStatus, targetName: string) {
         let room: ChatRoomDto;
         if (roomStatus === RoomStatus.PRIVATE) room = this.privateRoomList.get(roomName);
         else room = this.publicRoomList.get(roomName);
@@ -314,7 +311,7 @@ export class ChatRoomService {
         this.emitSuccess(socket, 'grantUser');
     }
 
-    ungrantUser(socket: Socket, roomName: string, roomStatus: RoomStatus, targetName: string){
+    ungrantUser(socket: Socket, roomName: string, roomStatus: RoomStatus, targetName: string) {
         let room: ChatRoomDto;
         if (roomStatus === RoomStatus.PRIVATE) room = this.privateRoomList.get(roomName);
         else room = this.publicRoomList.get(roomName);
@@ -334,7 +331,7 @@ export class ChatRoomService {
     }
 
     // TODO : roomName vs socket.rooms[0] 으로 할지 test 필요
-    setRoomPassword(socket: Socket, roomName: string, password: string){
+    setRoomPassword(socket: Socket, roomName: string, password: string) {
         const room = this.publicRoomList.get(roomName);
         if (room === undefined) this.emitFailReason(socket, 'setRoomPassword', 'such room does not exist.');
         room.requirePassword = true;
@@ -342,7 +339,7 @@ export class ChatRoomService {
         this.emitSuccess(socket, 'setRoomPassword');
     }
 
-    unsetRoomPassword(socket: Socket, roomName: string){
+    unsetRoomPassword(socket: Socket, roomName: string) {
         const room = this.publicRoomList.get(roomName);
         if (room === undefined) this.emitFailReason(socket, 'unsetRoomPassword', 'such room does not exist.');
         room.requirePassword = false;

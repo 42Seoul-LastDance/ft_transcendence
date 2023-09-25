@@ -10,8 +10,7 @@ async function bootstrap() {
         origin: true,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
-        allowedHeaders:
-            'Authorization, X-Requested-With, X-HTTP-Method-Override, Content-Type',
+        allowedHeaders: 'Authorization, X-Requested-With, X-HTTP-Method-Override, Content-Type',
     });
 
     // app.useWebSocketAdapter(new SocketIoAdapter(app));
