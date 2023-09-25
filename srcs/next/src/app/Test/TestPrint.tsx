@@ -1,7 +1,7 @@
 'use client';
 
 import { Provider } from 'react-redux';
-import { store, useAppSelector } from './store';
+import { useAppSelector, store } from '../Redux/store';
 
 const TestPrint = () => {
     const seletor = useAppSelector((state) => state.room.roomState);

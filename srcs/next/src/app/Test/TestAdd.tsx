@@ -2,8 +2,8 @@
 
 import React, { useRef } from 'react';
 import { Provider, useDispatch } from 'react-redux';
-import { push } from './mySlice';
-import { store } from './store';
+import { push } from '../Redux/mySlice';
+import { store } from '../Redux/store';
 import { getChatSocket } from '../SSock';
 import { Socket } from 'socket.io-client';
 

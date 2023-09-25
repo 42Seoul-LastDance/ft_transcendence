@@ -21,14 +21,16 @@ export interface GameRoom {
     endTime?: Date;
     winner?: number;
     loser?: number;
+    winnerScore?: number;
+    loserScore?: number;
     endGameStatus?: number;
 }
 
 export interface Player {
-    username: string;
     socket: Socket;
-    gameType: number; //enum
-    gameMode: number; //enum
+    userId?: number;
+    gameType?: number; //enum
+    gameMode?: number; //enum
     side?: number; //enum
     roomId?: number;
 }

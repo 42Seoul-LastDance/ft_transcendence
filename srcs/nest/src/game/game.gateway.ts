@@ -23,24 +23,24 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     server: Server;
 
     handleConnection(client: Socket) {
-        console.log(client.id, ': new connection.');
+        this.gameService.createPlayer(client);
+        console.log('new connection, player enrolled:', client.id);
     }
 
     handleDisconnect(client: Socket) {
-        console.log(client.id, ': lost connection.');
-        //플레이어 상황에 따라 분기 처리
-
+        this.gameService.handleDisconnect(client.id);
         this.gameService.deletePlayer(client.id);
+        console.log('lost connection, player deleted:', client.id);
     }
 
     //* Match Game ======================================
     //매칭게임요청 -> 큐 등록 or waitRoom 등록
     @SubscribeMessage('pushQueue')
-    pushQueue(client: Socket, clientInfo: JSON) {
+    async pushQueue(client: Socket, clientInfo: JSON) {
         //TESTCODE
         console.log('pushQueue:', client.id);
-        this.gameService.pushQueue(
-            client,
+        await this.gameService.pushQueue(
+            client.id,
             +clientInfo['gameMode'],
             clientInfo['username'],
         );
@@ -71,7 +71,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         //TESTCODE
         console.log('movePaddle:', client.id);
         //TODO(check): x, y축도 확인 필요한가?
-        this.gameService.movePaddle(client.id, gameInfo['paddlePosition']['z']);
+        this.gameService.movePaddle(client.id, +gameInfo['PaddlePositionZ']);
     }
 
     //(only from left) 득점 신고

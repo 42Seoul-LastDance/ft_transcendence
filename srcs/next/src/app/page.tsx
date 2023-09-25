@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import ChatRoomList from './Chat/ChatButton';
 import Link from 'next/link';
 import Button from '@mui/material/Button';
-import Game from './Game';
+import { useRouter } from 'next/navigation';
 
 // var socket = getDmSocket();
 
@@ -27,12 +27,16 @@ const TestButton = () => {
 };
 
 export default function Home() {
+    const router = useRouter();
     return (
-        <main>
-            <Game />
+        <>
+            <h1> Home, Sweet Home ☺️ </h1>
             {/* <ChatRoomList />
             <TestButton /> */}
             {/* <button onClick={socketEvent}> 안녕 친구들 </button> */}
-        </main>
+            <Link href="/game/matching">
+                <button> Start Matching </button>
+            </Link>
+        </>
     );
 }
