@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState } from 'react';
 import { Provider, useSelector } from 'react-redux';
@@ -8,7 +8,8 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import ChatRoomList from './chatRoomList'
+import ChatRoomList from './chatRoomList';
+import Setting from './setting';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -34,7 +35,7 @@ const CustomTabPanel = (props: TabPanelProps) => {
       )}
     </div>
   );
-}
+};
 
 export default function BasicTabs() {
   const [value, setValue] = React.useState<number>(0);
@@ -45,24 +46,28 @@ export default function BasicTabs() {
 
   return (
     <Provider store={store}>
-    <Box sx={{ width: '100%' }}>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
-          <Tab label="Chat Room" {...a11yProps(0)} />
-          <Tab label="Friends" {...a11yProps(1)} />
-          <Tab label="Settings" {...a11yProps(2)} />
-        </Tabs>
+      <Box sx={{ width: '100%' }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs
+            value={value}
+            onChange={handleChange}
+            aria-label="basic tabs example"
+          >
+            <Tab label="Chat Room" {...a11yProps(0)} />
+            <Tab label="Friends" {...a11yProps(1)} />
+            <Tab label="Settings" {...a11yProps(2)} />
+          </Tabs>
+        </Box>
+        <CustomTabPanel value={value} index={0}>
+          <ChatRoomList />
+        </CustomTabPanel>
+        <CustomTabPanel value={value} index={1}>
+          Item Two
+        </CustomTabPanel>
+        <CustomTabPanel value={value} index={2}>
+          <Setting />
+        </CustomTabPanel>
       </Box>
-      <CustomTabPanel value={value} index={0}>
-        <ChatRoomList/>
-      </CustomTabPanel>
-      <CustomTabPanel value={value} index={1}>
-        Item Two
-      </CustomTabPanel>
-      <CustomTabPanel value={value} index={2}>
-        Item Three
-      </CustomTabPanel>
-    </Box>
     </Provider>
   );
 }

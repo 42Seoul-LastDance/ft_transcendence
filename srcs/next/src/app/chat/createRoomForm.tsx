@@ -5,8 +5,11 @@ import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
+import { useDispatch } from 'react-redux';
+import { push, RoomStatus } from '../redux/roomSlice';
 
 export default function CreateRoomForm() {
+  const dispatch = useDispatch();
   const [roomName, setRoomName] = useState<string>('');
   const [isPrivate, setIsPrivate] = useState<boolean>(false);
   const [isPasswordProtected, setIsPasswordProtected] =
@@ -36,15 +39,29 @@ export default function CreateRoomForm() {
     setPassword(event.target.value);
   };
 
-  const handleSubmit = () => {
-    // 여기에서 방 정보를 제출하는 로직을 추가... 근데 언제하지... ㅠㅠㅠ
-    console.log('방 이름:', roomName);
-    console.log('프라이빗:', isPrivate);
-    console.log('비밀번호 설정:', isPasswordProtected);
-    if (isPasswordProtected) {
-      console.log('비밀번호:', password);
-    }
+  const addNewRoom = () => {
+    let privateStatus: RoomStatus;
+    isPrivate
+      ? (privateStatus = RoomStatus.PRIVATE)
+      : (privateStatus = RoomStatus.PUBLIC);
+    const newRoomInfo = {
+      username: 'exampleUsername',
+      roomname: roomName,
+      password: password,
+      requirePassword: isPasswordProtected,
+      status: privateStatus,
+    };
+    dispatch(push(newRoomInfo)); // push 액션을 디스패치하여 새로운 방 정보를 추가합니다.
   };
+
+  // const handleSubmit = () => {
+  //   console.log('방 이름:', roomName);
+  //   console.log('프라이빗:', isPrivate);
+  //   console.log('비밀번호 설정:', isPasswordProtected);
+  //   if (isPasswordProtected) {
+  //     console.log('비밀번호:', password);
+  //   }
+  // };
 
   return (
     <Box>
@@ -92,7 +109,8 @@ export default function CreateRoomForm() {
           margin="normal"
         />
       )}
-      <Button variant="contained" color="primary" onClick={handleSubmit}>
+      {/* <Button variant="contained" color="primary" onClick={handleSubmit}> */}
+      <Button variant="contained" color="primary" onClick={addNewRoom}>
         완료
       </Button>
     </Box>
