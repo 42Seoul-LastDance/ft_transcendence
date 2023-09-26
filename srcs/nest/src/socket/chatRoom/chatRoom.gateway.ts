@@ -8,6 +8,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { ChatRoomService } from './chatRoom.service';
 import { RoomInfoDto } from './dto/roominfo.dto';
+import { JwtService } from '@nestjs/jwt';
 @WebSocketGateway({
     port: 3000,
     cors: {
@@ -18,20 +19,27 @@ import { RoomInfoDto } from './dto/roominfo.dto';
     namespace: 'RoomChat',
 })
 export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    constructor(private chatroomService: ChatRoomService) {}
+    constructor(
+        private chatroomService: ChatRoomService,
+        private jwtService: JwtService,
+    ) {}
 
     @WebSocketServer()
     server: Server;
 
     // * 커넥션 핸들링 ========================================================
     handleConnection(socket: Socket) {
-        console.log('token: ', socket.handshake.query['username']);
-        this.chatroomService.addNewUser(socket);
+        console.log('token: ', socket.handshake.auth.token);
+        const decodedToken = this.jwtService.verify(socket.handshake.auth.token, {
+            secret: process.env.JWT_SECRET_KEY,
+        });
+        if (!decodedToken) socket.disconnect(true); //true면 아예 끊고, false 면 해당 namespace만 끊는다.
+        this.chatroomService.addNewUser(socket, decodedToken.sub);
         console.log(socket.id, ': new connection.');
     }
 
     handleDisconnect(socket: Socket) {
-        this.chatroomService.leavePastRoom(socket, this.chatroomService.getUserName(socket));
+        this.chatroomService.leavePastRoom(socket, this.chatroomService.getUserId(socket));
         this.chatroomService.deleteUser(socket);
         console.log(socket.id, ': lost connection.');
     }
@@ -54,7 +62,6 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     // * Message ===========================================================
-    // //메시지가 전송되면 모든 유저에게 메시지 전송
     @SubscribeMessage('sendMessage')
     sendMessage(socket: Socket, payload: JSON): void {
         this.chatroomService.sendMessage(
@@ -78,41 +85,52 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         this.chatroomService.joinPublicChatRoom(socket, payload['roomName'], payload['password']);
     }
 
-    // //채팅방 나가기
-    // @SubscribeMessage('exitChatRoom')
-    // exitChatRoom(client: Socket, roomId: string) {
-    //     // if (this.rooms[+roomId].owner == client.id) {
-    //     //     //방 폭!파!
-    //     // }
-    //     // client.join(roomId);
-    // }
+    @SubscribeMessage('joinPrivateChatRoom')
+    joinPrivateChatRoom(socket: Socket, payload: JSON) {
+        this.chatroomService.joinPrivateChatRoom(socket, payload['roomName']);
+    }
 
-    // //채팅방 없애기(방장이 나감)
-    // @SubscribeMessage('deleteChatRoom')
-    // deleteChatRoom(client: Socket, roomId: string) {
-    //     // client.join(roomId);
-    // }
+    @SubscribeMessage('exitChatRoom')
+    exitChatRoom(socket: Socket, payload: JSON) {
+        this.exitChatRoom(socket, payload['roomName']);
+    }
+
 
     // * 채팅방 패스워드 관련 =================================================
-    // @SubscribeMessage('setRoomPassword')
-    // setRoomPassword() {}
+    @SubscribeMessage('setRoomPassword')
+    setRoomPassword(socket: Socket, payload: JSON) {
+        this.chatroomService.setRoomPassword(socket, payload['roomName'], payload['password']);
+    }
 
-    // @SubscribeMessage('unsetRoomPassword')
-    // unsetRoomPassword() {}
-
-    // @SubscribeMessage('changeRoomPassword')
-    // changeRoomPassword() {}
+    @SubscribeMessage('unsetRoomPassword')
+    unsetRoomPassword(socket: Socket, payload: JSON) {
+        this.chatroomService.unsetRoomPassword(socket, payload['roomName']);
+    }
 
     // * Owner & Operator =====================================================
-    // @SubscribeMessage('grantUser')
-    // grantUser() {}
+    @SubscribeMessage('grantUser')
+    async grantUser(socket: Socket, payload: JSON) {
+        await this.chatroomService.grantUser(socket, payload['roomName'], payload['roomStatus'], payload['targetName'])
+    }
 
-    // @SubscribeMessage('kickUser')
-    // kickUser() {}
+    @SubscribeMessage('ungrantUser')
+    async ungrantUser(socket: Socket, payload: JSON) {
+        await this.chatroomService.ungrantUser(
+            socket,
+            payload['roomName'],
+            payload['roomStatus'],
+            payload['targetName'],
+        );
+    }
+    
+    @SubscribeMessage('kickUser')
+    async kickUser(socket: Socket, payload: JSON) {
+        await this.chatroomService.kickUser(socket, payload['roomName'], payload['targetName']);
+    }
 
     @SubscribeMessage('muteUser')
-    muteUser(socket: Socket, payload: JSON) {
-        this.chatroomService.muteUser(
+    async muteUser(socket: Socket, payload: JSON) {
+        await this.chatroomService.muteUser(
             socket,
             payload['status'],
             payload['roomName'],
@@ -121,14 +139,30 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         );
     }
 
-    // @SubscribeMessage('banUser')
-    // banUser() {}
+    @SubscribeMessage('banUser')
+    async banUser(socket: Socket, payload: JSON) {
+        this.chatroomService.banUser(socket, payload['roomName'], payload['roomStatus'], payload['targetName']);
+    }
+    
+    @SubscribeMessage('unbanUser')
+    async unbanUser(socket: Socket, payload: JSON) {
+        this.chatroomService.unbanUser(socket, payload['roomName'], payload['roomStatus'], payload['targetName']);
+    }
 
     // * Block & Unblock =======================================================
 
     @SubscribeMessage('blockUser')
-    blockUser() {}
+    async blockUser(socket: Socket, payload: JSON) {
+        this.chatroomService.blockUser(socket, payload['targetName']);
+    }
 
     @SubscribeMessage('unBlockUser')
-    unBlockUser() {}
+    async unBlockUser(socket: Socket, payload: JSON) {
+        this.chatroomService.unBlockUser(socket, payload['targetName']);
+    }
+
+    @SubscribeMessage('inviteUser')
+    async inviteUser(socket: Socket, payload: JSON) {
+        await this.chatroomService.inviteUser(socket, payload['roomName'], payload['userName']);
+    }
 }

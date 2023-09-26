@@ -18,17 +18,17 @@ export class ChatRoomDto {
     requirePassword: boolean;
 
     @IsArray()
-    operatorList: Array<string> = [];
+    operatorList: Array<number> = [];
 
     @IsArray()
-    memberList: Array<string> = [];
+    memberList: Array<number> = [];
 
     @IsArray()
-    inviteList: Array<string> = [];
+    inviteList: Array<number> = [];
 
     @IsArray()
-    banList: Array<string> = [];
+    banList: Array<number> = [];
 
     @IsArray()
-    muteList: Array<string> = [];
+    muteList: Array<number> = [];
 }
