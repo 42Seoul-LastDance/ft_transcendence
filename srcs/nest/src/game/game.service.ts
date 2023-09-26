@@ -99,18 +99,16 @@ export class GameService {
             const playerQ = this.matchQueue[gameMode];
             this.matchQueue[gameMode] = undefined;
             this.makeGameRoom(playerQ, playerId, GameType.MATCH, gameMode);
-        } else {
-            console.log('waiting in queue:', playerId);
-            this.matchQueue[gameMode] = playerId;
-        }
+        } else this.matchQueue[gameMode] = playerId;
     }
 
     popQueue(playerId: string): void {
         if (
             this.matchQueue[this.playerList.get(playerId).gameMode] === playerId
-        )
+        ) {
             this.matchQueue[this.playerList.get(playerId).gameMode] = undefined;
-        else throw new BadRequestException('player was not in Queue');
+            this.resetPlayer(this.playerList.get(playerId));
+        } else throw new BadRequestException('player was not in Queue');
     }
 
     //* Friend Game ======================================
@@ -243,6 +241,7 @@ export class GameService {
     ) {
         //gameRoom 업데이트
         this.updateGameRoom(roomId, winnerSide, endGameStatus);
+        console.log('gameRoom: ', this.gameRoomList.get(roomId));
         //플레이어들에게 결과 전달
         const [player1Socket, player2Socket] =
             this.gameRoomList.get(roomId).socket;
@@ -253,8 +252,15 @@ export class GameService {
             reason: endGameStatus,
         };
         //TODO gameResult 잘 전달되는지 확인 필요! (JSON 관련)
+        console.log(
+            'send gameOver to players:',
+            gameResult.leftScore,
+            'vs',
+            gameResult.rightScore,
+        );
         player1Socket.emit('gameOver', gameResult);
         player2Socket.emit('gameOver', gameResult);
+        console.log('sent gameOver');
         //DB에 저장
         await this.createGameData(roomId);
         //gameRoom 처리
@@ -284,9 +290,8 @@ export class GameService {
     }
     //게임 종료시 gameRoom 업데이트
     updateGameRoom(roomId: number, side: number, endGameStatus: number) {
-        this.gameRoomList.get(roomId).endTime = DateTime.now()
-            .setZone(TIMEZONE)
-            .toJSDate();
+        this.gameRoomList.get(roomId).endTime =
+            DateTime.now().setZone(TIMEZONE);
         this.gameRoomList.get(roomId).winner = side;
         this.gameRoomList.get(roomId).loser = (side + 1) % 2;
         this.gameRoomList.get(roomId).endGameStatus = endGameStatus;
@@ -294,8 +299,8 @@ export class GameService {
             endGameStatus === GameEndStatus.CHEATING ||
             endGameStatus === GameEndStatus.DISCONNECT
         ) {
-            this.gameRoomList.get(roomId).winnerScore = MAXSCORE;
-            this.gameRoomList.get(roomId).loserScore = 0;
+            this.gameRoomList.get(roomId).score[side] = MAXSCORE;
+            this.gameRoomList.get(roomId).score[(side + 1) % 2] = 0;
         }
     }
     //DB에 게임 결과 저장
@@ -381,9 +386,8 @@ export class GameService {
     //game 시작 시 => gameRoom 업데이트
     updateGame(gameRoomId: number) {
         this.gameRoomList.get(gameRoomId).gameStatus = GameStatus.GAME;
-        this.gameRoomList.get(gameRoomId).startTime = DateTime.now()
-            .setZone(TIMEZONE)
-            .toJSDate();
+        this.gameRoomList.get(gameRoomId).startTime =
+            DateTime.now().setZone(TIMEZONE);
         this.gameRoomList.get(gameRoomId).score = [0, 0];
         //TESTCODE: startTime
         // console.log('startTime:', this.gameRoomList.get(gameRoomId).startTime);

@@ -2,13 +2,11 @@
 
 import React, { Fragment, useState, useCallback, useEffect } from 'react';
 import { Unity, useUnityContext } from 'react-unity-webgl';
-import { getGameSocket, disconnectGameSocket } from '../SSock';
 import { Socket } from 'socket.io-client';
 import { useAppSelector, store } from '../Redux/store';
 import { Provider, useDispatch } from 'react-redux';
-import { setIsChanged } from '../Redux/socketSlice';
 import { setIsMatched } from '../Redux/matchSlice';
-import { useSocket } from '../SocketContext';
+import { useGameSocket } from '../Contexts/GameSocketContext';
 
 interface MatchingProps {
     socket: Socket | undefined;
@@ -32,20 +30,19 @@ const Game = () => {
     const [isReady, setIsReady] = useState<boolean>(false);
     const dispatch = useDispatch();
     const isMathched = useAppSelector((state) => state.match.isMatched);
-    const isChanged = useAppSelector((state) => state.socket.isChanged);
     const isCustomGame = useAppSelector((state) => state.match.isCustom);
 
-    useEffect(() => {
-        return () => {
-			dispatch(setIsMatched({ isMatched: true }));
-        };
-    }, []);
-    const socket = useSocket();
+    // useEffect(() => {
+    //     return () => {
+    //         dispatch(setIsMatched({ isMatched: true }));
+    //     };
+    // }, []);
+    const socket = useGameSocket();
 
     // react to unity
     if (!socket.hasListeners('startGame')) {
         socket.on('startGame', (json: JSON) => {
-            console.log('! startGame Event Detected');
+            console.log('! startGame Event Detected ', json);
             sendMessage('GameManager', 'StartGame', JSON.stringify(json));
         });
     }

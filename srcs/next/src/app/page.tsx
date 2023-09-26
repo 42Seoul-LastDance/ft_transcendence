@@ -1,7 +1,6 @@
 'use client';
 import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
-import { getDmSocket, getGameSocket, disconnectGameSocket } from './SSock';
 import { useEffect } from 'react';
 import ChatRoomList from './Chat/ChatButton';
 import Link from 'next/link';

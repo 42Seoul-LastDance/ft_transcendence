@@ -38,7 +38,12 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage('pushQueue')
     async pushQueue(client: Socket, clientInfo: JSON) {
         //TESTCODE
-        console.log('pushQueue:', client.id);
+        console.log(
+            'pushQueue:',
+            client.id,
+            +clientInfo['gameMode'],
+            clientInfo['username'],
+        );
         await this.gameService.pushQueue(
             client.id,
             +clientInfo['gameMode'],

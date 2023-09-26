@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 // Socket.IO 소켓 초기화
-var socket: Socket = io('http://10.14.6.6:3000/Game', {
+var dmSocket: Socket = io('http://10.14.6.6:3000/DM', {
     withCredentials: false,
 });
 
@@ -10,27 +10,26 @@ var socket: Socket = io('http://10.14.6.6:3000/Game', {
 const SocketContext = createContext<Socket | undefined>(undefined);
 
 // 커스텀 훅 정의
-export function useSocket() {
+export function useDmSocket() {
     const socket = useContext(SocketContext);
     if (!socket) {
-        throw new Error("useSocket must be used within a SocketProvider");
+        throw new Error('useSocket must be used within a SocketProvider');
     }
     return socket;
 }
 
 // SocketProvider 컴포넌트 정의
-export function SocketProvider({ children }: { children: React.ReactNode }) {
+export function DmSocketProvider({ children }: { children: React.ReactNode }) {
     // 소켓 초기화와 컨텍스트 제공을 한꺼번에 수행
     useEffect(() => {
-		socket.connect();
+        dmSocket.connect();
         return () => {
-            socket.disconnect();
-			console.log('socket disconnected :', socket.connected)
+            dmSocket.disconnect();
         };
     }, []);
 
     return (
-        <SocketContext.Provider value={socket}>
+        <SocketContext.Provider value={dmSocket}>
             {children}
         </SocketContext.Provider>
     );

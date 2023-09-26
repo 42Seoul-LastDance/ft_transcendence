@@ -1,14 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { roomSlice } from './mySlice';
 import { matchSlice } from './matchSlice';
-import { socketSlice } from './socketSlice';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 
 export const store = configureStore({
     reducer: {
         room: roomSlice.reducer,
         match: matchSlice.reducer,
-        socket: socketSlice.reducer,
     },
 });
 

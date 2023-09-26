@@ -24,8 +24,6 @@ export interface GameRoom {
     endTime?: Date | undefined;
     winner?: number | undefined;
     loser?: number | undefined;
-    winnerScore?: number | undefined;
-    loserScore?: number | undefined;
     endGameStatus?: number | undefined;
 }
 

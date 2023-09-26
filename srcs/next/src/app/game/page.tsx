@@ -4,13 +4,11 @@ import { useState, useCallback, useEffect } from 'react';
 import { Provider, useDispatch } from 'react-redux';
 import { Dispatch } from 'redux';
 import { store, useAppSelector } from '../Redux/store';
-import { getGameSocket, disconnectGameSocket } from '../SSock';
 import { Socket } from 'socket.io-client';
-import { setIsChanged } from '../Redux/socketSlice';
 import { setSide } from '../Redux/matchSlice';
 import { Unity, useUnityContext } from 'react-unity-webgl';
 import Matching from './Matching';
-import {SocketProvider} from '../SocketContext';
+import { GameSocketProvider } from '../Contexts/GameSocketContext';
 import Game from './Game';
 
 const GameHomeContent = () => {
@@ -40,9 +38,10 @@ const GameHome = () => {
     return (
         <>
             <Provider store={store}>
-				<SocketProvider>
-	                <GameHomeContent />
-				</SocketProvider>
+                <GameSocketProvider>
+                    <GameHomeContent />
+                    {/* 이러면 이 안에서 소켓 쓸 수 있음 리덕스마냥 */}
+                </GameSocketProvider>
             </Provider>
         </>
     );
