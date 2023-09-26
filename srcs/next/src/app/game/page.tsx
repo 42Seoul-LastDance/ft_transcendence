@@ -1,18 +1,13 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { Provider, useDispatch, useSelector } from 'react-redux';
-import { Dispatch } from 'redux';
-import { store } from '../Redux/store';
-import { Socket } from 'socket.io-client';
-import { setSide, MatchState } from '../Redux/matchSlice';
-import { Unity, useUnityContext } from 'react-unity-webgl';
+import { Provider, useSelector } from 'react-redux';
+import { store, RootState } from '../Redux/store';
 import Matching from './Matching';
 import { GameSocketProvider } from '../Contexts/GameSocketContext';
 import Game from './Game';
 
 const GameHomeContent = () => {
-    const isMatched = useSelector((state: MatchState) => state.isMatched);
+    const isMatched = useSelector((state: RootState) => state.match.isMatched);
 
     return <>{!isMatched ? <Matching /> : <Game />}</>;
 };

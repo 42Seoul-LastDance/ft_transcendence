@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Unity, useUnityContext } from 'react-unity-webgl';
-import { Socket } from 'socket.io-client';
-import { store } from '../Redux/store';
+import { RootState } from '../Redux/store';
 import { useDispatch, useSelector } from 'react-redux';
-import { setIsMatched, MatchState } from '../Redux/matchSlice';
+import { setIsMatched } from '../Redux/matchSlice';
 import { useGameSocket } from '../Contexts/GameSocketContext';
 
 const Game = () => {
@@ -24,8 +23,8 @@ const Game = () => {
     const [gameOver, setGameOver] = useState<boolean>(false);
     const [isReady, setIsReady] = useState<boolean>(false);
     const dispatch = useDispatch();
-    const isMatched = useSelector((state: MatchState) => state.isMatched);
-    const isCustomGame = useSelector((state: MatchState) => state.isCustom);
+    const isMatched = useSelector((state: RootState) => state.match.isMatched);
+    const isCustomGame = useSelector((state: RootState) => state.match.isCustom);
 
     // useEffect(() => {
     //     return () => {
@@ -79,14 +78,15 @@ const Game = () => {
     //     alert('Unity Exception : ' + reason);
     //     return reason;
     // }, []);
-    const handleUnityException = (reason: string) => {};
 
-    useEffect(() => {
-        addEventListener('UnityException', handleUnityException);
-        return () => {
-            removeEventListener('UnityException', handleUnityException);
-        };
-    }, [addEventListener, removeEventListener, handleUnityException]);
+    // const handleUnityException = (reason: string) => {};
+
+    // useEffect(() => {
+    //     addEventListener('UnityException', handleUnityException);
+    //     return () => {
+    //         removeEventListener('UnityException', handleUnityException);
+    //     };
+    // }, [addEventListener, removeEventListener, handleUnityException]);
 
     return (
         <>

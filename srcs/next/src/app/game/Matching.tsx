@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { Socket } from 'socket.io-client';
-import { Provider, useDispatch, useSelector } from 'react-redux';
-import { store } from '../Redux/store';
-import { setIsMatched, setSide, MatchState } from '../Redux/matchSlice';
+import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../Redux/store';
+import { setIsMatched } from '../Redux/matchSlice';
 import { useGameSocket } from '../Contexts/GameSocketContext';
 
 enum GameMode {
@@ -16,7 +14,8 @@ enum GameMode {
 
 const Matching = () => {
     const [isMatching, setIsMatching] = useState<boolean>(false);
-    const isCustomGame = useSelector((state: MatchState) => state.isCustom);
+    const isCustomGame = useSelector((state: RootState) => state.match.isCustom);
+	const isMatched = useSelector((state: RootState) => state.match.isCustom);
     const dispatch = useDispatch();
 
     const socket = useGameSocket();
