@@ -17,9 +17,10 @@ export interface GameRoom {
     //when game starts
     startTime?: Date | undefined;
     score?: [number | undefined, number | undefined];
-    ballHitX?: number | undefined;
-    ballHitY?: number | undefined;
-    ballHitZ?: number | undefined;
+    posX?: number | undefined;
+    posZ?: number | undefined;
+    dirX?: number | undefined;
+    dirZ?: number | undefined;
     //when ends
     endTime?: Date | undefined;
     winner?: number | undefined;
@@ -29,11 +30,10 @@ export interface GameRoom {
 
 export interface Player {
     socket: Socket;
-    username?: string | undefined;
     userId?: number | undefined;
     gameType?: number | undefined; //enum
     gameMode?: number | undefined; //enum
     side?: number | undefined; //enum
     roomId?: number | undefined;
-    friend?: string | undefined;
+    friendId?: number | undefined;
 }

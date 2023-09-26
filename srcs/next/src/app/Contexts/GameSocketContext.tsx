@@ -2,14 +2,16 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 // Socket.IO 소켓 초기화
-var gameSocket: Socket | undefined = undefined;
+var gameSocket: Socket = io('http://10.14.6.6:3000/Game', {
+    withCredentials: false,
+});
 
 // SocketContext 생성
-const SocketContext = createContext<Socket | undefined>(undefined);
+const GameSocketContext = createContext<Socket | undefined>(undefined);
 
 // 커스텀 훅 정의
 export function useGameSocket() {
-    const socket = useContext(SocketContext);
+    const socket = useContext(GameSocketContext);
     if (!socket) {
         throw new Error('useSocket must be used within a SocketProvider');
     }
@@ -24,19 +26,15 @@ export function GameSocketProvider({
 }) {
     // 소켓 초기화와 컨텍스트 제공을 한꺼번에 수행
     useEffect(() => {
-        if (gameSocket == undefined)
-            gameSocket = io('http://10.14.6.6:3000/Game', {
-                withCredentials: false,
-            });
-        else gameSocket.connect();
+        gameSocket.connect();
         return () => {
-            if (gameSocket != undefined) gameSocket.disconnect();
+            gameSocket.disconnect();
         };
     }, []);
 
     return (
-        <SocketContext.Provider value={gameSocket}>
+        <GameSocketContext.Provider value={gameSocket}>
             {children}
-        </SocketContext.Provider>
+        </GameSocketContext.Provider>
     );
 }

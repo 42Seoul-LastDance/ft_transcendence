@@ -18,5 +18,6 @@ npm install --prefix srcs next
 
 echo "----- Successfully installed -----"
 
+# tail -f
 npm --prefix srcs run build
 npm --prefix srcs run start

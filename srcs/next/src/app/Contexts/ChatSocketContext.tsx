@@ -7,11 +7,11 @@ var chatSocket: Socket = io('http://10.14.6.6:3000/RoomChat', {
 });
 
 // SocketContext 생성
-const SocketContext = createContext<Socket | undefined>(undefined);
+const ChatSocketContext = createContext<Socket | undefined>(undefined);
 
 // 커스텀 훅 정의
 export function useChatSocket() {
-    const socket = useContext(SocketContext);
+    const socket = useContext(ChatSocketContext);
     if (!socket) {
         throw new Error('useSocket must be used within a SocketProvider');
     }
@@ -33,8 +33,8 @@ export function ChatSocketProvider({
     }, []);
 
     return (
-        <SocketContext.Provider value={chatSocket}>
+        <ChatSocketContext.Provider value={chatSocket}>
             {children}
-        </SocketContext.Provider>
+        </ChatSocketContext.Provider>
     );
 }

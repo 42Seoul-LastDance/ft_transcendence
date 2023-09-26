@@ -1,6 +1,6 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
 
-interface MatchState {
+export interface MatchState {
     isCustom: boolean;
     isMatched: boolean;
     side: string;

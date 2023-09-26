@@ -7,11 +7,11 @@ var dmSocket: Socket = io('http://10.14.6.6:3000/DM', {
 });
 
 // SocketContext 생성
-const SocketContext = createContext<Socket | undefined>(undefined);
+const DmSocketContext = createContext<Socket | undefined>(undefined);
 
 // 커스텀 훅 정의
 export function useDmSocket() {
-    const socket = useContext(SocketContext);
+    const socket = useContext(DmSocketContext);
     if (!socket) {
         throw new Error('useSocket must be used within a SocketProvider');
     }
@@ -29,8 +29,8 @@ export function DmSocketProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <SocketContext.Provider value={dmSocket}>
+        <DmSocketContext.Provider value={dmSocket}>
             {children}
-        </SocketContext.Provider>
+        </DmSocketContext.Provider>
     );
 }

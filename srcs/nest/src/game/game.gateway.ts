@@ -36,18 +36,13 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     //* Match Game ======================================
     //매칭게임요청 -> 큐 등록 or waitRoom 등록
     @SubscribeMessage('pushQueue')
-    async pushQueue(client: Socket, clientInfo: JSON) {
+    pushQueue(client: Socket, clientInfo: JSON) {
         //TESTCODE
-        console.log(
-            'pushQueue:',
+        console.log('pushQueue:', client.id);
+        this.gameService.pushQueue(
             client.id,
             +clientInfo['gameMode'],
-            clientInfo['username'],
-        );
-        await this.gameService.pushQueue(
-            client.id,
-            +clientInfo['gameMode'],
-            clientInfo['username'],
+            +clientInfo['userId'],
         );
     }
 
@@ -61,21 +56,21 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     //* Friend Game ======================================
     @SubscribeMessage('inviteGame')
-    async inviteGame(client: Socket, gameInfo: JSON) {
-        await this.gameService.inviteGame(
+    inviteGame(client: Socket, gameInfo: JSON) {
+        this.gameService.inviteGame(
             client.id,
             +gameInfo['gameMode'],
-            gameInfo['username'],
-            gameInfo['friendname'],
+            +gameInfo['userId'],
+            +gameInfo['friendId'],
         );
     }
 
     @SubscribeMessage('agreeInvite')
-    async agreeInvite(client: Socket, gameInfo: JSON) {
-        await this.gameService.agreeInvite(
+    agreeInvite(client: Socket, gameInfo: JSON) {
+        this.gameService.agreeInvite(
             client.id,
-            gameInfo['username'],
-            gameInfo['friendname'],
+            +gameInfo['userId'],
+            +gameInfo['friendId'],
         );
     }
 
@@ -83,8 +78,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     denyInvite(client: Socket, gameInfo: JSON) {
         this.gameService.denyInvite(
             client.id,
-            gameInfo['username'],
-            gameInfo['friendname'],
+            +gameInfo['userId'],
+            +gameInfo['friendId'],
         );
     }
 
@@ -106,14 +101,23 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.gameService.movePaddle(client.id, +gameInfo['PaddlePositionZ']);
     }
 
-    //(only from left) 득점 신고
-    @SubscribeMessage('scorePoint')
-    async scorePoint(client: Socket, gameInfo: JSON) {
+    //validCheck
+    @SubscribeMessage('validCheck')
+    async validCheck(client: Socket, gameInfo: JSON) {
         //TESTCODE
-        console.log('scorePoint:', client.id);
-        await this.gameService.scorePoint(client.id, +gameInfo['side']);
+        console.log('validCheck:', client.id);
+        await this.gameService.validCheck(client.id, gameInfo);
     }
 
+    //ballHit
+    @SubscribeMessage('ballHit')
+    async ballHit(client: Socket, gameInfo: JSON) {
+        //TESTCODE
+        console.log('validCheck:', client.id);
+        await this.gameService.ballHit(client.id, gameInfo);
+    }
+
+    //emoji send
     @SubscribeMessage('sendEmoji')
     sendEmoji(client: Socket, emoji: string) {
         //TODO emoji 숫자로 오는지 확인
