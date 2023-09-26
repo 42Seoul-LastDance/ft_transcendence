@@ -1,61 +1,112 @@
 'use client';
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Box,
+  Container,
+  Card,
+  CardContent,
   TextField,
   Button,
   List,
   ListItem,
   ListItemText,
+  ListItemSecondaryAction,
 } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
 
-const ChatRoom: React.FC = () => {
-  const [messages, setMessages] = useState<string[]>([]);
-  const [newMessage, setNewMessage] = useState<string>('');
+interface ChatMessage {
+  username: string;
+  message: string;
+}
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNewMessage(event.target.value);
+function Chatting() {
+  const [username, setUsername] = useState('');
+  const [message, setMessage] = useState('');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); // ChatMessage[] 타입 명시
+
+  useEffect(() => {
+    setUsername('jun');
+  }, []);
+
+  // 메세지 보낼 때 동작
+  const handleSendMessage = () => {
+    if (message) {
+      const newMsg: ChatMessage = {
+        username,
+        message,
+      };
+      setChatMessages([...chatMessages, newMsg]);
+      setMessage('');
+    }
   };
 
-  const handleSendMessage = () => {
-    if (newMessage) {
-      // 새 메시지를 배열에 추가
-      setMessages([...messages, newMessage]);
-      // 입력 상자 비우기
-      setNewMessage('');
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleSendMessage();
     }
   };
 
   return (
-    <Box>
-      <List>
-        {messages.map((message, index) => (
-          <ListItem key={index}>
-            <ListItemText primary={message} />
-          </ListItem>
-        ))}
-      </List>
-      <Box display="flex" alignItems="center">
-        <TextField
-          label="메시지 입력"
-          variant="outlined"
-          fullWidth
-          value={newMessage}
-          onChange={handleInputChange}
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          endIcon={<SendIcon />}
-          onClick={handleSendMessage}
+    <Container maxWidth="sm">
+      <Card
+        className="mt-4"
+        style={{ height: '600px', width: '35rem', margin: 'auto' }}
+      >
+        <CardContent
+          style={{ overflowY: 'auto', height: 'calc(100% - 100px)' }}
         >
-          보내기
-        </Button>
-      </Box>
-    </Box>
+          <List>
+            {chatMessages.map((msg, index) => (
+              <ListItem key={index}>
+                <ListItemText
+                  primary={
+                    <div
+                      style={{
+                        textAlign: username === msg.username ? 'right' : 'left',
+                      }}
+                    >
+                      {msg.username}
+                    </div>
+                  }
+                  secondary={msg.message}
+                  primaryTypographyProps={{ variant: 'subtitle1' }}
+                  secondaryTypographyProps={{ variant: 'body1' }}
+                />
+                <ListItemSecondaryAction>
+                  <div
+                    style={{
+                      textAlign: username === msg.username ? 'right' : 'left',
+                    }}
+                  >
+                    {msg.username === username ? 'You' : ''}
+                  </div>
+                </ListItemSecondaryAction>
+              </ListItem>
+            ))}
+          </List>
+        </CardContent>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '8px' }}>
+          <TextField
+            fullWidth
+            id="msgText"
+            variant="outlined"
+            label="Message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <Button
+            id="sendBtn"
+            variant="contained"
+            color="primary"
+            size="large"
+            onClick={handleSendMessage}
+            style={{ marginLeft: '8px' }}
+          >
+            Send
+          </Button>
+        </div>
+      </Card>
+    </Container>
   );
-};
+}
 
-export default ChatRoom;
+export default Chatting;

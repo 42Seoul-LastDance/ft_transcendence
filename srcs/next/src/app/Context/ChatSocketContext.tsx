@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 // Socket.IO 소켓 초기화
-var chatSocket: Socket = io('http://10.14.6.6:3000/RoomChat', {
+var chatSocket: Socket = io('http://172.18.0.1:3000/RoomChat', {
   withCredentials: false,
 });
 
