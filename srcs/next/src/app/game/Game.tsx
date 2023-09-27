@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Unity, useUnityContext } from 'react-unity-webgl';
 import { RootState } from '../Redux/store';
 import { useDispatch, useSelector } from 'react-redux';
 import { setIsMatched } from '../Redux/matchSlice';
 import { useGameSocket } from '../Contexts/GameSocketContext';
+import { ReactUnityEventParameter } from "react-unity-webgl/distribution/types/react-unity-event-parameters";
+import { deflateSync } from 'zlib';
 
 const Game = () => {
     const {
@@ -62,32 +64,28 @@ const Game = () => {
         });
     }
 
-    // unity to react
-    // const handleGameOver = useCallback(() => {
-    //     socket.emit('GameOver', 'hi');
-    // }, [setGameOver]);
-
-    // useEffect(() => {
-    //     addEventListener('GameOver', handleGameOver);
-    //     return () => {
-    //         removeEventListener('GameOver', handleGameOver);
-    //     };
-    // }, [addEventListener, removeEventListener, handleGameOver]);
-
-    // const handleUnityException = useCallback(() => {
-    //     alert('Unity Exception : ' + reason);
-    //     return reason;
-    // }, []);
-
-    // const handleUnityException = (reason: string) => {};
-
-    // useEffect(() => {
-    //     addEventListener('UnityException', handleUnityException);
-    //     return () => {
-    //         removeEventListener('UnityException', handleUnityException);
-    //     };
-    // }, [addEventListener, removeEventListener, handleUnityException]);
-
+    const handleUnityException = useCallback((data: ReactUnityEventParameter) => {
+        alert('Unity Exception : ' + data);
+    }, []);
+	const handleValidCheck = useCallback((data: ReactUnityEventParameter) => {
+        console.log('ValidCheck : ' + data);
+    }, []);
+	// to string 형변환
+	const handleMovePaddle = useCallback((data: ReactUnityEventParameter) => {
+        socket.emit('movePaddle', JSON.parse(data))
+    }, []);
+	
+	// unity to react
+    useEffect(() => {
+        addEventListener('UnityException', handleUnityException);
+		addEventListener('ValidCheck', handleValidCheck);
+        return () => {
+            removeEventListener('UnityException', handleUnityException);
+			removeEventListener('ValidCheck', handleValidCheck);
+			removeEventListener('MovePaddle', handleValidCheck);
+        };
+    }, [addEventListener, removeEventListener, handleUnityException, handleValidCheck]);
+	
     return (
         <>
             {gameOver === true && <h2>{'Game Over!'}</h2>}
