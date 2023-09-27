@@ -9,8 +9,14 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
+  AppBar,
+  Box,
+  Toolbar,
+  IconButton,
+  Drawer,
 } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings'; // 설정 아이콘 추가
+import ChatSetting from './chatSetting';
 
 interface ChatMessage {
   username: string;
@@ -21,6 +27,7 @@ function Chatting() {
   const [username, setUsername] = useState('');
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); // ChatMessage[] 타입 명시
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false); // 설정 아이콘 클릭 시 설정창 표시 여부
 
   useEffect(() => {
     setUsername('jun');
@@ -44,14 +51,42 @@ function Chatting() {
     }
   };
 
+  const toggleSettings = () => {
+    setIsSettingsOpen(!isSettingsOpen);
+  };
+
   return (
-    <Container maxWidth="sm">
+    <Container
+      maxWidth="sm"
+      style={{
+        display: 'flex',
+        flexDirection: 'column', // 컨테이너 내의 요소를 위에서 아래로 배치하도록 수정
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+      }}
+    >
+      {/* 설정 아이콘 버튼 */}
+      <IconButton
+        color="primary"
+        aria-label="settings"
+        sx={{ position: 'absolute', top: '16px', right: '16px' }}
+        onClick={toggleSettings} // 설정 아이콘 버튼 클릭 시 설정창 토글
+      >
+        <SettingsIcon />
+      </IconButton>
+
       <Card
         className="mt-4"
-        style={{ height: '600px', width: '35rem', margin: 'auto' }}
+        style={{
+          height: '700px',
+          width: '35rem',
+          margin: 'auto',
+          alignItems: 'center',
+        }}
       >
         <CardContent
-          style={{ overflowY: 'auto', height: 'calc(100% - 100px)' }}
+          style={{ overflowY: 'auto', height: 'calc(100% - 105px)' }}
         >
           <List>
             {chatMessages.map((msg, index) => (
@@ -60,7 +95,7 @@ function Chatting() {
                   primary={
                     <div
                       style={{
-                        textAlign: username === msg.username ? 'right' : 'left',
+                        textAlign: username === msg.username ? 'left' : 'left',
                       }}
                     >
                       {msg.username}
@@ -70,20 +105,12 @@ function Chatting() {
                   primaryTypographyProps={{ variant: 'subtitle1' }}
                   secondaryTypographyProps={{ variant: 'body1' }}
                 />
-                <ListItemSecondaryAction>
-                  <div
-                    style={{
-                      textAlign: username === msg.username ? 'right' : 'left',
-                    }}
-                  >
-                    {msg.username === username ? 'You' : ''}
-                  </div>
-                </ListItemSecondaryAction>
               </ListItem>
             ))}
           </List>
         </CardContent>
         <div style={{ display: 'flex', alignItems: 'center', padding: '8px' }}>
+          {/* 채팅 입력 필드와 전송 버튼 */}
           <TextField
             fullWidth
             id="msgText"
@@ -105,6 +132,12 @@ function Chatting() {
           </Button>
         </div>
       </Card>
+
+      {/* 오른쪽 설정창 */}
+      <Drawer anchor="right" open={isSettingsOpen} onClose={toggleSettings}>
+        {/* 설정창 내용 */}
+        <ChatSetting />
+      </Drawer>
     </Container>
   );
 }

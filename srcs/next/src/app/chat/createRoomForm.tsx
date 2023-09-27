@@ -6,12 +6,18 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
 import { useDispatch } from 'react-redux';
+import { Room, RoomStatus, push } from '../redux/roomSlice';
+import {
+  ChatSocketProvider,
+  useChatSocket,
+} from '../Context/ChatSocketContext';
 
 export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const dispatch = useDispatch();
-  const [roomName, setRoomName] = useState<string>('');
+  const chatSocket = useChatSocket();
+  const [roomname, setRoomName] = useState<string>('');
   const [isPrivate, setIsPrivate] = useState<boolean>(false);
-  const [isLocked, setIsLocked] = useState<boolean>(false);
+  const [requirePassword, setIsLocked] = useState<boolean>(false);
   const [password, setPassword] = useState<string>('');
   const [showPasswordInput, setShowPasswordInput] = useState<boolean>(false);
 
@@ -29,7 +35,7 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   };
 
   const handlePasswordToggle = () => {
-    setIsLocked(!isLocked);
+    setIsLocked(!requirePassword);
     setShowPasswordInput(!showPasswordInput);
   };
 
@@ -38,21 +44,21 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   };
 
   const addNewRoom = () => {
-    const newRoomInfo = {
-      roomname: roomName,
-      password: isLocked ? password : null,
-      isLocked: isLocked,
-      status: isPrivate ? 'PRIVATE' : 'PUBLIC',
+    const newRoomInfo: Room = {
+      roomname: roomname,
+      username: 'hihi',
+      password: password ? password : null,
+      requirePassword: requirePassword,
+      status: isPrivate ? RoomStatus.PRIVATE : RoomStatus.PUBLIC,
     };
 
-    try {
-      console.log(newRoomInfo);
-      // chatSocket.emit('createChatRoom', newRoomInfo);
-      // dispatch(push(newRoomInfo));
-      onClose();
-    } catch (e) {
-      console.log('room create failed: ', e);
-    }
+    chatSocket.emit('createChatRoom', newRoomInfo);
+    chatSocket.on('createChatRoom', (data) => {
+      console.log(data);
+    });
+
+    dispatch(push(newRoomInfo));
+    onClose();
   };
 
   return (
@@ -60,7 +66,7 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
       <TextField
         label="방 이름"
         variant="outlined"
-        value={roomName}
+        value={roomname}
         onChange={handleRoomNameChange}
         fullWidth
         margin="normal"
@@ -81,7 +87,7 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
       </ToggleButtonGroup>
       <ToggleButton
         value="check"
-        selected={isLocked}
+        selected={requirePassword}
         onClick={handlePasswordToggle}
         aria-label="비밀번호 설정"
         color="primary"
