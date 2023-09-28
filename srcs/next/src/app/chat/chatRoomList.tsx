@@ -1,16 +1,13 @@
 'use client';
-
-import * as React from 'react';
-import { useSelector } from 'react-redux';
-import { RootState } from '../redux/store';
-import { Room } from '../redux/roomSlice';
+import React, { useEffect, useState } from 'react';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import CreateRoomButton from './createRoomButton';
 import { useRouter } from 'next/navigation';
 import { useChatSocket } from '../Context/ChatSocketContext';
-import { RoomStatus } from '../redux/roomSlice';
+import { ChatRoomDto } from '../DTO/ChatRoom.dto';
+import { RoomStatus } from '../DTO/RoomInfo.dto';
 
 const style = {
   width: '100%',
@@ -22,38 +19,39 @@ const ChatRoomList: React.FC = () => {
   const chatSocket = useChatSocket();
   const router = useRouter();
 
+  const [chatRoomList, setChatRoomList] = useState<ChatRoomDto>({});
+
   chatSocket.emit('getChatRoomList', {
     roomStatus: RoomStatus.PUBLIC,
   });
 
-  chatSocket.on('getChatRoomList', (data) => {
-    console.log(data);
+  chatSocket.on('getChatRoomList', (data: ChatRoomDto) => {
+    setChatRoomList(data);
+    console.log('room list: ', data);
   });
 
-  const joinRoom = (roomname: string) => {
+  const joinRoom = (roomName: string) => {
     router.push('/chatRoom');
   };
 
-  // socket.on('chatRooms', (data) => {
-  //   // 서버에서 chatRooms 이벤트를 통해 DTO를 받음
-  //   console.log('서버로부터 DTO 수신:', data);
-
-  // 룸 목록 슬라이스에서 꺼내오기
-  const rooms: Room[] = useSelector((state: RootState) => state.room.roomArray);
+  //   // test code for roomSlice
+  //   const rooms: RoomInfoDto[] = useSelector(
+  //   (state: RootState) => state.room.roomArray,
+  // );
 
   return (
     <>
       <div>
         <List sx={style} component="nav" aria-label="mailbox folders">
-          {rooms.map((room) => (
+          {Object.keys(chatRoomList).map((roomName) => (
             <ListItem
-              key={room.username}
+              key={roomName}
               divider
               onClick={() => {
-                joinRoom(room.roomname);
+                joinRoom(roomName);
               }}
             >
-              <ListItemText primary={room.roomname} />
+              <ListItemText primary={roomName} />
             </ListItem>
           ))}
         </List>

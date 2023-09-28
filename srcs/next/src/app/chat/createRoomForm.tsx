@@ -6,23 +6,21 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
 import { useDispatch } from 'react-redux';
-import { Room, RoomStatus, push } from '../redux/roomSlice';
-import {
-  ChatSocketProvider,
-  useChatSocket,
-} from '../Context/ChatSocketContext';
+import { useChatSocket } from '../Context/ChatSocketContext';
+import { RoomInfoDto, RoomStatus } from '../DTO/RoomInfo.dto';
+import { push } from '../redux/roomSlice';
 
 export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const dispatch = useDispatch();
   const chatSocket = useChatSocket();
-  const [roomname, setRoomName] = useState<string>('');
+  const [roomname, setRoomname] = useState<string>('');
   const [isPrivate, setIsPrivate] = useState<boolean>(false);
   const [requirePassword, setIsLocked] = useState<boolean>(false);
   const [password, setPassword] = useState<string>('');
   const [showPasswordInput, setShowPasswordInput] = useState<boolean>(false);
 
   const handleRoomNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRoomName(event.target.value);
+    setRoomname(event.target.value);
   };
 
   const handlePrivacyChange = (
@@ -44,9 +42,9 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   };
 
   const addNewRoom = () => {
-    const newRoomInfo: Room = {
+    const newRoomInfo: RoomInfoDto = {
       roomname: roomname,
-      username: 'hihi',
+      username: 'jaejun',
       password: password ? password : null,
       requirePassword: requirePassword,
       status: isPrivate ? RoomStatus.PRIVATE : RoomStatus.PUBLIC,

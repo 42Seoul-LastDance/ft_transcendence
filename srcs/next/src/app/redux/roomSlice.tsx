@@ -1,19 +1,8 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
-
-export enum RoomStatus {
-  PRIVATE = 'PRIVATE',
-  PUBLIC = 'PUBLIC',
-}
-export interface Room {
-  roomname: string;
-  username: string;
-  password: string | null;
-  requirePassword: boolean;
-  status: RoomStatus;
-}
+import { RoomInfoDto } from '../DTO/RoomInfo.dto';
 
 export interface RoomArray {
-  roomArray: Room[];
+  roomArray: RoomInfoDto[];
 }
 
 const initialState: RoomArray = {
@@ -24,16 +13,7 @@ const roomSlice = createSlice({
   name: 'room',
   initialState,
   reducers: {
-    push: (
-      state,
-      action: PayloadAction<{
-        username: string;
-        roomname: string;
-        password: string | null;
-        requirePassword: boolean;
-        status: RoomStatus;
-      }>,
-    ) => {
+    push: (state, action: PayloadAction<RoomInfoDto>) => {
       state.roomArray.push({
         username: action.payload.username,
         roomname: action.payload.roomname,
