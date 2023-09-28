@@ -28,18 +28,28 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     server: Server;
 
     // * 커넥션 핸들링 ========================================================
-    handleConnection(socket: Socket) {
-        console.log('token: ', socket.handshake.auth.token);
-        const decodedToken = this.jwtService.verify(socket.handshake.auth.token, {
-            secret: process.env.JWT_SECRET_KEY,
-        });
-        if (!decodedToken) socket.disconnect(true); //true면 아예 끊고, false 면 해당 namespace만 끊는다.
-        this.chatroomService.addNewUser(socket, decodedToken.sub);
+    async handleConnection(socket: Socket) {
+        console.log('token: ', socket.handshake.headers.token); // * 테스트용
+        // console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
+        const tokenString : string = socket.handshake.headers.token as string;
+
+        let decodedToken;
+        try {
+            decodedToken = this.jwtService.verify(tokenString, {
+                secret: process.env.JWT_SECRET_KEY,
+            });
+        } catch (error) {
+            socket.disconnect(true);
+            return;
+        }
+        await this.chatroomService.addNewUser(socket, decodedToken.sub);
         console.log(socket.id, ': new connection.');
     }
 
     handleDisconnect(socket: Socket) {
-        this.chatroomService.leavePastRoom(socket, this.chatroomService.getUserId(socket));
+        const userId = this.chatroomService.getUserId(socket);
+        console.log('disconnect userId : ', userId);
+        this.chatroomService.leavePastRoom(socket, userId);
         this.chatroomService.deleteUser(socket);
         console.log(socket.id, ': lost connection.');
     }

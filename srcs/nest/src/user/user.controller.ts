@@ -137,14 +137,15 @@ export class UserController {
     @Get('/username/:name')
     // @UseGuards(JwtAuthGuard) // TODO : enroll 과 accesstoken 분리 필요 -> 중복체크는 가드 없이 그냥 쓰는걸로 하자~
     async checkUniqueName(@Param('name') name: string, @Res() res: Response) {
+        let user;
         try {
             console.log(`checking name : ${name}`);
-            const user = await this.userService.getUserByUsername(name);
-            if (user) throw new BadRequestException('username exist');
+            user = await this.userService.getUserByUsername(name);
         } catch (error) {
             if (error.getStatus() == 404) throw new NotFoundException('no such user');
             else throw new InternalServerErrorException();
         }
+        if (user) throw new BadRequestException('username exist');
     }
 
     // @Get('/status')

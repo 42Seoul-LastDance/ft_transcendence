@@ -5,7 +5,7 @@ import {
     NotFoundException,
     UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+// import { InjectRepository } from '@nestjs/typeorm';
 import { Like } from 'typeorm';
 import { User } from './user.entity';
 import { UserRepository } from './user.repository';
@@ -14,6 +14,7 @@ import * as bcrypt from 'bcryptjs';
 import { existsSync, readFileSync, unlinkSync } from 'fs';
 import { extname } from 'path';
 import { UserProfileDto } from './dto/userProfile.dto';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class UserService {
@@ -43,6 +44,7 @@ export class UserService {
     }
 
     async findUserById(id: number): Promise<User> {
+        console.log('id in findUserById: ', id);
         const user = await this.userRepository.findOne({ where: { id: id } });
         if (!user) {
             console.log('findUserById error - not found');

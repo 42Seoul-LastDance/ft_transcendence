@@ -1,13 +1,15 @@
-import { EntityRepository, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 // import {
 //     ConflictException,
 //     InternalServerErrorException,
 // } from '@nestjs/common';
 import { User } from './user.entity';
+import { Injectable } from '@nestjs/common';
 // import { Auth42Dto } from 'src/auth/dto/auth42.dto';
 // import { CreateUserDto } from './dto/createUser.dto';
 
-@EntityRepository(User)
+// @EntityRepository(User)
+@Injectable()
 export class UserRepository extends Repository<User> {
     // async createUser(
     //     authDto: Auth42Dto,

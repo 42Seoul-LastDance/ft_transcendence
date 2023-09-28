@@ -20,9 +20,8 @@ export class ChatRoomService {
     private userList: Map<number, Socket> = new Map<number, Socket>(); //{username->id, Socket}
     private socketList: Map<string, number> = new Map<string, number>(); //{socket id , username->id}
     private blockList: Map<string, Array<number>> = new Map<string, Array<number>>(); //{socket id , blockUserList}
-    private userService: UserService;
 
-    constructor() {
+    constructor(private userService: UserService) {
         const chatRoom = {
             roomName: 'default room',
             ownerName: 'ebang',
@@ -34,16 +33,17 @@ export class ChatRoomService {
     }
 
     getUserId(socket: Socket): number | undefined {
-        return this.socketList[socket.id];
+        return this.socketList.get(socket.id);
     }
 
-    addNewUser(socket: Socket, userId: number) {
+    async addNewUser(socket: Socket, userId: number) {
         // const userName = socket.handshake.query['username'].toString();
+        console.log('socket id, userId in addNewUser : ', socket.id, userId);
         this.socketList.set(socket.id, userId);
         this.userList.set(userId, socket);
         this.blockList.set(socket.id, new Array<number>());
         //!test : 들어오면 default 룸으로 들어가게 하기.
-        this.joinPublicChatRoom(socket, 'default room', 'password');
+        await this.joinPublicChatRoom(socket, 'default room', 'password');
 
         socket.rooms.clear();
     }
@@ -124,6 +124,8 @@ export class ChatRoomService {
     async joinPublicChatRoom(socket: Socket, roomName: string, password: string): Promise<void> {
         const targetRoom = this.publicRoomList.get(roomName);
         const userId = this.getUserId(socket);
+        console.log('socket list:', this.socketList);
+        console.log('userId, socketId', userId, socket.id);
         if (targetRoom == undefined) { //NO SUCH ROOM
             this.emitFailReason(socket, 'joinPublicChatRoom', 'Room does not exists.');
             return;
@@ -148,7 +150,10 @@ export class ChatRoomService {
         socket.join(roomName);
         //ChannelList에서 user 추가
         targetRoom.memberList.push(userId);
-        const userName = (await this.userService.findUserById(userId)).username;
+        console.log('user id', userId);
+        const user = await this.userService.findUserById(userId);
+        console.log('user :', user);
+        const userName = user.username;
         socket.to(roomName).emit('joinPublicChatRoom', `"${userName}"님이 "${targetRoom.roomName}"방에 접속했습니다`);
         this.emitSuccess(socket, 'joinPublicChatRoom');
     }
@@ -213,7 +218,7 @@ export class ChatRoomService {
     }
 
     getUserBlockList(socket: Socket) {
-        return this.blockList[socket.id];
+        return this.blockList.get(socket.id);
         //Array<User>
     }
 

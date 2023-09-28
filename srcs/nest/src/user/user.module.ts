@@ -45,6 +45,6 @@ import { JwtEnrollGuard } from 'src/auth/jwtEnroll.guard';
     ],
     controllers: [UserController],
     providers: [UserService, JwtAuthGuard, JwtEnrollGuard, UserRepository],
-    exports: [UserService],
+    exports: [UserService, UserRepository],
 })
 export class UserModule {}
