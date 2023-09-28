@@ -23,6 +23,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     server: Server;
 
     handleConnection(client: Socket) {
+        //TODO jwt check logic
         this.gameService.createPlayer(client);
         console.log('new connection, player enrolled:', client.id);
     }
@@ -97,8 +98,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     movePaddle(client: Socket, gameInfo: JSON) {
         //TESTCODE
         console.log('movePaddle:', client.id);
-        //TODO(check): x, y축도 확인 필요한가?
-        this.gameService.movePaddle(client.id, +gameInfo['PaddlePositionZ']);
+        this.gameService.movePaddle(client.id, gameInfo);
     }
 
     //validCheck
