@@ -16,10 +16,10 @@ const style: React.CSSProperties = {
   left: '50%',
   transform: 'translate(-50%, -50%)',
   width: 400,
-  bgcolor: 'background.paper',
+  backgroundColor: 'background.paper',
   border: '2px solid #000',
-  boxShadow: 24,
-  p: 4,
+  boxShadow: '24px 24px 48px rgba(0, 0, 0, 0.2)',
+  padding: 4,
 };
 
 const CreateRoomButton: React.FC = () => {
@@ -39,7 +39,7 @@ const CreateRoomButton: React.FC = () => {
           <Typography id="modal-modal-title" variant="h6" component="h6">
             방 만들기
           </Typography>
-          <CreateRoomForm />
+          <CreateRoomForm onClose={handleClose} />
         </Box>
       </Modal>
     </div>

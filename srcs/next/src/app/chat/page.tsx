@@ -11,6 +11,11 @@ import Box from '@mui/material/Box';
 import ChatRoomList from './chatRoomList';
 import Setting from './setting';
 
+import {
+  ChatSocketProvider,
+  useChatSocket,
+} from '../Context/ChatSocketContext';
+
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -18,6 +23,7 @@ interface TabPanelProps {
 }
 
 const CustomTabPanel = (props: TabPanelProps) => {
+  const chatSocket = useChatSocket();
   const { children, value, index, ...other } = props;
 
   return (
@@ -46,28 +52,30 @@ export default function BasicTabs() {
 
   return (
     <Provider store={store}>
-      <Box sx={{ width: '100%' }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs
-            value={value}
-            onChange={handleChange}
-            aria-label="basic tabs example"
-          >
-            <Tab label="Chat Room" {...a11yProps(0)} />
-            <Tab label="Friends" {...a11yProps(1)} />
-            <Tab label="Settings" {...a11yProps(2)} />
-          </Tabs>
+      <ChatSocketProvider>
+        <Box sx={{ width: '100%' }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs
+              value={value}
+              onChange={handleChange}
+              aria-label="basic tabs example"
+            >
+              <Tab label="Chat Room" {...a11yProps(0)} />
+              <Tab label="Friends" {...a11yProps(1)} />
+              <Tab label="Settings" {...a11yProps(2)} />
+            </Tabs>
+          </Box>
+          <CustomTabPanel value={value} index={0}>
+            <ChatRoomList />
+          </CustomTabPanel>
+          <CustomTabPanel value={value} index={1}>
+            <p>대충 DM 넣을 곳</p>
+          </CustomTabPanel>
+          <CustomTabPanel value={value} index={2}>
+            <Setting />
+          </CustomTabPanel>
         </Box>
-        <CustomTabPanel value={value} index={0}>
-          <ChatRoomList />
-        </CustomTabPanel>
-        <CustomTabPanel value={value} index={1}>
-          Item Two
-        </CustomTabPanel>
-        <CustomTabPanel value={value} index={2}>
-          <Setting />
-        </CustomTabPanel>
-      </Box>
+      </ChatSocketProvider>
     </Provider>
   );
 }

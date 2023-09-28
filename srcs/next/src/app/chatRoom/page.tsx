@@ -1,61 +1,145 @@
 'use client';
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Box,
+  Container,
+  Card,
+  CardContent,
   TextField,
   Button,
   List,
   ListItem,
   ListItemText,
+  AppBar,
+  Box,
+  Toolbar,
+  IconButton,
+  Drawer,
 } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
+import SettingsIcon from '@mui/icons-material/Settings'; // 설정 아이콘 추가
+import ChatSetting from './chatSetting';
 
-const ChatRoom: React.FC = () => {
-  const [messages, setMessages] = useState<string[]>([]);
-  const [newMessage, setNewMessage] = useState<string>('');
+interface ChatMessage {
+  username: string;
+  message: string;
+}
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNewMessage(event.target.value);
-  };
+function Chatting() {
+  const [username, setUsername] = useState('');
+  const [message, setMessage] = useState('');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); // ChatMessage[] 타입 명시
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false); // 설정 아이콘 클릭 시 설정창 표시 여부
 
+  useEffect(() => {
+    setUsername('jun');
+  }, []);
+
+  // 메세지 보낼 때 동작
   const handleSendMessage = () => {
-    if (newMessage) {
-      // 새 메시지를 배열에 추가
-      setMessages([...messages, newMessage]);
-      // 입력 상자 비우기
-      setNewMessage('');
+    if (message) {
+      const newMsg: ChatMessage = {
+        username,
+        message,
+      };
+      setChatMessages([...chatMessages, newMsg]);
+      setMessage('');
     }
   };
 
-  return (
-    <Box>
-      <List>
-        {messages.map((message, index) => (
-          <ListItem key={index}>
-            <ListItemText primary={message} />
-          </ListItem>
-        ))}
-      </List>
-      <Box display="flex" alignItems="center">
-        <TextField
-          label="메시지 입력"
-          variant="outlined"
-          fullWidth
-          value={newMessage}
-          onChange={handleInputChange}
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          endIcon={<SendIcon />}
-          onClick={handleSendMessage}
-        >
-          보내기
-        </Button>
-      </Box>
-    </Box>
-  );
-};
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleSendMessage();
+    }
+  };
 
-export default ChatRoom;
+  const toggleSettings = () => {
+    setIsSettingsOpen(!isSettingsOpen);
+  };
+
+  return (
+    <Container
+      maxWidth="sm"
+      style={{
+        display: 'flex',
+        flexDirection: 'column', // 컨테이너 내의 요소를 위에서 아래로 배치하도록 수정
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+      }}
+    >
+      {/* 설정 아이콘 버튼 */}
+      <IconButton
+        color="primary"
+        aria-label="settings"
+        sx={{ position: 'absolute', top: '16px', right: '16px' }}
+        onClick={toggleSettings} // 설정 아이콘 버튼 클릭 시 설정창 토글
+      >
+        <SettingsIcon />
+      </IconButton>
+
+      <Card
+        className="mt-4"
+        style={{
+          height: '700px',
+          width: '35rem',
+          margin: 'auto',
+          alignItems: 'center',
+        }}
+      >
+        <CardContent
+          style={{ overflowY: 'auto', height: 'calc(100% - 105px)' }}
+        >
+          <List>
+            {chatMessages.map((msg, index) => (
+              <ListItem key={index}>
+                <ListItemText
+                  primary={
+                    <div
+                      style={{
+                        textAlign: username === msg.username ? 'left' : 'left',
+                      }}
+                    >
+                      {msg.username}
+                    </div>
+                  }
+                  secondary={msg.message}
+                  primaryTypographyProps={{ variant: 'subtitle1' }}
+                  secondaryTypographyProps={{ variant: 'body1' }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </CardContent>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '8px' }}>
+          {/* 채팅 입력 필드와 전송 버튼 */}
+          <TextField
+            fullWidth
+            id="msgText"
+            variant="outlined"
+            label="Message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <Button
+            id="sendBtn"
+            variant="contained"
+            color="primary"
+            size="large"
+            onClick={handleSendMessage}
+            style={{ marginLeft: '8px' }}
+          >
+            Send
+          </Button>
+        </div>
+      </Card>
+
+      {/* 오른쪽 설정창 */}
+      <Drawer anchor="right" open={isSettingsOpen} onClose={toggleSettings}>
+        {/* 설정창 내용 */}
+        <ChatSetting />
+      </Drawer>
+    </Container>
+  );
+}
+
+export default Chatting;

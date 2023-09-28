@@ -6,8 +6,6 @@ import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 
 export default function Home() {
-  const backAddr = 'http://172.18.0.1:4242';
-  console.log(backAddr);
   const router = useRouter();
 
   return (

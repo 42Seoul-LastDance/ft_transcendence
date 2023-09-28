@@ -45,4 +45,7 @@ xtest	:
 exec	:
 	docker exec -it next /bin/bash
 
+next	:
+	docker compose restart next
+
 .PHONY	: all down clean fclean docker cntest stest xtest next

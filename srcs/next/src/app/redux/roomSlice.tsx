@@ -5,8 +5,8 @@ export enum RoomStatus {
   PUBLIC = 'PUBLIC',
 }
 export interface Room {
-  username: string;
   roomname: string;
+  username: string;
   password: string | null;
   requirePassword: boolean;
   status: RoomStatus;

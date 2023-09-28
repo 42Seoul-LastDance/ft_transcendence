@@ -1,6 +1,7 @@
 echo "----- Start installing npm dependencies -----"
 
 npm install --prefix srcs next
+npm cache clean --force
 
 npm install --prefix srcs --save redux react-redux @reduxjs/toolkit react-devtools react-router-dom react-cookie jsonwebtoken
 npm install --prefix srcs --save react-unity-webgl nextjs-unity-webgl
@@ -12,6 +13,6 @@ npm install --prefix srcs --save babel-loader @babel/preset-react @babel/preset-
 
 echo "----- Successfully installed -----"
 
-npm --prefix srcs run dev --cache-clear
-
-
+# npm --prefix srcs run build
+# npm --prefix srcs run start
+npm --prefix srcs run dev

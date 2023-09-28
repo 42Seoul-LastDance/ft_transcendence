@@ -9,6 +9,8 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import CreateRoomButton from './createRoomButton';
 import { useRouter } from 'next/navigation';
+import { useChatSocket } from '../Context/ChatSocketContext';
+import { RoomStatus } from '../redux/roomSlice';
 
 const style = {
   width: '100%',
@@ -17,9 +19,18 @@ const style = {
 };
 
 const ChatRoomList: React.FC = () => {
+  const chatSocket = useChatSocket();
   const router = useRouter();
+
+  chatSocket.emit('getChatRoomList', {
+    roomStatus: RoomStatus.PUBLIC,
+  });
+
+  chatSocket.on('getChatRoomList', (data) => {
+    console.log(data);
+  });
+
   const joinRoom = (roomname: string) => {
-    // console.log('join: ', roomname);
     router.push('/chatRoom');
   };
 

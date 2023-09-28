@@ -1,19 +1,23 @@
-import * as React from 'react';
-import { useState } from 'react';
+'use client';
+import React, { useState } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
 import { useDispatch } from 'react-redux';
-import { push, RoomStatus } from '../redux/roomSlice';
+import { Room, RoomStatus, push } from '../redux/roomSlice';
+import {
+  ChatSocketProvider,
+  useChatSocket,
+} from '../Context/ChatSocketContext';
 
-export default function CreateRoomForm() {
+export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const dispatch = useDispatch();
-  const [roomName, setRoomName] = useState<string>('');
+  const chatSocket = useChatSocket();
+  const [roomname, setRoomName] = useState<string>('');
   const [isPrivate, setIsPrivate] = useState<boolean>(false);
-  const [isPasswordProtected, setIsPasswordProtected] =
-    useState<boolean>(false);
+  const [requirePassword, setIsLocked] = useState<boolean>(false);
   const [password, setPassword] = useState<string>('');
   const [showPasswordInput, setShowPasswordInput] = useState<boolean>(false);
 
@@ -31,7 +35,7 @@ export default function CreateRoomForm() {
   };
 
   const handlePasswordToggle = () => {
-    setIsPasswordProtected(!isPasswordProtected);
+    setIsLocked(!requirePassword);
     setShowPasswordInput(!showPasswordInput);
   };
 
@@ -40,35 +44,29 @@ export default function CreateRoomForm() {
   };
 
   const addNewRoom = () => {
-    let privateStatus: RoomStatus;
-    isPrivate
-      ? (privateStatus = RoomStatus.PRIVATE)
-      : (privateStatus = RoomStatus.PUBLIC);
-    const newRoomInfo = {
-      username: 'exampleUsername',
-      roomname: roomName,
-      password: password,
-      requirePassword: isPasswordProtected,
-      status: privateStatus,
+    const newRoomInfo: Room = {
+      roomname: roomname,
+      username: 'hihi',
+      password: password ? password : null,
+      requirePassword: requirePassword,
+      status: isPrivate ? RoomStatus.PRIVATE : RoomStatus.PUBLIC,
     };
-    dispatch(push(newRoomInfo)); // push 액션을 디스패치하여 새로운 방 정보를 추가합니다.
-  };
 
-  // const handleSubmit = () => {
-  //   console.log('방 이름:', roomName);
-  //   console.log('프라이빗:', isPrivate);
-  //   console.log('비밀번호 설정:', isPasswordProtected);
-  //   if (isPasswordProtected) {
-  //     console.log('비밀번호:', password);
-  //   }
-  // };
+    chatSocket.emit('createChatRoom', newRoomInfo);
+    chatSocket.on('createChatRoom', (data) => {
+      console.log(data);
+    });
+
+    dispatch(push(newRoomInfo));
+    onClose();
+  };
 
   return (
     <Box>
       <TextField
         label="방 이름"
         variant="outlined"
-        value={roomName}
+        value={roomname}
         onChange={handleRoomNameChange}
         fullWidth
         margin="normal"
@@ -79,7 +77,6 @@ export default function CreateRoomForm() {
         onChange={handlePrivacyChange}
         fullWidth
         aria-label="방 프라이버시"
-        margin="normal"
       >
         <ToggleButton value="public" aria-label="퍼블릭">
           퍼블릭
@@ -90,7 +87,7 @@ export default function CreateRoomForm() {
       </ToggleButtonGroup>
       <ToggleButton
         value="check"
-        selected={isPasswordProtected}
+        selected={requirePassword}
         onClick={handlePasswordToggle}
         aria-label="비밀번호 설정"
         color="primary"
@@ -109,7 +106,6 @@ export default function CreateRoomForm() {
           margin="normal"
         />
       )}
-      {/* <Button variant="contained" color="primary" onClick={handleSubmit}> */}
       <Button variant="contained" color="primary" onClick={addNewRoom}>
         완료
       </Button>
