@@ -49,7 +49,7 @@ export class ChatRoomService {
     }
 
     deleteUser(socket: Socket) {
-        this.userList.delete(this.socketList[socket.id]);
+        this.userList.delete(this.socketList.get(socket.id));
         this.socketList.delete(socket.id);
         this.blockList.delete(socket.id);
     }
@@ -99,7 +99,7 @@ export class ChatRoomService {
 
     leavePastRoom(socket: Socket, userId: number) {
         console.log('socket: ', socket);
-        const pastRoomName = this.userList[userId]?.socket.rooms[0];
+        const pastRoomName = this.userList.get(userId)?.socket.rooms[0];
         console.log('pastRoomName: ', pastRoomName);
         if (pastRoomName !== undefined) { //기존에 유저가 있던 채널이 있는지 확인
             const pastRoom = this.publicRoomList.get(pastRoomName);
@@ -227,7 +227,7 @@ export class ChatRoomService {
         //2. 추가후 다시 갱신
         //! test
         if (!this.blockList.has(socket.id)) console.log('test failed: socket.id에 해당하는 키 값이 존재하지 않습니다.');
-        const blockedList = this.blockList[socket.id];
+        const blockedList = this.blockList.get(socket.id);
         // //! test
         // if (blockedList === undefined) console.log('test failed : blockList의 Array값이 undefined입니다.');
         const blockedElement = blockedList.find(socket.id);
@@ -241,7 +241,7 @@ export class ChatRoomService {
         //1. socket.id를 통해 blockList의 value(Array<string>) 가져오기
         //2. value에서 targetName 찾기
         //3. targetName 제거
-        const blockedList = this.blockList[socket.id];
+        const blockedList = this.blockList.get(socket.id);
         // ? blockedList 에서 키를 못찾거나 밸류가 없으면?
         //!test
         if (!this.blockList.has(socket.id)) console.log('test failed: socket.id에 해당하는 키 값이 존재하지 않습니다.');
@@ -276,7 +276,7 @@ export class ChatRoomService {
     async inviteUser(socket: Socket, roomName: string, username: string) {
         //1. input으로 username받아서 일치하는 사람을 초대한다.
         //2. roomName 에 해당하는 room의 inviteList에 추가.
-        const room = this.privateRoomList[roomName];
+        const room = this.privateRoomList.get(roomName);
         if (room === undefined) this.emitFailReason(socket, 'inviteUser', 'such private room does not exists.');
         if (room.inviteList.find(username) !== undefined) {
             this.emitFailReason(socket, 'inviteUser', 'user already invited.');
@@ -289,7 +289,7 @@ export class ChatRoomService {
 
     async banUser(socket: Socket, roomName: string, roomStatus: RoomStatus, targetName: string) {
         let room: ChatRoomDto;
-        if (roomStatus === RoomStatus.PRIVATE) room = this.privateRoomList[roomName];
+        if (roomStatus === RoomStatus.PRIVATE) room = this.privateRoomList.get(roomName);
         else room = this.publicRoomList.get(roomName);
 
         const targetId = (await this.userService.getUserByUsername(targetName)).id;

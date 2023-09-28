@@ -30,7 +30,7 @@ export class DirectMessageService {
     }
 
     getUserId(socket: Socket): number | undefined {
-        return this.socketList[socket.id];
+        return this.socketList.get(socket.id);
     }
 
     async sendMessage(socket: Socket, content: string, targetId: number){

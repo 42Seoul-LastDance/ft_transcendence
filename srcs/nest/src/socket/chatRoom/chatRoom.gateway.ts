@@ -100,11 +100,10 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         this.chatroomService.joinPrivateChatRoom(socket, payload['roomName']);
     }
 
-    @SubscribeMessage('exitChatRoom')
-    exitChatRoom(socket: Socket, payload: JSON) {
-        this.exitChatRoom(socket, payload['roomName']);
-    }
-
+    // @SubscribeMessage('exitChatRoom')
+    // exitChatRoom(socket: Socket, payload: JSON) {
+    //     this.exitChatRoom(socket, payload['roomName']);
+    // }
 
     // * 채팅방 패스워드 관련 =================================================
     @SubscribeMessage('setRoomPassword')
