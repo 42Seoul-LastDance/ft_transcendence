@@ -211,15 +211,15 @@ export class GameService {
         const roomId = this.playerList.get(playerId).roomId;
         const side = this.playerList.get(playerId).side;
         const rival = this.gameRoomList.get(roomId).socket[side];
-        if (
-            gameInfo['PaddlePosX'] !== PADDLE_POS_X[side] ||
-            gameInfo['PaddlePosY'] !== PADDLE_POS_Y ||
-            gameInfo['PaddlePosZ'] < PADDLE_POS_Z_MIN ||
-            gameInfo['PaddlePosZ'] > PADDLE_POS_Z_MAX
-        ) {
-            this.finishGame(roomId, (side + 1) % 2, GameEndStatus.CHEATING);
-            return;
-        }
+        // if (
+        //     gameInfo['PaddlePosX'] !== PADDLE_POS_X[side] ||
+        //     gameInfo['PaddlePosY'] !== PADDLE_POS_Y ||
+        //     gameInfo['PaddlePosZ'] < PADDLE_POS_Z_MIN ||
+        //     gameInfo['PaddlePosZ'] > PADDLE_POS_Z_MAX
+        // ) {
+        //     this.finishGame(roomId, (side + 1) % 2, GameEndStatus.CHEATING);
+        //     return;
+        // }
         rival.emit('movePaddle', {
             PaddlePosX: PADDLE_POS_X[side],
             PaddlePosY: PADDLE_POS_Y,
@@ -426,7 +426,7 @@ export class GameService {
                 endTime: room.endTime,
                 endGameStatus: room.endGameStatus,
             } as Game);
-            await this.gameRepository.save(newGameData);
+            //await this.gameRepository.save(newGameData);
         } catch (error) {
             //TESTCODE
             console.log('Error: game =>', error);

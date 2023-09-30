@@ -1,5 +1,8 @@
 'use client';
 
+// 1. Paddle은 MoveOpponenet 가 없다
+// 2. Unity to react parameter 값 이상함
+
 import { useState, useEffect, useCallback } from 'react';
 import { Unity, useUnityContext } from 'react-unity-webgl';
 import { RootState } from '../Redux/store';
@@ -33,36 +36,40 @@ const Game = () => {
     //         dispatch(setIsMatched({ isMatched: true }));
     //     };
     // }, []);
-    const socket = useGameSocket();
 
-    // react to unity
-    if (!socket.hasListeners('startGame')) {
-        socket.on('startGame', (json: JSON) => {
-            alert('startGame Event Detected');
-            sendMessage('GameManager', 'StartGame', JSON.stringify(json));
-        });
-    }
-    if (!socket.hasListeners('kickout')) {
-        socket.on('kickout', () => {
-            alert('kickout Event Detected');
-            dispatch(setIsMatched({ isMatched: false }));
-        });
-    }
-    if (!socket.hasListeners('movePaddle')) {
-        socket.on('movePaddle', (json: JSON) => {
-            alert('movePaddle Event Detected');
-            sendMessage('Paddle', 'MoveOpponentPaddle', JSON.stringify(json));
-        });
-    }
-    if (!socket.hasListeners('gameOver')) {
-        socket.on('gameOver', (json: JSON) => {
-            alert('gameOver Event Detected');
-            sendMessage('GameManager', 'GameOver', JSON.stringify(json));
-            setGameOver(true);
-            if (!isCustomGame) dispatch(setIsMatched({ isMatched: false }));
-            else setIsReady(false);
-        });
-    }
+	const socket = useGameSocket();
+
+	// react to unity
+	const Init = () => {
+		console.log('! Init Called')
+		if (!socket.hasListeners('startGame')) {
+			socket.on('startGame', (json: JSON) => {
+				//console.log('! startGame Event Detected : ', json);
+				sendMessage('GameManager', 'StartGame', JSON.stringify(json));
+			});
+		}
+		if (!socket.hasListeners('kickout')) {
+			socket.on('kickout', () => {
+				alert('kickout Event Detected');
+				dispatch(setIsMatched({ isMatched: false }));
+			});
+		}
+		if (!socket.hasListeners('movePaddle')) {
+			socket.on('movePaddle', (json: JSON) => {
+				console.log('! movePaddle Event Detected : ', json);
+				sendMessage('Paddle', 'MoveOpponentPaddle', JSON.stringify(json));
+			});
+		}
+		if (!socket.hasListeners('gameOver')) {
+			socket.on('gameOver', (json: JSON) => {
+				console.log('! gameOver Event Detected : ', json);
+				sendMessage('GameManager', 'GameOver', JSON.stringify(json));
+				setGameOver(true);
+				//if (!isCustomGame) dispatch(setIsMatched({ isMatched: false }));
+				//else setIsReady(false);
+			});
+		}
+	}
 
     const handleUnityException = useCallback((data: ReactUnityEventParameter) => {
         alert('Unity Exception : ' + data);
@@ -70,21 +77,24 @@ const Game = () => {
 	const handleValidCheck = useCallback((data: ReactUnityEventParameter) => {
         console.log('ValidCheck : ' + data);
     }, []);
-	// to string 형변환
 	const handleMovePaddle = useCallback((data: ReactUnityEventParameter) => {
-        socket.emit('movePaddle', JSON.parse(data))
+        socket.emit('movePaddle', JSON.parse(data as string));
+		console.log('from unity: ', data as string, JSON.parse(data as string));
     }, []);
 	
 	// unity to react
     useEffect(() => {
         addEventListener('UnityException', handleUnityException);
-		addEventListener('ValidCheck', handleValidCheck);
+		//addEventListener('ValidCheck', handleValidCheck);
+		addEventListener('MovePaddle', handleMovePaddle);
+		addEventListener('Init', Init);
         return () => {
             removeEventListener('UnityException', handleUnityException);
-			removeEventListener('ValidCheck', handleValidCheck);
-			removeEventListener('MovePaddle', handleValidCheck);
+			//removeEventListener('ValidCheck', handleValidCheck);
+			removeEventListener('MovePaddle', handleMovePaddle);
+			removeEventListener('Init', Init);
         };
-    }, [addEventListener, removeEventListener, handleUnityException, handleValidCheck]);
+    }, [addEventListener, removeEventListener, handleUnityException, handleValidCheck, handleMovePaddle, Init]);
 	
     return (
         <>
@@ -100,7 +110,7 @@ const Game = () => {
             </button>
             <Unity
                 unityProvider={unityProvider}
-                style={{ width: 1280, height: 720 }}
+                style={{ width: 800, height: 450 }}
             />
         </>
     );
