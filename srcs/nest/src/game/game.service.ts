@@ -207,14 +207,23 @@ export class GameService {
     }
 
     //* In Game ======================================
-    movePaddle(playerId: string, paddlePosZ: number) {
+    movePaddle(playerId: string, gameInfo: JSON) {
         const roomId = this.playerList.get(playerId).roomId;
         const side = this.playerList.get(playerId).side;
         const rival = this.gameRoomList.get(roomId).socket[side];
+        if (
+            gameInfo['PaddlePosX'] !== PADDLE_POS_X[side] ||
+            gameInfo['PaddlePosY'] !== PADDLE_POS_Y ||
+            gameInfo['PaddlePosZ'] < PADDLE_POS_Z_MIN ||
+            gameInfo['PaddlePosZ'] > PADDLE_POS_Z_MAX
+        ) {
+            this.finishGame(roomId, (side + 1) % 2, GameEndStatus.CHEATING);
+            return;
+        }
         rival.emit('movePaddle', {
-            PaddlePositionX: PADDLE_POS_X[side],
-            PaddlePositionY: PADDLE_POS_Y,
-            PaddlePositionZ: paddlePosZ,
+            PaddlePosX: PADDLE_POS_X[side],
+            PaddlePosY: PADDLE_POS_Y,
+            PaddlePosZ: gameInfo['PaddlePosZ'],
         });
     }
 
@@ -239,39 +248,39 @@ export class GameService {
         //end of TESTCODE
         if (
             //ball
-            BALL_SPEED[player.gameMode] != gameInfo['ballSpeed'] ||
-            BALL_POS_Y != gameInfo['ballPosY'] ||
+            BALL_SPEED[player.gameMode] !== gameInfo['ballSpeed'] ||
+            BALL_POS_Y !== gameInfo['ballPosY'] ||
             BALL_POS_X_MIN >= gameInfo['ballPosX'] ||
             BALL_POS_X_MAX <= gameInfo['ballPosX'] ||
             BALL_POS_Z_MIN >= gameInfo['ballPosZ'] ||
             BALL_POS_Z_MAX <= gameInfo['ballPosZ'] ||
-            BALL_SCALE_X != gameInfo['ballScaleX'] ||
-            BALL_SCALE_Y != gameInfo['ballScaleY'] ||
-            BALL_SCALE_Z != gameInfo['ballScaleZ'] ||
+            BALL_SCALE_X !== gameInfo['ballScaleX'] ||
+            BALL_SCALE_Y !== gameInfo['ballScaleY'] ||
+            BALL_SCALE_Z !== gameInfo['ballScaleZ'] ||
             //left
-            PADDLE_POS_X[PlayerSide.LEFT] != gameInfo['leftPosX'] ||
-            PADDLE_POS_Y != gameInfo['leftPosY'] ||
+            PADDLE_POS_X[PlayerSide.LEFT] !== gameInfo['leftPosX'] ||
+            PADDLE_POS_Y !== gameInfo['leftPosY'] ||
             PADDLE_POS_Z_MIN >= gameInfo['leftPosZ'] ||
             PADDLE_POS_Z_MAX <= gameInfo['leftPosZ'] ||
-            PADDLE_ROTATE_X != gameInfo['leftRotateX'] ||
-            PADDLE_ROTATE_Y != gameInfo['leftRotateY'] ||
-            PADDLE_ROTATE_Z != gameInfo['leftRotateZ'] ||
-            PADDLE_SCALE_X != gameInfo['leftScaleX'] ||
-            PADDLE_SCALE_Y != gameInfo['leftScaleY'] ||
-            PADDLE_SCALE_Z != gameInfo['leftScaleZ'] ||
-            PADDLE_SPEED != gameInfo['leftSpeed'] ||
+            PADDLE_ROTATE_X !== gameInfo['leftRotateX'] ||
+            PADDLE_ROTATE_Y !== gameInfo['leftRotateY'] ||
+            PADDLE_ROTATE_Z !== gameInfo['leftRotateZ'] ||
+            PADDLE_SCALE_X !== gameInfo['leftScaleX'] ||
+            PADDLE_SCALE_Y !== gameInfo['leftScaleY'] ||
+            PADDLE_SCALE_Z !== gameInfo['leftScaleZ'] ||
+            PADDLE_SPEED !== gameInfo['leftSpeed'] ||
             //right
-            PADDLE_POS_X[PlayerSide.RIGHT] != gameInfo['rightPosX'] ||
-            PADDLE_POS_Y != gameInfo['rightPosY'] ||
+            PADDLE_POS_X[PlayerSide.RIGHT] !== gameInfo['rightPosX'] ||
+            PADDLE_POS_Y !== gameInfo['rightPosY'] ||
             PADDLE_POS_Z_MIN >= gameInfo['rightPosZ'] ||
             PADDLE_POS_Z_MAX <= gameInfo['rightPosZ'] ||
-            PADDLE_ROTATE_X != gameInfo['rightRotateX'] ||
-            PADDLE_ROTATE_Y != gameInfo['rightRotateY'] ||
-            PADDLE_ROTATE_Z != gameInfo['rightRotateZ'] ||
-            PADDLE_SCALE_X != gameInfo['rightScaleX'] ||
-            PADDLE_SCALE_Y != gameInfo['rightScaleY'] ||
-            PADDLE_SCALE_Z != gameInfo['rightScaleZ'] ||
-            PADDLE_SPEED != gameInfo['rightSpeed']
+            PADDLE_ROTATE_X !== gameInfo['rightRotateX'] ||
+            PADDLE_ROTATE_Y !== gameInfo['rightRotateY'] ||
+            PADDLE_ROTATE_Z !== gameInfo['rightRotateZ'] ||
+            PADDLE_SCALE_X !== gameInfo['rightScaleX'] ||
+            PADDLE_SCALE_Y !== gameInfo['rightScaleY'] ||
+            PADDLE_SCALE_Z !== gameInfo['rightScaleZ'] ||
+            PADDLE_SPEED !== gameInfo['rightSpeed']
         ) {
             console.log('validCheck: cheating detacted');
             const roomId = player.roomId;
@@ -420,7 +429,7 @@ export class GameService {
             await this.gameRepository.save(newGameData);
         } catch (error) {
             //TESTCODE
-            console.log('Error: game => internal error while save DB');
+            console.log('Error: game =>', error);
             throw new InternalServerErrorException(
                 'error while save game data',
             );
@@ -512,9 +521,9 @@ export class GameService {
             (Math.random() * (MAXF - MINF) + MINF);
         this.updateBall(roomId, dirX, dirZ);
         return {
-            x: dirX,
-            y: 0,
-            z: dirZ,
+            ballDirX: dirX,
+            ballDirY: 0,
+            ballDirZ: dirZ,
         };
     }
     //ball 정보 업데이트
@@ -539,8 +548,8 @@ export class GameService {
         const dirX = this.gameRoomList.get(roomId).dirX;
         const dirZ = this.gameRoomList.get(roomId).dirZ;
         if (
-            diffPosX / diffPosZ != dirX / dirZ ||
-            BALL_POS_Y != gameInfo['ballPosY'] ||
+            diffPosX / diffPosZ !== dirX / dirZ ||
+            BALL_POS_Y !== gameInfo['ballPosY'] ||
             BALL_POS_X_MIN >= gameInfo['ballPosX'] ||
             BALL_POS_X_MAX <= gameInfo['ballPosX'] ||
             BALL_POS_Z_MIN >= gameInfo['ballPosZ'] ||
