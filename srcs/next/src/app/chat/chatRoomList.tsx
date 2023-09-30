@@ -7,7 +7,9 @@ import CreateRoomButton from './createRoomButton';
 import { useRouter } from 'next/navigation';
 import { useChatSocket } from '../Context/ChatSocketContext';
 import { ChatRoomDto } from '../DTO/ChatRoom.dto';
-import { RoomStatus } from '../DTO/RoomInfo.dto';
+import { RoomInfoDto, RoomStatus } from '../DTO/RoomInfo.dto';
+import { useSelector } from 'react-redux';
+import { RootState } from '../redux/store';
 
 const style = {
   width: '100%',
@@ -34,28 +36,39 @@ const ChatRoomList: React.FC = () => {
     router.push('/chatRoom');
   };
 
-  //   // test code for roomSlice
-  //   const rooms: RoomInfoDto[] = useSelector(
-  //   (state: RootState) => state.room.roomArray,
-  // );
+  // test code for roomSlice
+  const rooms: RoomInfoDto[] = useSelector(
+    (state: RootState) => state.room.roomArray,
+  );
 
   return (
     <>
-      <div>
-        <List sx={style} component="nav" aria-label="mailbox folders">
-          {Object.keys(chatRoomList).map((roomName) => (
-            <ListItem
-              key={roomName}
-              divider
-              onClick={() => {
-                joinRoom(roomName);
-              }}
-            >
-              <ListItemText primary={roomName} />
-            </ListItem>
-          ))}
-        </List>
-      </div>
+      <List sx={style} component="nav" aria-label="mailbox folders">
+        {Object.keys(chatRoomList).map((roomName) => (
+          <ListItem
+            key={roomName}
+            divider
+            onClick={() => {
+              joinRoom(roomName);
+            }}
+          >
+            <ListItemText primary={roomName} />
+          </ListItem>
+        ))}
+      </List>
+      <List sx={style} component="nav" aria-label="mailbox folders">
+        {rooms.map((room) => (
+          <ListItem
+            key={room.username}
+            divider
+            onClick={() => {
+              joinRoom(room.roomname);
+            }}
+          >
+            <ListItemText primary={room.roomname} />
+          </ListItem>
+        ))}
+      </List>
       <CreateRoomButton />
     </>
   );

@@ -1,50 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Provider, useSelector } from 'react-redux';
-import store, { RootState } from '../redux/store';
-
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
+import { Tab, Tabs } from '@mui/material';
 import ChatRoomList from './chatRoomList';
-import Setting from './setting';
+import { ChatSocketProvider } from '../Context/ChatSocketContext';
+import { Provider } from 'react-redux';
+import store from '../redux/store';
 
-import {
-  ChatSocketProvider,
-  useChatSocket,
-} from '../Context/ChatSocketContext';
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-const CustomTabPanel = (props: TabPanelProps) => {
-  const chatSocket = useChatSocket();
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          <Typography>{children}</Typography>
-        </Box>
-      )}
-    </div>
-  );
-};
-
-export default function BasicTabs() {
-  const [value, setValue] = React.useState<number>(0);
+const ChattingTabs = () => {
+  const [value, setValue] = useState<number>(0);
 
   const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
     setValue(newValue);
@@ -53,36 +17,21 @@ export default function BasicTabs() {
   return (
     <Provider store={store}>
       <ChatSocketProvider>
-        <Box sx={{ width: '100%' }}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs
-              value={value}
-              onChange={handleChange}
-              aria-label="basic tabs example"
-            >
-              <Tab label="Chat Room" {...a11yProps(0)} />
-              <Tab label="Friends" {...a11yProps(1)} />
-              <Tab label="Settings" {...a11yProps(2)} />
-            </Tabs>
-          </Box>
-          <CustomTabPanel value={value} index={0}>
-            <ChatRoomList />
-          </CustomTabPanel>
-          <CustomTabPanel value={value} index={1}>
-            <p>대충 DM 넣을 곳</p>
-          </CustomTabPanel>
-          <CustomTabPanel value={value} index={2}>
-            <Setting />
-          </CustomTabPanel>
-        </Box>
+        <div>
+          <Tabs value={value} onChange={handleChange}>
+            <Tab label="Chatting" />
+            <Tab label="DM" />
+            <Tab label="Setting" />
+          </Tabs>
+          <div>
+            {value === 0 && <ChatRoomList />}
+            {value === 1 && <div>Tab 2 Content</div>}
+            {value === 2 && <div>Tab 3 Content</div>}
+          </div>
+        </div>
       </ChatSocketProvider>
     </Provider>
   );
-}
+};
 
-function a11yProps(index: number) {
-  return {
-    id: `simple-tab-${index}`,
-    'aria-controls': `simple-tabpanel-${index}`,
-  };
-}
+export default ChattingTabs;

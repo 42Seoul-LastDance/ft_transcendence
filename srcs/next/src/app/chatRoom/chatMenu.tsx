@@ -1,12 +1,15 @@
+'use client';
 import * as React from 'react';
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import Box from '@mui/material/Box';
 
 const buttons = [
+  <Button key="profile">Profile</Button>,
   <Button key="kick">Kick</Button>,
   <Button key="ban">Ban</Button>,
   <Button key="mute">Mute</Button>,
+  <Button key="game">Game</Button>,
 ];
 
 const ChatMenu = () => {
