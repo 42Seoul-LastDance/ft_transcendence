@@ -12,6 +12,20 @@ import { useGameSocket } from '../Contexts/GameSocketContext';
 import { ReactUnityEventParameter } from "react-unity-webgl/distribution/types/react-unity-event-parameters";
 import { deflateSync } from 'zlib';
 
+enum PlayerSide {
+	NONE = -1,
+    LEFT = 0,
+    RIGHT = 1,
+}
+
+interface StartGameJson{
+	side: PlayerSide,
+	ballDirX: number,
+	ballDirY: number,
+	ballDirZ: number,
+	isFirst: boolean
+}
+
 const Game = () => {
     const {
         unityProvider,
@@ -26,25 +40,21 @@ const Game = () => {
     });
 
     const [gameOver, setGameOver] = useState<boolean>(false);
-    const [isReady, setIsReady] = useState<boolean>(false);
+    const [isReady, setIsReady] = useState<boolean>(true);
     const dispatch = useDispatch();
     const isMatched = useSelector((state: RootState) => state.match.isMatched);
     const isCustomGame = useSelector((state: RootState) => state.match.isCustom);
-
-    // useEffect(() => {
-    //     return () => {
-    //         dispatch(setIsMatched({ isMatched: true }));
-    //     };
-    // }, []);
-
 	const socket = useGameSocket();
+	var mySide :PlayerSide = PlayerSide.NONE;
 
 	// react to unity
 	const Init = () => {
-		console.log('! Init Called')
+		setIsReady(false);
 		if (!socket.hasListeners('startGame')) {
-			socket.on('startGame', (json: JSON) => {
-				//console.log('! startGame Event Detected : ', json);
+			socket.on('startGame', (json: StartGameJson) => {
+				mySide = json.side;
+				if (json.side == PlayerSide.NONE)
+					alert('error player side');
 				sendMessage('GameManager', 'StartGame', JSON.stringify(json));
 			});
 		}
@@ -57,7 +67,12 @@ const Game = () => {
 		if (!socket.hasListeners('movePaddle')) {
 			socket.on('movePaddle', (json: JSON) => {
 				console.log('! movePaddle Event Detected : ', json);
-				sendMessage('Paddle', 'MoveOpponentPaddle', JSON.stringify(json));
+				if (mySide === PlayerSide.LEFT)
+					sendMessage('RightPaddle', 'MoveOpponentPaddle', JSON.stringify(json));
+				else if (mySide === PlayerSide.RIGHT)
+					sendMessage('LeftPaddle', 'MoveOpponentPaddle', JSON.stringify(json));
+				else
+					console.log('err : side is NONE')
 			});
 		}
 		if (!socket.hasListeners('gameOver')) {
@@ -75,22 +90,22 @@ const Game = () => {
         alert('Unity Exception : ' + data);
     }, []);
 	const handleValidCheck = useCallback((data: ReactUnityEventParameter) => {
-        console.log('ValidCheck : ' + data);
+        //console.log('ValidCheck : ' + data);
     }, []);
 	const handleMovePaddle = useCallback((data: ReactUnityEventParameter) => {
         socket.emit('movePaddle', JSON.parse(data as string));
-		console.log('from unity: ', data as string, JSON.parse(data as string));
+		console.log('from unity : ', data)
     }, []);
 	
 	// unity to react
     useEffect(() => {
         addEventListener('UnityException', handleUnityException);
-		//addEventListener('ValidCheck', handleValidCheck);
+		addEventListener('ValidCheck', handleValidCheck);
 		addEventListener('MovePaddle', handleMovePaddle);
 		addEventListener('Init', Init);
         return () => {
             removeEventListener('UnityException', handleUnityException);
-			//removeEventListener('ValidCheck', handleValidCheck);
+			removeEventListener('ValidCheck', handleValidCheck);
 			removeEventListener('MovePaddle', handleMovePaddle);
 			removeEventListener('Init', Init);
         };
