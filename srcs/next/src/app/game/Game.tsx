@@ -33,10 +33,10 @@ const Game = () => {
         addEventListener,
         removeEventListener,
     } = useUnityContext({
-        loaderUrl: '/build/Socket.loader.js',
-        dataUrl: '/build/Socket.data.unityweb',
-        frameworkUrl: '/build/Socket.framework.js.unityweb',
-        codeUrl: '/build/Socket.wasm.unityweb',
+        loaderUrl: '/build/Pong.loader.js',
+        dataUrl: '/build/Pong.data.unityweb',
+        frameworkUrl: '/build/Pong.framework.js.unityweb',
+        codeUrl: '/build/Pong.wasm.unityweb',
     });
 
     const [gameOver, setGameOver] = useState<boolean>(false);
@@ -52,10 +52,10 @@ const Game = () => {
 		setIsReady(false);
 		if (!socket.hasListeners('startGame')) {
 			socket.on('startGame', (json: StartGameJson) => {
-				mySide = json.side;
-				if (json.side == PlayerSide.NONE)
-					alert('error player side');
+				if (json.isFirst)
+					mySide = json.side;
 				sendMessage('GameManager', 'StartGame', JSON.stringify(json));
+				console.log('! startGame Event Detected : ', json)
 			});
 		}
 		if (!socket.hasListeners('kickout')) {
@@ -66,13 +66,10 @@ const Game = () => {
 		}
 		if (!socket.hasListeners('movePaddle')) {
 			socket.on('movePaddle', (json: JSON) => {
-				console.log('! movePaddle Event Detected : ', json);
 				if (mySide === PlayerSide.LEFT)
 					sendMessage('RightPaddle', 'MoveOpponentPaddle', JSON.stringify(json));
 				else if (mySide === PlayerSide.RIGHT)
 					sendMessage('LeftPaddle', 'MoveOpponentPaddle', JSON.stringify(json));
-				else
-					console.log('err : side is NONE')
 			});
 		}
 		if (!socket.hasListeners('gameOver')) {
@@ -84,6 +81,12 @@ const Game = () => {
 				//else setIsReady(false);
 			});
 		}
+		if (!socket.hasListeners('ballHit')) {
+			socket.on('ballHit', (json: JSON) => {
+				console.log('! ballHit Event Detected : ', json);
+				sendMessage('Ball', 'SynchronizeBallPos', JSON.stringify(json));
+			});
+		}
 	}
 
     const handleUnityException = useCallback((data: ReactUnityEventParameter) => {
@@ -91,33 +94,39 @@ const Game = () => {
     }, []);
 	const handleValidCheck = useCallback((data: ReactUnityEventParameter) => {
         //console.log('ValidCheck : ' + data);
+		//socket.emit('validCheck', JSON.parse(data as string));
     }, []);
 	const handleMovePaddle = useCallback((data: ReactUnityEventParameter) => {
         socket.emit('movePaddle', JSON.parse(data as string));
-		console.log('from unity : ', data)
+    }, []);
+	const handleBallHit = useCallback((data: ReactUnityEventParameter) => {
+        socket.emit('ballHit', JSON.parse(data as string));
+		console.log('ballHit From Unity : ', data)
     }, []);
 	
 	// unity to react
     useEffect(() => {
-        addEventListener('UnityException', handleUnityException);
-		addEventListener('ValidCheck', handleValidCheck);
-		addEventListener('MovePaddle', handleMovePaddle);
 		addEventListener('Init', Init);
+		addEventListener('MovePaddle', handleMovePaddle);
+		addEventListener('ValidCheck', handleValidCheck);
+		addEventListener('BallHit', handleBallHit);
+        addEventListener('UnityException', handleUnityException);
         return () => {
-            removeEventListener('UnityException', handleUnityException);
-			removeEventListener('ValidCheck', handleValidCheck);
-			removeEventListener('MovePaddle', handleMovePaddle);
 			removeEventListener('Init', Init);
+			removeEventListener('MovePaddle', handleMovePaddle);
+			removeEventListener('ValidCheck', handleValidCheck);
+			removeEventListener('BallHit', handleBallHit);
+            removeEventListener('UnityException', handleUnityException);
         };
-    }, [addEventListener, removeEventListener, handleUnityException, handleValidCheck, handleMovePaddle, Init]);
+    }, [addEventListener, removeEventListener, handleUnityException, handleValidCheck, handleMovePaddle, Init, handleBallHit]);
 	
     return (
         <>
             {gameOver === true && <h2>{'Game Over!'}</h2>}
             <button
                 onClick={() => {
-                    socket.emit('getReady');
                     setIsReady(true);
+                    socket.emit('getReady');
                 }}
                 disabled={isReady}
             >
