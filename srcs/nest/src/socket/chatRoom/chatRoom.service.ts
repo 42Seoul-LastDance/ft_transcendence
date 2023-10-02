@@ -99,9 +99,10 @@ export class ChatRoomService {
 
     leavePastRoom(socket: Socket, userId: number) {
         console.log('socket: ', socket);
-        const pastRoomName = this.userList.get(userId)?.socket.rooms[0];
+        const pastRoomName = this.userList.get(userId)?.rooms[0];
         console.log('pastRoomName: ', pastRoomName);
-        if (pastRoomName !== undefined) { //기존에 유저가 있던 채널이 있는지 확인
+        if (pastRoomName !== undefined) {
+            //기존에 유저가 있던 채널이 있는지 확인
             const pastRoom = this.publicRoomList.get(pastRoomName);
             const condition = (element) => element === pastRoomName;
             let idx = pastRoom.memberList.findIndex(condition);
@@ -126,7 +127,8 @@ export class ChatRoomService {
         const userId = this.getUserId(socket);
         console.log('socket list:', this.socketList);
         console.log('userId, socketId', userId, socket.id);
-        if (targetRoom == undefined) { //NO SUCH ROOM
+        if (targetRoom == undefined) {
+            //NO SUCH ROOM
             this.emitFailReason(socket, 'joinPublicChatRoom', 'Room does not exists.');
             return;
         }
@@ -199,7 +201,13 @@ export class ChatRoomService {
         this.emitSuccess(socket, 'kickUser');
     }
 
-    async muteUser(socket: Socket, status: RoomStatus, roomName: string, targetName: string, time: number) : Promise<void> {
+    async muteUser(
+        socket: Socket,
+        status: RoomStatus,
+        roomName: string,
+        targetName: string,
+        time: number,
+    ): Promise<void> {
         //TODO : test  : op가 아니어도 된다면?! (front에서 혹시 잘못 띄우는지 확인)
 
         //TODO : test . mute  가 잘 사라지나.
@@ -230,7 +238,8 @@ export class ChatRoomService {
         const blockedList = this.blockList.get(socket.id);
         // //! test
         // if (blockedList === undefined) console.log('test failed : blockList의 Array값이 undefined입니다.');
-        const blockedElement = blockedList.find(socket.id);
+        const condition = (element) => element === socket.id;
+        const blockedElement = blockedList.find(condition);
         if (blockedElement !== undefined) this.emitFailReason(socket, 'blockUser', 'already blocked.');
         const targetId = (await this.userService.getUserByUsername(targetName)).id;
         blockedList.push(targetId);
@@ -278,7 +287,8 @@ export class ChatRoomService {
         //2. roomName 에 해당하는 room의 inviteList에 추가.
         const room = this.privateRoomList.get(roomName);
         if (room === undefined) this.emitFailReason(socket, 'inviteUser', 'such private room does not exists.');
-        if (room.inviteList.find(username) !== undefined) {
+        const condition = (element) => element === username;
+        if (room.inviteList.find(condition) !== undefined) {
             this.emitFailReason(socket, 'inviteUser', 'user already invited.');
             return;
         }
