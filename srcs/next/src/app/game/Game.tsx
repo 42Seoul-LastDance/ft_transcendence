@@ -1,8 +1,5 @@
 'use client';
 
-// 1. Paddle은 MoveOpponenet 가 없다
-// 2. Unity to react parameter 값 이상함
-
 import { useState, useEffect, useCallback } from 'react';
 import { Unity, useUnityContext } from 'react-unity-webgl';
 import { RootState } from '../Redux/store';
@@ -25,7 +22,7 @@ interface StartGameJson{
 	ballDirZ: number,
 	isFirst: boolean
 }
-
+ 
 const Game = () => {
     const {
         unityProvider,
