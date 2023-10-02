@@ -5,12 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../Redux/store';
 import { setIsMatched } from '../Redux/matchSlice';
 import { useGameSocket } from '../Contexts/GameSocketContext';
-
-enum GameMode {
-    NONE = -1,
-    NORMAL = 0,
-    HARD = 1,
-}
+import { GameMode } from '../Enums';
 
 const Matching = () => {
     const [isMatching, setIsMatching] = useState<boolean>(false);

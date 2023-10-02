@@ -4,24 +4,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { Unity, useUnityContext } from 'react-unity-webgl';
 import { RootState } from '../Redux/store';
 import { useDispatch, useSelector } from 'react-redux';
-import { setIsMatched } from '../Redux/matchSlice';
+import { setIsMatched, setSide } from '../Redux/matchSlice';
 import { useGameSocket } from '../Contexts/GameSocketContext';
 import { ReactUnityEventParameter } from "react-unity-webgl/distribution/types/react-unity-event-parameters";
 import { deflateSync } from 'zlib';
-
-enum PlayerSide {
-	NONE = -1,
-    LEFT = 0,
-    RIGHT = 1,
-}
-
-interface StartGameJson{
-	side: PlayerSide,
-	ballDirX: number,
-	ballDirY: number,
-	ballDirZ: number,
-	isFirst: boolean
-}
+import EmojiButtons from './EmojiButtons';
+import EmojiScreen from './EmojiScreen';
+import { PlayerSide, StartGameJson } from '../Enums';
  
 const Game = () => {
     const {
@@ -39,7 +28,6 @@ const Game = () => {
     const [gameOver, setGameOver] = useState<boolean>(false);
     const [isReady, setIsReady] = useState<boolean>(true);
     const dispatch = useDispatch();
-    const isMatched = useSelector((state: RootState) => state.match.isMatched);
     const isCustomGame = useSelector((state: RootState) => state.match.isCustom);
 	const socket = useGameSocket();
 	var mySide :PlayerSide = PlayerSide.NONE;
@@ -51,6 +39,7 @@ const Game = () => {
 			socket.on('startGame', (json: StartGameJson) => {
 				if (json.isFirst)
 					mySide = json.side;
+				dispatch(setSide({ side: json.side }));
 				sendMessage('GameManager', 'StartGame', JSON.stringify(json));
 				console.log('! startGame Event Detected : ', json)
 			});
@@ -67,6 +56,8 @@ const Game = () => {
 					sendMessage('RightPaddle', 'MoveOpponentPaddle', JSON.stringify(json));
 				else if (mySide === PlayerSide.RIGHT)
 					sendMessage('LeftPaddle', 'MoveOpponentPaddle', JSON.stringify(json));
+				else
+					console.log('err : movePaddle event detected but, player side is NONE')
 			});
 		}
 		if (!socket.hasListeners('gameOver')) {
@@ -74,8 +65,10 @@ const Game = () => {
 				console.log('! gameOver Event Detected : ', json);
 				sendMessage('GameManager', 'GameOver', JSON.stringify(json));
 				setGameOver(true);
-				//if (!isCustomGame) dispatch(setIsMatched({ isMatched: false }));
-				//else setIsReady(false);
+				if (isCustomGame)
+					setIsReady(false);
+				else
+					dispatch(setIsMatched({ isMatched: false }));
 			});
 		}
 		if (!socket.hasListeners('ballHit')) {
@@ -98,7 +91,6 @@ const Game = () => {
     }, []);
 	const handleBallHit = useCallback((data: ReactUnityEventParameter) => {
         socket.emit('ballHit', JSON.parse(data as string));
-		console.log('ballHit From Unity : ', data)
     }, []);
 	
 	// unity to react
@@ -117,22 +109,33 @@ const Game = () => {
         };
     }, [addEventListener, removeEventListener, handleUnityException, handleValidCheck, handleMovePaddle, Init, handleBallHit]);
 	
+	const containerStyle: React.CSSProperties = {
+		display: 'flex',
+		alignItems: 'center',
+		justifyContent: 'center',
+	};
+
     return (
         <>
-            {gameOver === true && <h2>{'Game Over!'}</h2>}
-            <button
+				<EmojiScreen screenSide={PlayerSide.LEFT}/>
+			<div style={containerStyle}>
+				<Unity
+					unityProvider={unityProvider}
+					style={{ width: 800, height: 450 }}
+					/>
+			</div>
+				<EmojiScreen screenSide={PlayerSide.RIGHT}/>
+
+			<EmojiButtons/>
+
+			<button
                 onClick={() => {
                     setIsReady(true);
                     socket.emit('getReady');
                 }}
                 disabled={isReady}
-            >
-                Get Ready
+            > Get Ready
             </button>
-            <Unity
-                unityProvider={unityProvider}
-                style={{ width: 800, height: 450 }}
-            />
         </>
     );
 };

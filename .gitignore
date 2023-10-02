@@ -14,7 +14,7 @@ lerna-debug.log*
 # OS
 .DS_Store
 srcs/postgresql/*
-*.png
+# *.png
 *.jpeg
 *.jpg
 !default.png
