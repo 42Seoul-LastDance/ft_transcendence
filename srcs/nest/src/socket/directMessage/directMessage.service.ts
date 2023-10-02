@@ -11,10 +11,16 @@ export class DirectMessageService {
     constructor(private directMessageRepository: DirectMessageRepository) {}
 
     addNewUser(socket: Socket, userId: number) {
+        console.log('socket id, userId in addNewUser(DM) : ', socket.id, userId);
+        const signedUser = this.userList.get(userId);
+        if (signedUser !== undefined) this.socketList.delete(signedUser.id);
         this.socketList.set(socket.id, userId);
+        this.userList.set(userId, socket);
+        // ? DM도 blockList를 유저별로 인메모리에 저장해놔야 빠르게 체크할 수 있지 않을까?
     }
 
     deleteUser(socket: Socket) {
+        this.userList.delete(this.socketList.get(socket.id));
         this.socketList.delete(socket.id);
     }
 
@@ -33,7 +39,7 @@ export class DirectMessageService {
         return this.socketList.get(socket.id);
     }
 
-    async sendMessage(socket: Socket, content: string, targetId: number){
+    async sendMessage(socket: Socket, content: string, targetId: number) {
         const userId = this.getUserId(socket);
         const targetSocket: Socket = this.userList.get(targetId);
         const payload = {
@@ -45,5 +51,9 @@ export class DirectMessageService {
         if (!userId) targetSocket.emit('sendMessage', 'internal server error');
         await this.saveMessage(userId, targetId, content);
         targetSocket.emit('sendMessage', payload);
+    }
+
+    async findRecentDMs(target1Id: number, target2Id: number, count: number): Promise<DirectMessage[]> {
+        return;
     }
 }

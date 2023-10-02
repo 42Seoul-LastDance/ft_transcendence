@@ -1,6 +1,6 @@
 export interface RoomInfoDto {
-  roomname: string;
-  username: string;
+  roomName: string;
+  userName: string;
   password: string | null;
   requirePassword: boolean;
   status: RoomStatus;

@@ -1,5 +1,4 @@
 import {
-    ConnectedSocket,
     OnGatewayConnection,
     OnGatewayDisconnect,
     SubscribeMessage,

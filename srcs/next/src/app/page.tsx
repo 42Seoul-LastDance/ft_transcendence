@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, redirect } from 'next/navigation';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 
@@ -12,6 +12,14 @@ export default function Home() {
     <main>
       <h1>42Login!</h1>
       <Divider />
+      <Button
+        variant="contained"
+        onClick={() => {
+          router.push('http://10.14.6.5:3000/auth/42login');
+        }}
+      >
+        42login
+      </Button>
       <Button
         variant="contained"
         onClick={() => {

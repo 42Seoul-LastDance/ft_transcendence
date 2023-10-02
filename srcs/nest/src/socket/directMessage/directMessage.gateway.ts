@@ -32,12 +32,17 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
     // * 커넥션 핸들링 ========================================================
     handleConnection(socket: Socket) {
         console.log('token: ', socket.handshake.auth.token);
-        const decodedToken = this.jwtService.verify(socket.handshake.auth.token, {
-            secret: process.env.JWT_SECRET_KEY,
-        });
-        if (!decodedToken) socket.disconnect(true); //true면 아예 끊고, false 면 해당 namespace만 끊는다.
-        this.directMessageService.addNewUser(socket, decodedToken.sub); //sub == id?
-        console.log(socket.id, ': new connection.');
+
+        try {
+            const decodedToken = this.jwtService.verify(socket.handshake.auth.token, {
+                secret: process.env.JWT_SECRET_KEY,
+            });
+            this.directMessageService.addNewUser(socket, decodedToken.sub);
+        } catch (error) {
+            socket.disconnect(true); //true면 아예 끊고, false 면 해당 namespace만 끊는다.
+            return;
+        }
+        console.log(socket.id, ': new connection. (DM)');
     }
 
     handleDisconnect(socket: Socket) {

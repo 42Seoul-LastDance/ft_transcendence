@@ -44,6 +44,7 @@ export class ChatRoomService {
         this.socketList.set(socket.id, userId);
         this.userList.set(userId, socket);
         this.blockList.set(socket.id, new Array<number>());
+        // ? blockList를 DB에서 꺼내와서 채워놔야 하지 않을까?
         //!test : 들어오면 default 룸으로 들어가게 하기.
         await this.joinPublicChatRoom(socket, 'default room', 'password');
 
@@ -52,7 +53,7 @@ export class ChatRoomService {
 
     deleteUser(socket: Socket) {
         this.userList.delete(this.socketList.get(socket.id));
-        if (this.socketList.delete(socket.id)) console.log('delete socket : ', socket.id);
+        this.socketList.delete(socket.id);
         this.blockList.delete(socket.id);
     }
 
@@ -88,6 +89,7 @@ export class ChatRoomService {
         roomDto.roomName = roomInfoDto.roomName;
         roomDto.ownerName = roomInfoDto.userName;
         roomDto.requirePassword = roomInfoDto.requirePassword;
+        if (roomInfoDto.password) roomDto.password = roomInfoDto.password;
         const ownerId = (await this.userService.getUserByUsername(roomInfoDto.userName)).id;
         // roomDto.memberList.push(ownerId); // ! join에서 이미 memberList에 push 중
 

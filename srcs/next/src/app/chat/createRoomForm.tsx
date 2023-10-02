@@ -9,10 +9,12 @@ import { useDispatch } from 'react-redux';
 import { useChatSocket } from '../Context/ChatSocketContext';
 import { RoomInfoDto, RoomStatus } from '../DTO/RoomInfo.dto';
 import { push } from '../redux/roomSlice';
+import { useRouter } from 'next/navigation';
 
 export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const dispatch = useDispatch();
   const chatSocket = useChatSocket();
+  const router = useRouter();
   const [roomname, setRoomname] = useState<string>('');
   const [isPrivate, setIsPrivate] = useState<boolean>(false);
   const [requirePassword, setIsLocked] = useState<boolean>(false);
@@ -43,20 +45,20 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
 
   const addNewRoom = () => {
     const newRoomInfo: RoomInfoDto = {
-      roomname: roomname,
-      username: 'jaejun',
+      roomName: roomname,
+      userName: 'testman',
       password: password ? password : null,
       requirePassword: requirePassword,
       status: isPrivate ? RoomStatus.PRIVATE : RoomStatus.PUBLIC,
     };
 
+    console.log(newRoomInfo);
     chatSocket.emit('createChatRoom', newRoomInfo);
     chatSocket.on('createChatRoom', (data) => {
       console.log(data);
     });
 
-    dispatch(push(newRoomInfo));
-    onClose();
+    router.push('/chatRoom');
   };
 
   return (
