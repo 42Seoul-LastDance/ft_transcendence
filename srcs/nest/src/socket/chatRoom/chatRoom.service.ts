@@ -39,6 +39,8 @@ export class ChatRoomService {
     async addNewUser(socket: Socket, userId: number) {
         // const userName = socket.handshake.query['username'].toString();
         console.log('socket id, userId in addNewUser : ', socket.id, userId);
+        const signedUser = this.userList.get(userId);
+        if (signedUser !== undefined) this.socketList.delete(signedUser.id);
         this.socketList.set(socket.id, userId);
         this.userList.set(userId, socket);
         this.blockList.set(socket.id, new Array<number>());
@@ -50,7 +52,7 @@ export class ChatRoomService {
 
     deleteUser(socket: Socket) {
         this.userList.delete(this.socketList.get(socket.id));
-        this.socketList.delete(socket.id);
+        if (this.socketList.delete(socket.id)) console.log('delete socket : ', socket.id);
         this.blockList.delete(socket.id);
     }
 
@@ -72,10 +74,10 @@ export class ChatRoomService {
     }
 
     getChatRoomList() {
-        console.log('will send', this.publicRoomList);
+        // console.log('will send', this.publicRoomList);
         const jsonArray = Array.from(this.publicRoomList.entries());
         const json = JSON.stringify(jsonArray);
-        console.log('will send as JSON: ', json);
+        // console.log('will send as JSON: ', json);
         return json;
     }
 
@@ -84,10 +86,10 @@ export class ChatRoomService {
         //TODO : chat Room 중복 체크
 
         roomDto.roomName = roomInfoDto.roomName;
-        roomDto.ownerName = roomInfoDto.username;
+        roomDto.ownerName = roomInfoDto.userName;
         roomDto.requirePassword = roomInfoDto.requirePassword;
-        const ownerId = (await this.userService.getUserByUsername(roomInfoDto.username)).id;
-        roomDto.memberList.push(ownerId);
+        const ownerId = (await this.userService.getUserByUsername(roomInfoDto.userName)).id;
+        // roomDto.memberList.push(ownerId); // ! join에서 이미 memberList에 push 중
 
         if (roomInfoDto.status == RoomStatus.PRIVATE) this.privateRoomList.set(roomInfoDto.roomName, roomDto);
         else this.publicRoomList.set(roomInfoDto.roomName, roomDto);
@@ -98,7 +100,7 @@ export class ChatRoomService {
     }
 
     leavePastRoom(socket: Socket, userId: number) {
-        console.log('socket: ', socket);
+        // console.log('socket: ', socket);
         const pastRoomName = this.userList.get(userId)?.rooms[0];
         console.log('pastRoomName: ', pastRoomName);
         if (pastRoomName !== undefined) {

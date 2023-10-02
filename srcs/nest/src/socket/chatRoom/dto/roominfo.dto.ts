@@ -6,7 +6,7 @@ export class RoomInfoDto {
     roomName: string;
 
     @IsString()
-    username: string;
+    userName: string;
 
     @IsString()
     password: string | null;

@@ -2,12 +2,12 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 const token =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MjQyIiwibmFtZSI6Imh5dW5qdWtpIiwiaWF0IjoxNTE2MjIzNDIzNH0.UPVv3vDiROAVbRequxbMLnS9NXcR4QcfKGxY20kg-Qs';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MjQyIiwibmFtZSI6InRlc3RtYW4iLCJpYXQiOjE1MTYyMjM0MjM0fQ.jZsy7aTM-GcoSbQW6TERNuTCBCvIS-7l_qfm5PMg0-U';
 
 // Socket.IO 소켓 초기화
-export var chatSocket: Socket = io('http://127.0.0.1:3000/RoomChat', {
+export var chatSocket: Socket = io('http://10.14.6.5:3000/RoomChat', {
   withCredentials: false,
-  autoConnect: false,
+  autoConnect: true,
   transports: ['websocket'],
   query: {
     token,
@@ -39,7 +39,6 @@ export function ChatSocketProvider({
   // 소켓 초기화와 컨텍스트 제공을 한꺼번에 수행
   useEffect(() => {
     chatSocket.connect();
-    // console.log('socket connect');
     return () => {
       chatSocket.disconnect();
     };

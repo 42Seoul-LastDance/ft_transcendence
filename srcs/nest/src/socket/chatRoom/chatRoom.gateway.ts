@@ -1,4 +1,5 @@
 import {
+    ConnectedSocket,
     OnGatewayConnection,
     OnGatewayDisconnect,
     SubscribeMessage,
@@ -33,16 +34,15 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         // console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
         const tokenString: string = socket.handshake.query.token as string;
 
-        let decodedToken;
         try {
-            decodedToken = this.jwtService.verify(tokenString, {
+            const decodedToken = this.jwtService.verify(tokenString, {
                 secret: process.env.JWT_SECRET_KEY,
             });
+            await this.chatroomService.addNewUser(socket, decodedToken.sub);
         } catch (error) {
             socket.disconnect(true);
             return;
         }
-        await this.chatroomService.addNewUser(socket, decodedToken.sub);
         console.log(socket.id, ': new connection.');
     }
 
@@ -86,6 +86,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // * ChatRoom Method ===========================================================
     @SubscribeMessage('createChatRoom')
     createChatRoom(socket: Socket, payload: JSON) {
+        console.log('createChatRoom payload : ', payload);
         this.chatroomService.createChatRoom(socket, Object.assign(new RoomInfoDto(), payload));
         socket.emit('createChatRoom');
     }
