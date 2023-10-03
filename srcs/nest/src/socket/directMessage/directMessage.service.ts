@@ -54,6 +54,17 @@ export class DirectMessageService {
     }
 
     async findRecentDMs(target1Id: number, target2Id: number, count: number): Promise<DirectMessage[]> {
-        return;
+        return this.directMessageRepository.find({
+            where: [
+                { senderId: target1Id },
+                { receiverId: target1Id },
+                { senderId: target2Id },
+                { receiverId: target2Id },
+            ],
+            order: {
+                sentTime: 'DESC',
+            },
+            take: count,
+        });
     }
 }
