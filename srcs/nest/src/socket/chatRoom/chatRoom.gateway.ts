@@ -28,20 +28,21 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     public server: Server;
 
     // * 커넥션 핸들링 ========================================================
-    async handleConnection(socket: Socket) {
+    async handleConnection(socket: Socket) {  
         // console.log('token: ', socket.handshake.query.token); // * 테스트용
         // console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
-        const tokenString: string = socket.handshake.query.token as string;
-        try {
-            const decodedToken = this.jwtService.verify(tokenString, {
-                secret: process.env.JWT_SECRET_KEY,
-            });
-            await this.chatroomService.addNewUser(socket, decodedToken.sub, this.server);
-        } catch (error) {
-            socket.disconnect(true);
-            return;
-        }
+        // const tokenString: string = socket.handshake.query.token as string;
+        // try {
+        //     const decodedToken = this.jwtService.verify(tokenString, {
+        //         secret: process.env.JWT_SECRET_KEY,
+        //     });
+        //     await this.chatroomService.addNewUser(socket, 1507, this.server);
+        // } catch (error) {
+        //     socket.disconnect(true);
+        //     return;
+        // }
         console.log(socket.id, ': new connection.');
+		socket.emit('connectSuccess'); 
     }
 
     handleDisconnect(socket: Socket) {
@@ -64,6 +65,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         // ”roomname”: string,
         // ”isLocked” : boolean,
         // ”status” : roomStatus,
+		console.log('----------------------getChatRoomList')
         const chatRoomList = this.chatroomService.getChatRoomList();
         socket.emit('getChatRoomList', chatRoomList);
         // socket.emit('getChatRoomList', {'chatRoomList': {chatRoomList}});
