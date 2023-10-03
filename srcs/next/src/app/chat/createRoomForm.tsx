@@ -5,16 +5,18 @@ import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useChatSocket } from '../Context/ChatSocketContext';
 import { RoomInfoDto, RoomStatus } from '../DTO/RoomInfo.dto';
-import { push } from '../redux/roomSlice';
 import { useRouter } from 'next/navigation';
+import { setIsJoined } from '../redux/roomSlice';
+import { RootState } from '../redux/store';
 
 export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
-  const dispatch = useDispatch();
   const chatSocket = useChatSocket();
   const router = useRouter();
+  const dispatch = useDispatch();
+  const isJoined = useSelector((state: RootState) => state.room.isJoined);
   const [roomname, setRoomname] = useState<string>('');
   const [isPrivate, setIsPrivate] = useState<boolean>(false);
   const [requirePassword, setIsLocked] = useState<boolean>(false);
@@ -54,11 +56,12 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
 
     console.log(newRoomInfo);
     chatSocket.emit('createChatRoom', newRoomInfo);
-    chatSocket.on('createChatRoom', (data) => {
-      console.log(data);
-    });
-
-    router.push('/chatRoom');
+    // chatSocket.on('createChatRoom', (data) => {
+    //   console.log(data);
+    // });
+    dispatch(setIsJoined(true));
+    onClose();
+    // router.push('/chatRoom');
   };
 
   return (

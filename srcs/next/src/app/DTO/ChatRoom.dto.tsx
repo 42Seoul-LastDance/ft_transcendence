@@ -12,6 +12,3 @@ export interface ChatRoomDto {
   password: string | null;
   requirePassword: boolean;
 }
-export interface ChatRoomListDto {
-  [roomName: string]: ChatRoomDto;
-}

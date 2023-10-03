@@ -1,37 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Tab, Tabs } from '@mui/material';
-import ChatRoomList from './chatRoomList';
-import { ChatSocketProvider } from '../Context/ChatSocketContext';
-import { Provider } from 'react-redux';
-import store from '../redux/store';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import store, { RootState } from '../redux/store';
+import ChattingTabs from './chattingTabs';
+import ChattingContent from './chattingPage';
+import {
+  ChatSocketProvider,
+  useChatSocket,
+} from '../Context/ChatSocketContext';
+import { setRoomNameList } from '../redux/roomSlice';
 
-const ChattingTabs = () => {
-  const [value, setValue] = useState<number>(0);
-
-  const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
-    setValue(newValue);
-  };
+const ChatHomeContent = () => {
+  const dispatch = useDispatch();
+  const isJoined = useSelector((state: RootState) => state.room.isJoined);
+  const chatSocket = useChatSocket();
 
   return (
-    <Provider store={store}>
-      <ChatSocketProvider>
-        <div>
-          <Tabs value={value} onChange={handleChange}>
-            <Tab label="Chatting" />
-            <Tab label="DM" />
-            <Tab label="Setting" />
-          </Tabs>
-          <div>
-            {value === 0 && <ChatRoomList />}
-            {value === 1 && <div>Tab 2 Content</div>}
-            {value === 2 && <div>Tab 3 Content</div>}
-          </div>
-        </div>
-      </ChatSocketProvider>
-    </Provider>
+    <>
+      <div style={{ display: 'flex' }}>
+        <ChattingTabs />
+        {isJoined ? <ChattingContent /> : <></>}
+      </div>
+    </>
   );
 };
 
-export default ChattingTabs;
+const ChatHome = () => {
+  return (
+    <>
+      <Provider store={store}>
+        <ChatSocketProvider>
+          <ChatHomeContent />
+        </ChatSocketProvider>
+      </Provider>
+    </>
+  );
+};
+
+export default ChatHome;

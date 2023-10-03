@@ -17,7 +17,10 @@ import {
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings'; // 설정 아이콘 추가
 import ChatSetting from './chatSetting';
-import {useChatSocket, ChatSocketProvider} from '../Context/ChatSocketContext'
+import {
+  useChatSocket,
+  ChatSocketProvider,
+} from '../Context/ChatSocketContext';
 interface ChatMessage {
   username: string;
   message: string;
@@ -63,7 +66,7 @@ const ChattingContent = () => {
       style={{
         display: 'flex',
         flexDirection: 'column', // 컨테이너 내의 요소를 위에서 아래로 배치하도록 수정
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         alignItems: 'center',
         height: '100vh',
       }}
@@ -142,14 +145,14 @@ const ChattingContent = () => {
       </Drawer>
     </Container>
   );
-}
+};
 
 const Chatting = () => {
   return (
     <>
-          <ChattingContent/>
+      <ChattingContent />
     </>
   );
-}
+};
 
 export default Chatting;

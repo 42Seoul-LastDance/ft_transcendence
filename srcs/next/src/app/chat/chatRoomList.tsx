@@ -8,11 +8,14 @@ import CreateRoomButton from './createRoomButton';
 import { useRouter } from 'next/navigation';
 import { useChatSocket } from '../Context/ChatSocketContext';
 import { RoomStatus } from '../DTO/RoomInfo.dto'; // ChatRoomDto 및 ChatRoomListDto는 사용되지 않으므로 import 제거
-import { ChatRoomListDto, ChatRoomDto } from '../DTO/ChatRoom.dto';
+import { ChatRoomDto } from '../DTO/ChatRoom.dto';
 import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import { useDispatch } from 'react-redux';
-import { push } from '../redux/roomSlice';
+import { setIsJoined, setRoomNameList } from '../redux/roomSlice';
+import { DefaultEventsMap } from '@socket.io/component-emitter';
+import { Dispatch, AnyAction } from 'redux';
+import { Socket } from 'socket.io-client';
 
 const style = {
   width: '100%',
@@ -20,50 +23,66 @@ const style = {
   bgcolor: 'background.paper',
 };
 
+// const eventSet = (chatSocket: Socket, dispatch: Dispatch) => {
+//   chatSocket.on('getChatRoomList', (data) => {
+//     dispatch(setRoomNameList(data));
+//     console.log('event Detected');
+//   });
+//   chatSocket.emit('getChatRoomList', {
+//     roomStatus: RoomStatus.PUBLIC,
+//   });
+// };
+
 const ChatRoomList: React.FC = () => {
   const chatSocket = useChatSocket();
-  const router = useRouter();
+  const dispatch = useDispatch();
+  const isJoined = useSelector((state: RootState) => state.room.isJoined);
 
-  const [roomNameList, setRoomNameList] = useState<string[]>([]);
+  const roomNameList = useSelector(
+    (state: RootState) => state.room.roomNameList,
+  );
 
-  useEffect(() => {
-	if (!chatSocket.hasListeners('getChatRoomList')){
-		chatSocket.on('getChatRoomList', (data) => {
-			setRoomNameList(data);
-		});
-	}
-	chatSocket.emit('getChatRoomList', {
-	  roomStatus: RoomStatus.PUBLIC,
-	});
-    // 컴포넌트 언마운트 시에 소켓 이벤트 핸들러 제거
-    return () => {
-      chatSocket.off('getChatRoomList');
-    };
-  }, [chatSocket]);
+  // if (!chatSocket.hasListeners('getChatRoomList')) {
+  //   chatSocket.on('getChatRoomList', (data) => {
+  //     dispatch(setRoomNameList(data));
+  //   });
+  // }
+
+  // useEffect(() => {
+  //   chatSocket.emit('getChatRoomList', {
+  //     roomStatus: RoomStatus.PUBLIC,
+  //   });
+  // }, []);
 
   const joinRoom = (roomName: string) => {
-	var curRoomInfo : ChatRoomDto;
+    if (!chatSocket.hasListeners('getChatRoomInfo')) {
+      chatSocket.on('getChatRoomInfo', (curRoomInfo: ChatRoomDto) => {
+        console.log('curRoomInfo: ', curRoomInfo);
+        console.log('curRoomInfo: ', curRoomInfo.requirePassword);
+        if (curRoomInfo.requirePassword === true) {
+          const password = prompt('비밀번호를 입력하세요');
+          console.log('password: ', curRoomInfo.password);
+          if (password === curRoomInfo.password) {
+            // router.push('/chatRoom');
+            dispatch(setIsJoined(true));
+          } else {
+            alert('비밀번호가 틀렸습니다');
+          }
+        } else if (curRoomInfo.requirePassword === false) {
+          console.log('비밀번호 없음');
+          // router.push('/chatRoom');
+          dispatch(setIsJoined(true));
+        } else {
+          console.log('curRoomInfo.requirePassword : 이것은 backend 잘못이여');
+        }
+      });
+    }
 
-	if (!chatSocket.hasListeners('getChatRoomInfo')){
-		chatSocket.on('getChatRoomInfo', (data: ChatRoomDto) => {
-			curRoomInfo = data;
-			if (curRoomInfo.requirePassword == true) {
-				const password = prompt('비밀번호를 입력하세요');
-				console.log('password: ', curRoomInfo.password);
-				if (password === curRoomInfo.password) {
-				  router.push('/chatRoom');
-				} else {
-				  alert('비밀번호가 틀렸습니다');
-				}
-			} else if (curRoomInfo.requirePassword == false) {
-				router.push('/chatRoom');
-			}
-		});
-	}
-	chatSocket.emit('getChatRoomInfo', {
-		'roomName': roomName,
-		'status': RoomStatus.PUBLIC
-	});
+    chatSocket.emit('getChatRoomInfo', {
+      roomName: roomName,
+      status: RoomStatus.PUBLIC,
+    });
+    console.log('join!!');
   };
 
   return (

@@ -5,7 +5,7 @@ const token =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MjQyIiwibmFtZSI6InRlc3RtYW4iLCJpYXQiOjE1MTYyMjM0MjM0fQ.jZsy7aTM-GcoSbQW6TERNuTCBCvIS-7l_qfm5PMg0-U';
 
 // Socket.IO 소켓 초기화
-export var chatSocket: Socket = io('http://10.14.6.7:3000/RoomChat', {
+export var chatSocket: Socket = io('http://10.14.6.5:3000/RoomChat', {
   // forceNew: true,
   withCredentials: false,
   autoConnect: true,
