@@ -25,7 +25,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     ) {}
 
     @WebSocketServer()
-    server: Server;
+    public server: Server;
 
     // * 커넥션 핸들링 ========================================================
     async handleConnection(socket: Socket) {
@@ -36,7 +36,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
             const decodedToken = this.jwtService.verify(tokenString, {
                 secret: process.env.JWT_SECRET_KEY,
             });
-            await this.chatroomService.addNewUser(socket, decodedToken.sub);
+            await this.chatroomService.addNewUser(socket, decodedToken.sub, this.server);
         } catch (error) {
             socket.disconnect(true);
             return;
@@ -47,7 +47,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     handleDisconnect(socket: Socket) {
         const userId = this.chatroomService.getUserId(socket);
         console.log('disconnect userId : ', userId);
-        this.chatroomService.leavePastRoom(socket, userId);
+        this.chatroomService.leavePastRoom2(socket, this.server);
         this.chatroomService.deleteUser(socket);
         console.log(socket.id, ': lost connection.');
     }
@@ -95,18 +95,20 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     @SubscribeMessage('createChatRoom')
     createChatRoom(socket: Socket, payload: JSON) {
         // console.log('createChatRoom payload : ', payload);
-        this.chatroomService.createChatRoom(socket, Object.assign(new RoomInfoDto(), payload));
-        socket.emit('createChatRoom');
+        this.chatroomService.createChatRoom(socket, Object.assign(new RoomInfoDto(), payload), this.server);
+        // * 프론트 요청 : create 후 새로 갱신된 리스트 전송
+        const chatRoomList = this.chatroomService.getChatRoomList();
+        this.server.emit('getChatRoomList', chatRoomList);
     }
 
     @SubscribeMessage('joinPublicChatRoom')
     joinPublicChatRoom(socket: Socket, payload: JSON) {
-        this.chatroomService.joinPublicChatRoom(socket, payload['roomName'], payload['password']);
+        this.chatroomService.joinPublicChatRoom(socket, payload['roomName'], payload['password'], this.server);
     }
 
     @SubscribeMessage('joinPrivateChatRoom')
     joinPrivateChatRoom(socket: Socket, payload: JSON) {
-        this.chatroomService.joinPrivateChatRoom(socket, payload['roomName']);
+        this.chatroomService.joinPrivateChatRoom(socket, payload['roomName'], this.server);
     }
 
     // @SubscribeMessage('exitChatRoom')
@@ -143,7 +145,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('kickUser')
     async kickUser(socket: Socket, payload: JSON) {
-        await this.chatroomService.kickUser(socket, payload['roomName'], payload['targetName']);
+        await this.chatroomService.kickUser(socket, payload['roomName'], payload['targetName'], this.server);
     }
 
     @SubscribeMessage('muteUser')
