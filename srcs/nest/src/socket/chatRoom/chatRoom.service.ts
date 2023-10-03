@@ -38,17 +38,18 @@ export class ChatRoomService {
 
     async addNewUser(socket: Socket, userId: number) {
         // const userName = socket.handshake.query['username'].toString();
-        console.log('socket id, userId in addNewUser : ', socket.id, userId);
-        const signedUser = this.userList.get(userId);
-        if (signedUser !== undefined) this.socketList.delete(signedUser.id);
+        console.log('socket id, userId in ADD NEW USER : ', socket.id, userId);
         this.socketList.set(socket.id, userId);
         this.userList.set(userId, socket);
         this.blockList.set(socket.id, new Array<number>());
         // ? blockList를 DB에서 꺼내와서 채워놔야 하지 않을까?
         //!test : 들어오면 default 룸으로 들어가게 하기.
+        socket.rooms.clear();
         await this.joinPublicChatRoom(socket, 'default room', 'password');
 
-        socket.rooms.clear();
+        //!test
+        // console.log('add new user, has rooms : ', socket.rooms);
+        // console.log('add new user, has rooms : ', socket.rooms);
     }
 
     deleteUser(socket: Socket) {
@@ -76,23 +77,35 @@ export class ChatRoomService {
 
     getChatRoomList() {
         // console.log('will send', this.publicRoomList);
-        const jsonArray = Array.from(this.publicRoomList.entries());
-        const json = JSON.stringify(jsonArray);
-        // console.log('will send as JSON: ', json);
-        return json;
+        const keyArray = Array.from(this.publicRoomList.keys()); // keyArray:  [ 'default room', 'roomName', ... ]
+        // console.log('keyArray: ', keyArray);
+        return keyArray;
+    }
+
+    getChatRoomInfo(roomName: string, roomstatus: RoomStatus) {
+        //public/private 중 특정 방 정보를 준다.
+        let roominfo: ChatRoomDto;
+        if (roomstatus === RoomStatus.PUBLIC) roominfo = this.publicRoomList.get(roomName);
+        else roominfo = this.privateRoomList.get(roomName);
+        return roominfo;
     }
 
     async createChatRoom(socket: Socket, roomInfoDto: RoomInfoDto): Promise<void> {
+        //check duplicate
+        let checkDuplicate: ChatRoomDto;
+        if (roomInfoDto.status === RoomStatus.PUBLIC) checkDuplicate = this.publicRoomList.get(roomInfoDto.roomName);
+        else checkDuplicate = this.privateRoomList.get(roomInfoDto.roomName);
+        if (checkDuplicate !== undefined) {
+            this.emitFailReason(socket, 'createChatRoom', 'channel already exists.');
+            return;
+        }
+
         const roomDto: ChatRoomDto = new ChatRoomDto();
-        //TODO : chat Room 중복 체크
 
         roomDto.roomName = roomInfoDto.roomName;
         roomDto.ownerName = roomInfoDto.userName;
         roomDto.requirePassword = roomInfoDto.requirePassword;
         if (roomInfoDto.password) roomDto.password = roomInfoDto.password;
-        const ownerId = (await this.userService.getUserByUsername(roomInfoDto.userName)).id;
-        // roomDto.memberList.push(ownerId); // ! join에서 이미 memberList에 push 중
-
         if (roomInfoDto.status == RoomStatus.PRIVATE) this.privateRoomList.set(roomInfoDto.roomName, roomDto);
         else this.publicRoomList.set(roomInfoDto.roomName, roomDto);
         if (roomInfoDto.status == RoomStatus.PRIVATE) this.joinPrivateChatRoom(socket, roomDto.roomName);
@@ -101,26 +114,52 @@ export class ChatRoomService {
         //.to('' + roomDto.id) => 글쓴 사람을 제외한 다른 사람들한테만 보이는지 확인
     }
 
-    leavePastRoom(socket: Socket, userId: number) {
+    async leavePastRoom(socket: Socket, userId: number) {
         // console.log('socket: ', socket);
-        const pastRoomName = this.userList.get(userId)?.rooms[0];
-        console.log('pastRoomName: ', pastRoomName);
+        // console.log('LEAVE PAST ROOM ', socket.rooms);
+        const userName = (await this.userService.findUserById(userId)).username;
+        const pastRoom = this.userList.get(userId)?.rooms;
+        let pastRoomName;
+        if (pastRoom) pastRoomName = Array.from(pastRoom)[0];
+        else pastRoomName = undefined;
+        //! test - 1개의 방을 유지하는가?
+        // for (const value of this.userList.get(userId).rooms) {
+        //     console.log('room : ', value);
+        // }
+        // console.log('LEAVE PAST ROOM - Get USERID ROOMS', this.userList.get(userId)?.rooms);
+        // console.log('LEAVE PAST ROOM - ROOM NAME : ', pastRoomName);
+        // console.log('pastRoomName: ', pastRoomName);
         if (pastRoomName !== undefined) {
             //기존에 유저가 있던 채널이 있는지 확인
-            const pastRoom = this.publicRoomList.get(pastRoomName);
-            const condition = (element) => element === pastRoomName;
-            let idx = pastRoom.memberList.findIndex(condition);
-
-            pastRoom.memberList.splice(idx, 1); //memberList
-            idx = pastRoom.muteList.findIndex(condition); //muteList
-            if (idx !== -1) pastRoom.muteList.splice(idx, 1);
-
-            socket.leave(pastRoomName);
-            // 해당 채널의 유저가 0명일 경우, Map에서 삭제
-            if (pastRoom.memberList.length == 0) {
-                if (pastRoom.status == RoomStatus.PRIVATE) this.privateRoomList.delete(pastRoomName);
-                else this.publicRoomList.delete(pastRoomName);
+            const pastRoom: ChatRoomDto = this.publicRoomList.get(pastRoomName);
+            socket.to(pastRoomName).emit('sendMessage', userName + '님이 방을 나가셨습니다.');
+            //user가 나갈 것임을 출력
+            //user가 room owner 인 경우 방 폭파 메시지 출력
+            //한 명씩 for 문으로 leave
+            if (userName === pastRoom.ownerName) {
+                //방 하나를 폭파.
+                socket.to(pastRoomName).emit('explodeChatRoom', '방 소유자가 나갔으므로 채팅방이 사라집니다.');
+                // 방 타입 검사 후 해당 리스트에서 key-value쌍 item 삭제
+                let roomList;
+                if (pastRoom.status == RoomStatus.PUBLIC) roomList = this.publicRoomList;
+                else roomList = this.privateRoomList;
+                roomList.delete(pastRoomName);
+            } else {
+                //한 유저만 chatRoom에서 삭제
+                const condition = (element) => element === pastRoomName;
+                let idx = pastRoom.memberList.findIndex(condition);
+                pastRoom.memberList.splice(idx, 1); //memberList
+                idx = pastRoom.muteList.findIndex(condition); //muteList
+                if (idx !== -1) pastRoom.muteList.splice(idx, 1);
+                socket.leave(pastRoomName);
             }
+
+            // // 해당 채널의 유저가 0명일 경우, Map에서 삭제
+            // if (pastRoom.memberList.length == 0) {
+            //     if (pastRoom.status == RoomStatus.PRIVATE) this.privateRoomList.delete(pastRoomName);
+            //     else this.publicRoomList.delete(pastRoomName);
+            // }
+            // console.log('AFTER LEAVE PAST ROOM ', socket.rooms);
             this.emitSuccess(socket, 'leavePastRoom');
         }
         this.emitFailReason(socket, 'leavePastRoom', 'there was no past room.');
@@ -129,8 +168,9 @@ export class ChatRoomService {
     async joinPublicChatRoom(socket: Socket, roomName: string, password: string): Promise<void> {
         const targetRoom = this.publicRoomList.get(roomName);
         const userId = this.getUserId(socket);
+        console.log('JOIN PUBLIC CHAT ROOM', roomName);
         console.log('socket list:', this.socketList);
-        console.log('userId, socketId', userId, socket.id);
+        // console.log('userId, socketId', userId, socket.id);
         if (targetRoom == undefined) {
             //NO SUCH ROOM
             this.emitFailReason(socket, 'joinPublicChatRoom', 'Room does not exists.');
@@ -149,16 +189,16 @@ export class ChatRoomService {
 
         this.leavePastRoom(socket, userId);
         //!test
-        console.log('test: must be none. ', socket.rooms);
-        // socket.rooms.clear(); // ? 기존에 있던 방 나간다. docs -> 자기 client id?
+        // console.log('test: must be none: ', socket.rooms);
+        // sockejoinPublict.rooms.clear(); // ? 기존에 있던 방 나간다. docs -> 자기 client id?
 
         //user의 Channel 변경
         socket.join(roomName);
         //ChannelList에서 user 추가
         targetRoom.memberList.push(userId);
-        console.log('user id', userId);
+        // console.log('user id', userId);
         const user = await this.userService.findUserById(userId);
-        console.log('user :', user);
+        // console.log('user :', user);
         const userName = user.username;
         socket.to(roomName).emit('joinPublicChatRoom', `"${userName}"님이 "${targetRoom.roomName}"방에 접속했습니다`);
         this.emitSuccess(socket, 'joinPublicChatRoom');
@@ -197,7 +237,7 @@ export class ChatRoomService {
         const userId = this.getUserId(socket);
         //!test
         if (socket.rooms[0] != roomName)
-            console.log('test failed. user 가 속해있는 room이 1개 이상이거나 맞지 않습니다.');
+            console.log('test failed. user 가 속해있는 room이 1개 이상이거나 맞지 않습니다.'); //default room도 있음
         const userName = (await this.userService.findUserById(userId)).username;
         socket.to(roomName).emit('kickUser', `"${userName}"님이 "${targetName}"님을 강퇴하였습니다.`);
         const targetId = (await this.userService.getUserByUsername(targetName)).id;

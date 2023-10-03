@@ -7,6 +7,7 @@ import { DirectMessage } from './directMessage.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DirectMessageController } from './directMessage.controller';
 import { UserModule } from 'src/user/user.module';
+import { BlockedUsersModule } from 'src/user/blockedUsers/blockedUsers.module';
 
 @Module({
     imports: [
@@ -14,6 +15,7 @@ import { UserModule } from 'src/user/user.module';
         TypeOrmModule.forFeature([DirectMessageRepository]),
         JwtModule,
         UserModule,
+        BlockedUsersModule,
     ],
     controllers: [DirectMessageController],
     providers: [DirectMessageGateway, DirectMessageService, DirectMessageRepository],

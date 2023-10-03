@@ -29,10 +29,9 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     // * 커넥션 핸들링 ========================================================
     async handleConnection(socket: Socket) {
-        console.log('token: ', socket.handshake.query.token); // * 테스트용
+        // console.log('token: ', socket.handshake.query.token); // * 테스트용
         // console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
         const tokenString: string = socket.handshake.query.token as string;
-
         try {
             const decodedToken = this.jwtService.verify(tokenString, {
                 secret: process.env.JWT_SECRET_KEY,
@@ -67,6 +66,16 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         // ”status” : roomStatus,
         const chatRoomList = this.chatroomService.getChatRoomList();
         socket.emit('getChatRoomList', chatRoomList);
+        // socket.emit('getChatRoomList', {'chatRoomList': {chatRoomList}});
+        // Object.fromEntries(chatRoomList)
+    }
+
+    @SubscribeMessage('getChatRoomInfo')
+    getChatRoomInfo(socket: Socket, payload: JSON) {
+        // ”roomName”: string,
+        // ”status” : roomStatus,
+        const chatRoomInfo = this.chatroomService.getChatRoomInfo(payload['roomName'], payload['status']);
+        socket.emit('getChatRoomInfo', chatRoomInfo);
         // Object.fromEntries(chatRoomList)
     }
 
@@ -85,7 +94,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // * ChatRoom Method ===========================================================
     @SubscribeMessage('createChatRoom')
     createChatRoom(socket: Socket, payload: JSON) {
-        console.log('createChatRoom payload : ', payload);
+        // console.log('createChatRoom payload : ', payload);
         this.chatroomService.createChatRoom(socket, Object.assign(new RoomInfoDto(), payload));
         socket.emit('createChatRoom');
     }

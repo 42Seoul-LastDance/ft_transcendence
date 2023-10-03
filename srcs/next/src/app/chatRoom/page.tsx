@@ -17,13 +17,15 @@ import {
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings'; // 설정 아이콘 추가
 import ChatSetting from './chatSetting';
-
+import {useChatSocket, ChatSocketProvider} from '../Context/ChatSocketContext'
 interface ChatMessage {
   username: string;
   message: string;
 }
 
-function Chatting() {
+// ㅅㅐ로고침하면 밖으로 나가게 해해야야함함
+
+const ChattingContent = () => {
   const [username, setUsername] = useState('');
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); // ChatMessage[] 타입 명시
@@ -139,6 +141,14 @@ function Chatting() {
         <ChatSetting />
       </Drawer>
     </Container>
+  );
+}
+
+const Chatting = () => {
+  return (
+    <>
+          <ChattingContent/>
+    </>
   );
 }
 

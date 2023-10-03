@@ -6,6 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { BlockedUsers } from 'src/user/blockedUsers/blockedUsers.entity';
 import { BlockedUsersRepository } from 'src/user/blockedUsers/blockedUsers.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BlockedUsersModule } from 'src/user/blockedUsers/blockedUsers.module';
 
 @Module({
     imports: [
@@ -13,6 +14,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         TypeOrmModule.forFeature([BlockedUsersRepository]),
         UserModule,
         JwtModule,
+        BlockedUsersModule,
     ],
     providers: [ChatRoomGateway, ChatRoomService],
 })

@@ -3,7 +3,7 @@ import { BlockedUsersRepository } from './blockedUsers.repository';
 import { BlockedUsers } from './blockedUsers.entity';
 
 @Injectable()
-export class blockedUsersService {
+export class BlockedUsersService {
     constructor(private blockedUsersRepository: BlockedUsersRepository) {}
 
     async addBlockUser(userId: number, targetId: number): Promise<void> {
