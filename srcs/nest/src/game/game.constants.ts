@@ -11,15 +11,15 @@ export const MAXSCORE: number = 5;
 export const TIMEZONE: string = 'Asia/Seoul';
 
 //Game: Ball
-//TODO score 지점 확인때문에 패딩 빼둠
-// const PADDING: number = 1;
+export const PADDING: number = 1;
 //TODO hard mode ball speed
 export const BALL_SPEED: [number, number] = [15, 15]; //[NORMAL, HARD]
-export const BALL_POS_Y: number = 0.8;
-export const BALL_POS_X_MIN: number = -19.3; // - PADDING;
-export const BALL_POS_X_MAX: number = 19.3; // + PADDING;
-export const BALL_POS_Z_MIN: number = -14.3; // - PADDING;
-export const BALL_POS_Z_MAX: number = 14.3; // + PADDING;
+export const BALL_POS_X_MIN: number = -19.3 - PADDING;
+export const BALL_POS_X_MAX: number = 19.3 + PADDING;
+export const BALL_POS_Y_MIN: number = 0.8 - PADDING / 100;
+export const BALL_POS_Y_MAX: number = 0.8 + PADDING / 100;
+export const BALL_POS_Z_MIN: number = -14.3 - PADDING;
+export const BALL_POS_Z_MAX: number = 14.3 + PADDING;
 export const BALL_SCALE_X: number = 0.5;
 export const BALL_SCALE_Y: number = 0.5;
 export const BALL_SCALE_Z: number = 0.5;

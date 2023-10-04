@@ -96,8 +96,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     //패들 움직임, 상대에게 패들위치 전달
     @SubscribeMessage('movePaddle')
     movePaddle(client: Socket, gameInfo: JSON) {
-        //TESTCODE
-        console.log('movePaddle:', client.id);
         this.gameService.movePaddle(client.id, gameInfo);
     }
 
@@ -113,15 +111,13 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage('ballHit')
     async ballHit(client: Socket, gameInfo: JSON) {
         //TESTCODE
-        console.log('validCheck:', client.id);
+        // console.log('ballHit:', client.id);
         await this.gameService.ballHit(client.id, gameInfo);
     }
 
     //emoji send
     @SubscribeMessage('sendEmoji')
     sendEmoji(client: Socket, emoji: string) {
-        //TODO emoji 숫자로 오는지 확인
-        console.log('sendEmoji: ', emoji);
-        this.gameService.sendEmoji(client.id, +emoji);
+        this.gameService.sendEmoji(client.id, emoji['type']);
     }
 }

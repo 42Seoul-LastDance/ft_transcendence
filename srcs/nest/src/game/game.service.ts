@@ -20,9 +20,10 @@ import {
     MAXSCORE,
     TIMEZONE,
     BALL_SPEED,
-    BALL_POS_Y,
     BALL_POS_X_MIN,
     BALL_POS_X_MAX,
+    BALL_POS_Y_MIN,
+    BALL_POS_Y_MAX,
     BALL_POS_Z_MIN,
     BALL_POS_Z_MAX,
     BALL_SCALE_X,
@@ -39,6 +40,7 @@ import {
     PADDLE_ROTATE_X,
     PADDLE_ROTATE_Y,
     PADDLE_ROTATE_Z,
+    PADDING,
 } from './game.constants';
 import { GameRoom, Player } from './game.interface';
 import { Game } from './game.entity';
@@ -196,7 +198,6 @@ export class GameService {
             const [leftPlayer, rightPlayer] =
                 this.gameRoomList.get(roomId).socket;
             const gameInfo = this.getBallStartDir(roomId);
-            //TODO ballDirection 잘 가는지 확인 필요! (JSON 관련)111
             gameInfo['isFirst'] = true;
             gameInfo['side'] = PlayerSide.LEFT;
             leftPlayer.emit('startGame', gameInfo);
@@ -210,25 +211,25 @@ export class GameService {
     movePaddle(playerId: string, gameInfo: JSON) {
         const roomId = this.playerList.get(playerId).roomId;
         const side = this.playerList.get(playerId).side;
-        const rival = this.gameRoomList.get(roomId).socket[side];
+        const rival = this.gameRoomList.get(roomId).socket[(side + 1) % 2];
         // if (
-        //     gameInfo['PaddlePosX'] !== PADDLE_POS_X[side] ||
-        //     gameInfo['PaddlePosY'] !== PADDLE_POS_Y ||
-        //     gameInfo['PaddlePosZ'] < PADDLE_POS_Z_MIN ||
-        //     gameInfo['PaddlePosZ'] > PADDLE_POS_Z_MAX
+        //     gameInfo['paddlePosX'] !== PADDLE_POS_X[side] ||
+        //     gameInfo['paddlePosY'] !== PADDLE_POS_Y ||
+        //     gameInfo['paddlePosZ'] < PADDLE_POS_Z_MIN ||
+        //     gameInfo['paddlePosZ'] > PADDLE_POS_Z_MAX
         // ) {
         //     this.finishGame(roomId, (side + 1) % 2, GameEndStatus.CHEATING);
         //     return;
         // }
         rival.emit('movePaddle', {
-            PaddlePosX: PADDLE_POS_X[side],
-            PaddlePosY: PADDLE_POS_Y,
-            PaddlePosZ: gameInfo['PaddlePosZ'],
+            paddlePosX: PADDLE_POS_X[side],
+            paddlePosY: PADDLE_POS_Y,
+            paddlePosZ: gameInfo['paddlePosZ'],
         });
     }
 
-    sendEmoji(playerId: string, emoji: number) {
-        if (emoji < Emoji.HI || Emoji.BADWORDS < emoji)
+    sendEmoji(playerId: string, emoji: string) {
+        if (+emoji < Emoji.HI || Emoji.BADWORDS < +emoji)
             throw new BadRequestException('wrong emoji sent');
         const player = this.playerList.get(playerId);
         const side = player.side;
@@ -239,7 +240,6 @@ export class GameService {
     }
 
     async validCheck(playerId: string, gameInfo: JSON) {
-        //ToDo JSON 숫자로 들어오는지 확인 필요!
         const player = this.playerList.get(playerId);
         //TESTCODE: to be deleted
         if (BALL_SPEED[player.gameMode] === gameInfo['ballSpeed'])
@@ -249,9 +249,10 @@ export class GameService {
         if (
             //ball
             BALL_SPEED[player.gameMode] !== gameInfo['ballSpeed'] ||
-            BALL_POS_Y !== gameInfo['ballPosY'] ||
             BALL_POS_X_MIN >= gameInfo['ballPosX'] ||
             BALL_POS_X_MAX <= gameInfo['ballPosX'] ||
+            BALL_POS_Y_MIN >= gameInfo['ballPosY'] ||
+            BALL_POS_Y_MAX <= gameInfo['ballPosY'] ||
             BALL_POS_Z_MIN >= gameInfo['ballPosZ'] ||
             BALL_POS_Z_MAX <= gameInfo['ballPosZ'] ||
             BALL_SCALE_X !== gameInfo['ballScaleX'] ||
@@ -305,11 +306,12 @@ export class GameService {
         }
         //score check
         if (
-            gameInfo['ballPosX'] === BALL_POS_X_MIN ||
-            gameInfo['ballPosX'] === BALL_POS_X_MAX
+            gameInfo['ballPosX'] <= BALL_POS_X_MIN + PADDING + 0.75 ||
+            gameInfo['ballPosX'] >= BALL_POS_X_MAX - PADDING - 0.75
         ) {
-            //scored: TODO 충돌지점이 완벽하게 들어오지 않으면 scoreSide 수정해야함
-            const scoreSide = (gameInfo['ballPosX'] / BALL_POS_X_MAX + 1) / 2;
+            let scoreSide = PlayerSide.RIGHT;
+            if (gameInfo['ballPosX'] >= BALL_POS_X_MAX - PADDING - 0.75)
+                scoreSide = PlayerSide.LEFT;
             this.gameRoomList.get(roomId).score[scoreSide] += 1;
             if (this.gameRoomList.get(roomId).score[scoreSide] === MAXSCORE) {
                 //game finish (max score reached)
@@ -336,7 +338,6 @@ export class GameService {
         const gameInfo = this.getBallStartDir(roomId);
         gameInfo['isFirst'] = false;
         gameInfo['side'] = PlayerSide.NONE; //아무값
-        //TODO ballDirection 잘 가는지 확인 필요! (JSON 관련)222
         player1.emit('startGame', gameInfo);
         player2.emit('startGame', gameInfo);
     }
@@ -349,7 +350,7 @@ export class GameService {
     ) {
         //gameRoom 업데이트
         this.updateGameRoom(roomId, winnerSide, endGameStatus);
-        console.log('gameRoom: ', this.gameRoomList.get(roomId));
+        // console.log('gameRoom: ', this.gameRoomList.get(roomId));
         //플레이어들에게 결과 전달
         const [player1Socket, player2Socket] =
             this.gameRoomList.get(roomId).socket;
@@ -359,10 +360,9 @@ export class GameService {
             rightScore: this.gameRoomList.get(roomId).score[PlayerSide.RIGHT],
             reason: endGameStatus,
         };
-        //TODO gameResult 잘 전달되는지 확인 필요! (JSON 관련)
         player1Socket.emit('gameOver', gameResult);
         player2Socket.emit('gameOver', gameResult);
-        console.log('sent gameOver');
+        console.log('sent gameOver:', gameResult);
         //DB에 저장
         await this.createGameData(roomId);
         //gameRoom 처리
@@ -426,6 +426,7 @@ export class GameService {
                 endTime: room.endTime,
                 endGameStatus: room.endGameStatus,
             } as Game);
+            //! un-comment below
             //await this.gameRepository.save(newGameData);
         } catch (error) {
             //TESTCODE
@@ -536,26 +537,48 @@ export class GameService {
     ) {
         this.gameRoomList.get(roomId).dirX = dirX;
         this.gameRoomList.get(roomId).dirZ = dirZ;
-        this.gameRoomList.get(roomId).posX = posX | 0;
-        this.gameRoomList.get(roomId).posZ = posZ | 0;
+        this.gameRoomList.get(roomId).posX = posX !== undefined ? posX : 0;
+        this.gameRoomList.get(roomId).posZ = posZ !== undefined ? posZ : 0;
     }
     //ballHit valid check
     isBallOkay(roomId: number, gameInfo: JSON): boolean {
-        const diffPosX =
-            gameInfo['ballPosX'] - this.gameRoomList.get(roomId).posX;
-        const diffPosZ =
-            gameInfo['ballPosZ'] - this.gameRoomList.get(roomId).posZ;
-        const dirX = this.gameRoomList.get(roomId).dirX;
-        const dirZ = this.gameRoomList.get(roomId).dirZ;
+        const diffPosXZ =
+            (gameInfo['ballPosX'] - this.gameRoomList.get(roomId).posX) /
+            (gameInfo['ballPosZ'] - this.gameRoomList.get(roomId).posZ);
+
+        const dirXZ =
+            this.gameRoomList.get(roomId).dirX /
+            this.gameRoomList.get(roomId).dirZ;
+
         if (
-            diffPosX / diffPosZ !== dirX / dirZ ||
-            BALL_POS_Y !== gameInfo['ballPosY'] ||
+            diffPosXZ - dirXZ < -2 * PADDING ||
+            2 * PADDING < diffPosXZ - dirXZ ||
             BALL_POS_X_MIN >= gameInfo['ballPosX'] ||
             BALL_POS_X_MAX <= gameInfo['ballPosX'] ||
+            BALL_POS_Y_MIN >= gameInfo['ballPosY'] ||
+            BALL_POS_Y_MAX <= gameInfo['ballPosY'] ||
             BALL_POS_Z_MIN >= gameInfo['ballPosZ'] ||
             BALL_POS_Z_MAX <= gameInfo['ballPosZ']
-        )
+        ) {
+            console.log(
+                '=================\n',
+                gameInfo['ballPosX'],
+                this.gameRoomList.get(roomId).posX,
+                gameInfo['ballPosX'] - this.gameRoomList.get(roomId).posX,
+                '\n',
+                gameInfo['ballPosZ'],
+                this.gameRoomList.get(roomId).posZ,
+                gameInfo['ballPosZ'] - this.gameRoomList.get(roomId).posZ,
+                '\n',
+                this.gameRoomList.get(roomId).dirX,
+                this.gameRoomList.get(roomId).dirZ,
+                '\n',
+                diffPosXZ,
+                dirXZ,
+                '\n=================',
+            );
             return false;
+        }
         return true;
     }
 
