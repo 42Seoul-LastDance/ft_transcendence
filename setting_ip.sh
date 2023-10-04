@@ -1,13 +1,17 @@
-line_address=$(grep -n "#local BACK Address" .env | cut -d: -f1)
-if [ -z "$line_address" ]; then
-    IPADD="$(ifconfig | grep "inet 10" | head -1 | awk '{print $2}')"
+#!/bin/bash
+
+add_env_line() {
+    local key="$1"
+    local value="$2"
+    echo "$key" >> .env
+    echo "$value" >> .env
+}
+
+if ! grep -q "#Backend URL" .env; then
+    IP_ADDRESS="$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -1)"
     echo "" >> .env
-    echo "#local BACK Address" >> .env
-    echo "BACK_URL=http://$IPADD:3000" >> .env
-    echo "#next public BACK Address" >> .env
-    echo "NEXT_PUBLIC_BACK_URL=http://10.14.6.6:3000" >> .env
-    echo "#local FRONT Address" >> .env
-    echo "FRONT_URL=http://$IPADD:4242" >> .env
-    echo "#local callback Address" >> .env
-    echo "FT_CALLBACK=http://$IPADD:3000/auth/callback" >> .env
+    add_env_line "#Backend URL" "BACK_URL=http://$IP_ADDRESS:3000"
+    add_env_line "#next public BACK URL" "NEXT_PUBLIC_BACK_URL=http://$IP_ADDRESS:3000"
+    add_env_line "#local FRONT URL" "FRONT_URL=http://$IP_ADDRESS:4242"
+    add_env_line "#local callback URL" "FT_CALLBACK=http://$IP_ADDRESS:3000/auth/callback"
 fi
