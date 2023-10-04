@@ -46,7 +46,7 @@ export class ChatRoomService {
         this.blockList.set(socket.id, new Array<number>());
         // ? blockList를 DB에서 꺼내와서 채워놔야 하지 않을까?
         //!test : 들어오면 default 룸으로 들어가게 하기.
-        await this.joinPublicChatRoom(socket, 'default room', 'password', io);
+        // await this.joinPublicChatRoom(socket, 'default room', 'password', io);
 
         //!test
         console.log('add new user, has rooms : ', socket.rooms);
@@ -106,6 +106,8 @@ export class ChatRoomService {
         roomDto.ownerName = roomInfoDto.userName;
         roomDto.requirePassword = roomInfoDto.requirePassword;
         roomDto.status = roomInfoDto.status;
+
+        console.log('createChatRoom : ', roomDto);
         if (roomInfoDto.password) roomDto.password = roomInfoDto.password;
         if (roomInfoDto.status == RoomStatus.PRIVATE) this.privateRoomList.set(roomInfoDto.roomName, roomDto);
         else this.publicRoomList.set(roomInfoDto.roomName, roomDto);
@@ -200,7 +202,9 @@ export class ChatRoomService {
     async joinPublicChatRoom(socket: Socket, roomName: string, password: string, io: Server): Promise<void> {
         const targetRoom = this.publicRoomList.get(roomName);
         const userId = this.getUserId(socket);
+
         console.log('JOIN PUBLIC CHAT ROOM : ', roomName);
+        console.log('userId: ', userId);
         // console.log('socket list:', this.socketList);
         // console.log('userId, socketId', userId, socket.id);
         if (targetRoom == undefined) {

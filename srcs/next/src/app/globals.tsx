@@ -1,6 +1,3 @@
-declare var ipaddr: string;
+var BACK_URL = process.env.NEXT_PUBLIC_BACK_URL;
 
-// 변수를 할당
-ipaddr = 'http://10.14.4.5';
-
-export default ipaddr;
+export default BACK_URL;

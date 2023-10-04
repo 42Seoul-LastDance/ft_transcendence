@@ -3,27 +3,25 @@ import { useDispatch } from 'react-redux';
 import { io, Socket } from 'socket.io-client';
 import { setRoomNameList } from '../redux/roomSlice';
 import { RoomStatus } from '../DTO/RoomInfo.dto';
+import BACK_URL from '../globals';
 
 const token =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MjQyIiwibmFtZSI6InRlc3RtYW4iLCJpYXQiOjE1MTYyMjM0MjM0fQ.jZsy7aTM-GcoSbQW6TERNuTCBCvIS-7l_qfm5PMg0-U';
 
 // Socket.IO 소켓 초기화
-export var chatSocket: Socket = io(
-  `${process.env.NEXT_PUBLIC_BACK_URL}/RoomChat`,
-  {
-    // forceNew: true,
-    withCredentials: false,
-    autoConnect: true,
-    transports: ['websocket'],
-    query: {
-      token,
-    },
-    // * 실 구현은 auth.token
-    // auth: {
-    // token,
-    // }
+export var chatSocket: Socket = io(`${BACK_URL}/RoomChat`, {
+  // forceNew: true,
+  withCredentials: false,
+  autoConnect: true,
+  transports: ['websocket'],
+  query: {
+    token,
   },
-);
+  // * 실 구현은 auth.token
+  // auth: {
+  // token,
+  // }
+});
 
 // SocketContext 생성
 const ChatSocketContext = createContext<Socket | undefined>(undefined);
