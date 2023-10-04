@@ -1,9 +1,9 @@
 'use client';
 
 import { Provider, useSelector } from 'react-redux';
-import { store, RootState } from '../Redux/store';
+import { store, RootState } from '../redux/store';
 import Matching from './Matching';
-import { GameSocketProvider } from '../Contexts/GameSocketContext';
+import { GameSocketProvider } from '../Contexts/gameSocketContext';
 import Game from './Game';
 
 const GameHomeContent = () => {

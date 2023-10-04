@@ -1,6 +1,6 @@
 'use client'
 
-import { useGameSocket } from "../Contexts/GameSocketContext";
+import { useGameSocket } from "../Contexts/gameSocketContext";
 import {Emoji} from "../Enums"
 
 const EmojiButtons = () => {

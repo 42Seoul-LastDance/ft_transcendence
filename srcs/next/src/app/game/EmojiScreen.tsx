@@ -1,10 +1,10 @@
 'use client';
 
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../Redux/store';
+import { RootState } from '../redux/store';
 import { useEffect } from 'react';
-import { useGameSocket } from '../Contexts/GameSocketContext';
-import { setEmoji } from '../Redux/matchSlice';
+import { useGameSocket } from '../Contexts/gameSocketContext';
+import { setEmoji } from '../redux/matchSlice';
 import { Emoji, EmojiScreenProps, PlayerSide, SendEmojiJson } from '../Enums';
 
 const imageStyle = {
@@ -13,19 +13,19 @@ const imageStyle = {
 };
 
 const EmojiScreen: React.FC<EmojiScreenProps> = ({ screenSide }) => {
-    const side = useSelector((state: RootState) => state.match.side);
+    const mySide = useSelector((state: RootState) => state.match.side);
     const emoji = useSelector((state: RootState) => state.match.emoji);
     const dispatch = useDispatch();
     const socket = useGameSocket();
 
     useEffect(() => {
         console.log('socket listener on');
-        if (!socket.hasListeners('sendEmoji')) {
+         if (!socket.hasListeners('sendEmoji')) {
             socket.on('sendEmoji', (json: SendEmojiJson) => {
-                console.log(side, screenSide);
-                // if ((side === PlayerSide.RIGHT && screenSide === PlayerSide.LEFT)
-                // || (side === PlayerSide.LEFT && screenSide === PlayerSide.RIGHT))
-                // {
+                console.log(mySide, screenSide);
+                if ((mySide === PlayerSide.RIGHT && screenSide === PlayerSide.LEFT)
+                || (mySide === PlayerSide.LEFT && screenSide === PlayerSide.RIGHT))
+                {
                 console.log('sendEmoji Event Detected');
                 if (json.type === Emoji.HI)
                     dispatch(setEmoji({ emoji: '/emoji/emoji_HI.png' }));
@@ -43,15 +43,14 @@ const EmojiScreen: React.FC<EmojiScreenProps> = ({ screenSide }) => {
                     dispatch(setEmoji({ emoji: '/emoji/emoji_BADWORDS.png' }));
                 else console.log(json);
                 console.log('emoji : ', emoji);
-                //}
+                }
             });
         }
-    }, [side]);
+    }, [mySide]);
 
     return (
         <>
             <img src={emoji} style={imageStyle} />
-            {/* <img src='/emoji/emoji_BADWORDS.png' style={imageStyle} /> */}
         </>
     );
 };
