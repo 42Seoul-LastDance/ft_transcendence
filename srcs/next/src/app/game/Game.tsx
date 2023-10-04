@@ -67,8 +67,8 @@ const Game = () => {
 				setGameOver(true);
 				if (isCustomGame)
 					setIsReady(false);
-				else
-					dispatch(setIsMatched({ isMatched: false }));
+				// else
+				// 	dispatch(setIsMatched({ isMatched: false }));
 			});
 		}
 		if (!socket.hasListeners('ballHit')) {
