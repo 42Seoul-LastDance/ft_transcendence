@@ -199,6 +199,10 @@ export class GameService {
                 this.gameRoomList.get(roomId).socket;
             const gameInfo = this.getBallStartDir(roomId);
             gameInfo['isFirst'] = true;
+            gameInfo['leftScore'] = 0;
+            gameInfo['rightScore'] = 0;
+            gameInfo['ballSpeed'] =
+                BALL_SPEED[this.gameRoomList.get(roomId).gameMode];
             gameInfo['side'] = PlayerSide.LEFT;
             leftPlayer.emit('startGame', gameInfo);
             gameInfo['side'] = PlayerSide.RIGHT;
@@ -338,6 +342,12 @@ export class GameService {
         const gameInfo = this.getBallStartDir(roomId);
         gameInfo['isFirst'] = false;
         gameInfo['side'] = PlayerSide.NONE; //아무값
+        gameInfo['leftScore'] =
+            this.gameRoomList.get(roomId).score[PlayerSide.LEFT];
+        gameInfo['rightScore'] =
+            this.gameRoomList.get(roomId).score[PlayerSide.RIGHT];
+        gameInfo['ballSpeed'] =
+            BALL_SPEED[this.gameRoomList.get(roomId).gameMode];
         player1.emit('startGame', gameInfo);
         player2.emit('startGame', gameInfo);
     }
@@ -559,26 +569,8 @@ export class GameService {
             BALL_POS_Y_MAX <= gameInfo['ballPosY'] ||
             BALL_POS_Z_MIN >= gameInfo['ballPosZ'] ||
             BALL_POS_Z_MAX <= gameInfo['ballPosZ']
-        ) {
-            console.log(
-                '=================\n',
-                gameInfo['ballPosX'],
-                this.gameRoomList.get(roomId).posX,
-                gameInfo['ballPosX'] - this.gameRoomList.get(roomId).posX,
-                '\n',
-                gameInfo['ballPosZ'],
-                this.gameRoomList.get(roomId).posZ,
-                gameInfo['ballPosZ'] - this.gameRoomList.get(roomId).posZ,
-                '\n',
-                this.gameRoomList.get(roomId).dirX,
-                this.gameRoomList.get(roomId).dirZ,
-                '\n',
-                diffPosXZ,
-                dirXZ,
-                '\n=================',
-            );
+        )
             return false;
-        }
         return true;
     }
 
