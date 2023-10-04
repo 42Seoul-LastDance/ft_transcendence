@@ -11,7 +11,8 @@ import { ChatRoomDto } from '../DTO/ChatRoom.dto';
 import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import { useDispatch } from 'react-redux';
-import { setIsJoined, setRoomNameList } from '../redux/roomSlice';
+import { setIsJoined } from '../redux/roomSlice';
+import { setCurRoom } from '../redux/userSlice';
 
 const style = {
   width: '100%',
@@ -22,7 +23,6 @@ const style = {
 const ChatRoomList: React.FC = () => {
   const chatSocket = useChatSocket();
   const dispatch = useDispatch();
-  const isJoined = useSelector((state: RootState) => state.room.isJoined);
 
   const roomNameList = useSelector(
     (state: RootState) => state.room.roomNameList,
@@ -31,23 +31,20 @@ const ChatRoomList: React.FC = () => {
   const joinRoom = (roomName: string) => {
     if (!chatSocket.hasListeners('getChatRoomInfo')) {
       chatSocket.on('getChatRoomInfo', (curRoomInfo: ChatRoomDto) => {
-        console.log('curRoomInfo: ', curRoomInfo);
-        console.log('curRoomInfo: ', curRoomInfo.requirePassword);
         if (curRoomInfo.requirePassword === true) {
           const password = prompt('비밀번호를 입력하세요');
           console.log('password: ', curRoomInfo.password);
           if (password === curRoomInfo.password) {
-			  dispatch(setIsJoined(true));
-            // router.push('/chatRoom');
+            dispatch(setCurRoom(curRoomInfo));
+            dispatch(setIsJoined(true));
           } else {
             alert('비밀번호가 틀렸습니다');
           }
         } else if (curRoomInfo.requirePassword === false) {
-          console.log('비밀번호 없음');
+          dispatch(setCurRoom(curRoomInfo));
           dispatch(setIsJoined(true));
-          // router.push('/chatRoom');
         } else {
-          console.log('curRoomInfo.requirePassword : 이것은 backend 잘못이여');
+          console.log('curRoom.requirePassword : 이것은 backend 잘못이여');
         }
       });
     }
