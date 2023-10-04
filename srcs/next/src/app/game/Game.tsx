@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Unity, useUnityContext } from 'react-unity-webgl';
-import { RootState } from '../Redux/store';
+import { RootState } from '../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
-import { setIsMatched, setSide } from '../Redux/matchSlice';
-import { useGameSocket } from '../Contexts/GameSocketContext';
+import { setIsMatched, setSide } from '../redux/matchSlice';
+import { useGameSocket } from '../Contexts/gameSocketContext';
 import { ReactUnityEventParameter } from "react-unity-webgl/distribution/types/react-unity-event-parameters";
 import { deflateSync } from 'zlib';
 import EmojiButtons from './EmojiButtons';
@@ -39,7 +39,6 @@ const Game = () => {
 			socket.on('startGame', (json: StartGameJson) => {
 				if (json.isFirst)
 					mySide = json.side;
-				dispatch(setSide({ side: json.side }));
 				sendMessage('GameManager', 'StartGame', JSON.stringify(json));
 				console.log('! startGame Event Detected : ', json)
 			});
@@ -119,10 +118,10 @@ const Game = () => {
         <>
 				<EmojiScreen screenSide={PlayerSide.LEFT}/>
 			<div style={containerStyle}>
-				<Unity
-					unityProvider={unityProvider}
-					style={{ width: 800, height: 450 }}
-					/>
+					<Unity
+						unityProvider={unityProvider}
+						style={{ width: 800, height: 450 }}
+						/>
 			</div>
 				<EmojiScreen screenSide={PlayerSide.RIGHT}/>
 

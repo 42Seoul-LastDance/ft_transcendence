@@ -493,7 +493,7 @@ export class GameService {
     handShake(playerId: string, side: number, roomId: number): void {
         this.playerList.get(playerId).roomId = roomId;
         this.playerList.get(playerId).side = side;
-        this.playerList.get(playerId).socket.emit('handShake');
+        this.playerList.get(playerId).socket.emit('handShake', {side: side});
     }
 
     //game 시작 시 => gameRoom 업데이트

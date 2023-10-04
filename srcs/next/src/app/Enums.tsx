@@ -32,6 +32,10 @@ export interface SendEmojiJson{
 	type: Emoji
 }
 
+export interface HandShakeJson{
+	side: PlayerSide
+}
+
 export interface EmojiScreenProps {
 	screenSide : PlayerSide
 }

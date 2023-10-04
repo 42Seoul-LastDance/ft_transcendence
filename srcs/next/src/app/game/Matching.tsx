@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../Redux/store';
-import { setIsMatched } from '../Redux/matchSlice';
-import { useGameSocket } from '../Contexts/GameSocketContext';
-import { GameMode } from '../Enums';
+import { RootState } from '../redux/store';
+import { setIsMatched, setSide } from '../redux/matchSlice';
+import { useGameSocket } from '../Contexts/gameSocketContext';
+import { GameMode, HandShakeJson } from '../Enums';
 
 const Matching = () => {
     const [isMatching, setIsMatching] = useState<boolean>(false);
@@ -16,7 +16,8 @@ const Matching = () => {
     const socket = useGameSocket();
 
     if (!socket.hasListeners('handShake')) {
-        socket.on('handShake', () => {
+        socket.on('handShake', (json: HandShakeJson) => {
+			dispatch(setSide({ side: json.side }));
             dispatch(setIsMatched({ isMatched: true }));
         });
     }
