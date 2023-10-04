@@ -6,11 +6,12 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
 import { useDispatch, useSelector } from 'react-redux';
-import { useChatSocket } from '../Context/ChatSocketContext';
-import { RoomInfoDto, RoomStatus } from '../DTO/RoomInfo.dto';
+import { useChatSocket } from '../context/chatSocketContext';
+import { RoomInfoDto, RoomStatus } from '../interface';
 import { useRouter } from 'next/navigation';
 import { setIsJoined } from '../redux/roomSlice';
 import { RootState } from '../redux/store';
+import { setCurRoom, setName } from '../redux/userSlice';
 
 export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const chatSocket = useChatSocket();
@@ -22,6 +23,7 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const [requirePassword, setIsLocked] = useState<boolean>(false);
   const [password, setPassword] = useState<string>('');
   const [showPasswordInput, setShowPasswordInput] = useState<boolean>(false);
+  const name = useSelector((state: RootState) => state.user.name);
 
   const handleRoomNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRoomname(event.target.value);
@@ -48,17 +50,19 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const addNewRoom = () => {
     const newRoomInfo: RoomInfoDto = {
       roomName: roomname,
-      userName: 'testman',
+      userName: name,
       password: password ? password : null,
       requirePassword: requirePassword,
       status: isPrivate ? RoomStatus.PRIVATE : RoomStatus.PUBLIC,
     };
 
-    console.log(newRoomInfo);
+    if (!chatSocket.hasListeners('createChatRoom')) {
+      chatSocket.on('createChatRoom', (data) => {
+        console.log('create Chat Room : ', data);
+        dispatch(setCurRoom(data));
+      });
+    }
     chatSocket.emit('createChatRoom', newRoomInfo);
-    // chatSocket.on('createChatRoom', (data) => {
-    //   console.log(data);
-    // });
     dispatch(setIsJoined(true));
     onClose();
     // router.push('/chatRoom');

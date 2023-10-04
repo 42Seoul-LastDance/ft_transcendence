@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { ChatRoomDto } from '../DTO/ChatRoom.dto';
+import { ChatRoomDto } from '../interface';
 
 export interface userState {
   name: string;
@@ -10,7 +10,7 @@ export interface userState {
 }
 
 const initialState: userState = {
-  name: '',
+  name: 'testman',
   imageUrl: null,
   isAvailable: null,
   token: '',

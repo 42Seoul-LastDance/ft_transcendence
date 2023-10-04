@@ -5,9 +5,9 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import CreateRoomButton from './createRoomButton';
-import { useChatSocket } from '../Context/ChatSocketContext';
-import { RoomStatus } from '../DTO/RoomInfo.dto'; // ChatRoomDto 및 ChatRoomListDto는 사용되지 않으므로 import 제거
-import { ChatRoomDto } from '../DTO/ChatRoom.dto';
+import { useChatSocket } from '../context/chatSocketContext';
+import { RoomStatus } from '../interface'; // ChatRoomDto 및 ChatRoomListDto는 사용되지 않으므로 import 제거
+import { ChatRoomDto } from '../interface';
 import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import { useDispatch } from 'react-redux';

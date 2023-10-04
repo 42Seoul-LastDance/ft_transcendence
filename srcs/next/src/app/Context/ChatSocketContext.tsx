@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { io, Socket } from 'socket.io-client';
 import { setRoomNameList } from '../redux/roomSlice';
-import { RoomStatus } from '../DTO/RoomInfo.dto';
+import { RoomStatus } from '../interface';
 import BACK_URL from '../globals';
 
 const token =
@@ -12,7 +12,7 @@ const token =
 export var chatSocket: Socket = io(`${BACK_URL}/RoomChat`, {
   // forceNew: true,
   withCredentials: false,
-  autoConnect: true,
+  autoConnect: false,
   transports: ['websocket'],
   query: {
     token,

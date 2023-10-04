@@ -346,23 +346,26 @@ export class ChatRoomService {
         this.emitSuccess(socket, 'unBlockUser');
     }
 
-    async sendMessage(socket: Socket, roomName: string, status: RoomStatus, userName: string, content: string) {
+    async sendMessage(socket: Socket, payload: JSON) {
         // TODO : muteList 검사 -> room
         // TODO : blockList 검사는 프론트랑 협의 하기
         //1. 해당 room에서 user가 muteList 에 있는지 조회.
         //2. broadcast
+        console.log('here: ', payload);
         let room: ChatRoomDto;
-        if (status == RoomStatus.PRIVATE) {
-            room = this.privateRoomList.get(roomName);
+        if (payload['status'] == RoomStatus.PRIVATE) {
+            room = this.privateRoomList.get(payload['roomName']);
         } else {
-            room = this.publicRoomList.get(roomName);
+            room = this.publicRoomList.get(payload['roomName']);
         }
-        const userId = (await this.userService.getUserByUsername(userName)).id;
+        const userId = (await this.userService.getUserByUsername(payload['userName'])).id;
         if (room.muteList === undefined) console.log('mutelist is undefine.\n');
         else if (room.muteList.find((element) => userId === element) !== undefined) return;
 
+        socket
+            .to(payload['roomName'])
+            .emit('sendMessage', { userName: payload['userName'], content: payload['content'] });
         console.log('successfully sent message.');
-        socket.to(roomName).emit('sendMessage', content);
     }
 
     async inviteUser(socket: Socket, roomName: string, username: string) {

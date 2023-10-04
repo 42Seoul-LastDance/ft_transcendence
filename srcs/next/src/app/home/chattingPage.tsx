@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import {
   Container,
   Card,
@@ -17,36 +17,57 @@ import {
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings'; // 설정 아이콘 추가
 import ChatSetting from './chatSetting';
-import {
-  useChatSocket,
-  ChatSocketProvider,
-} from '../Context/ChatSocketContext';
+import { useChatSocket } from '../context/chatSocketContext';
+import { RootState } from '../redux/store';
+import { useSelector } from 'react-redux';
+import { ChatRoomDto } from '../interface';
+
 interface ChatMessage {
-  username: string;
-  message: string;
+  userName: string;
+  content: string;
 }
 
 // ㅅㅐ로고침하면 밖으로 나가게 해해야야함함
 
 const ChattingContent = () => {
-  const [username, setUsername] = useState('');
+  // const [username, setUsername] = useState('');
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); // ChatMessage[] 타입 명시
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // 설정 아이콘 클릭 시 설정창 표시 여부
+  const chatSocket = useChatSocket();
+  const curRoomInfo = useSelector((state: RootState) => state.user.curRoom);
+  const myName = useSelector((state: RootState) => state.user.name);
 
-  useEffect(() => {
-    setUsername('jun');
-  }, []);
+  if (!chatSocket.hasListeners('sendMessage')) {
+    chatSocket.on('sendMessage', (data: ChatMessage) => {
+      const newMsg: ChatMessage = {
+        userName: data.userName,
+        content: data.content,
+      };
+      setChatMessages([...chatMessages, newMsg]);
+      console.log('sendMessage event Detected : ', newMsg);
+    });
+    console.log('sendMessage on!');
+  }
 
   // 메세지 보낼 때 동작
   const handleSendMessage = () => {
     if (message) {
       const newMsg: ChatMessage = {
-        username,
-        message,
+        userName: myName,
+        content: message,
       };
       setChatMessages([...chatMessages, newMsg]);
       setMessage('');
+      console.log('my msg: ', newMsg);
+      if (!curRoomInfo) throw new Error('curRoomInfo is null');
+
+      chatSocket.emit('sendMessage', {
+        roomName: curRoomInfo.roomName,
+        status: curRoomInfo.status,
+        userName: myName,
+        content: message,
+      });
     }
   };
 
@@ -100,13 +121,21 @@ const ChattingContent = () => {
                   primary={
                     <div
                       style={{
-                        textAlign: username === msg.username ? 'left' : 'left',
+                        textAlign: myName === msg.userName ? 'right' : 'left',
                       }}
                     >
-                      {msg.username}
+                      {msg.userName}
                     </div>
                   }
-                  secondary={msg.message}
+                  secondary={
+                    <div
+                      style={{
+                        textAlign: myName === msg.userName ? 'right' : 'left',
+                      }}
+                    >
+                      {msg.content}
+                    </div>
+                  }
                   primaryTypographyProps={{ variant: 'subtitle1' }}
                   secondaryTypographyProps={{ variant: 'body1' }}
                 />

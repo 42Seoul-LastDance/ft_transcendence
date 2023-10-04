@@ -41,7 +41,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
             socket.disconnect(true);
             return;
         }
-        console.log(socket.id, ': new connection.');
+        console.log(socket.id, ': new connection. (Chat)');
         socket.emit('connectSuccess');
     }
 
@@ -50,7 +50,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         console.log('disconnect userId : ', userId);
         this.chatroomService.leavePastRoom2(socket, this.server);
         this.chatroomService.deleteUser(socket);
-        console.log(socket.id, ': lost connection.');
+        console.log(socket.id, ': lost connection. (Chat)');
     }
 
     // * Getter ===========================================================
@@ -84,13 +84,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // * Message ===========================================================
     @SubscribeMessage('sendMessage')
     sendMessage(socket: Socket, payload: JSON): void {
-        this.chatroomService.sendMessage(
-            socket,
-            payload['roomName'],
-            payload['status'],
-            payload['userName'],
-            payload['content'],
-        );
+        this.chatroomService.sendMessage(socket, payload);
     }
 
     // * ChatRoom Method ===========================================================
@@ -100,6 +94,8 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         this.chatroomService.createChatRoom(socket, Object.assign(new RoomInfoDto(), payload), this.server);
         // * 프론트 요청 : create 후 새로 갱신된 리스트 전송
         const chatRoomList = this.chatroomService.getChatRoomList();
+        const chatRoomInfo = this.chatroomService.getChatRoomInfo(payload['roomName'], payload['status']);
+        socket.emit('createChatRoom', chatRoomInfo);
         this.server.emit('getChatRoomList', chatRoomList);
     }
 

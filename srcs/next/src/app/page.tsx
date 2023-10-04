@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { useRouter, redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import Link from 'next/link';
 
 export default function Home() {
   const router = useRouter();
@@ -31,14 +32,16 @@ export default function Home() {
       </Button>
       <h1>make Room</h1>
       <Divider />
-      <Button
-        variant="contained"
-        onClick={() => {
-          router.push('/chat');
-        }}
-      >
-        chat
-      </Button>
+      <Link href="/home">
+        <Button
+          variant="contained"
+          onClick={() => {
+            router.push('/home');
+          }}
+        >
+          To Home
+        </Button>
+      </Link>
     </main>
   );
 }

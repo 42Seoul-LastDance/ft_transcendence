@@ -7,8 +7,11 @@ import ChattingContent from './chattingPage';
 import {
   ChatSocketProvider,
   useChatSocket,
-} from '../Context/ChatSocketContext';
-import { setRoomNameList } from '../redux/roomSlice';
+} from '../context/chatSocketContext';
+import {
+  SuperSocketProvider,
+  useSuperSocket,
+} from '../context/superSocketContext';
 
 const ChatHomeContent = () => {
   const dispatch = useDispatch();
@@ -25,16 +28,18 @@ const ChatHomeContent = () => {
   );
 };
 
-const ChatHome = () => {
+const MainHome = () => {
   return (
     <>
       <Provider store={store}>
-        <ChatSocketProvider>
-          <ChatHomeContent />
-        </ChatSocketProvider>
+        <SuperSocketProvider>
+          <ChatSocketProvider>
+            <ChatHomeContent />
+          </ChatSocketProvider>
+        </SuperSocketProvider>
       </Provider>
     </>
   );
 };
 
-export default ChatHome;
+export default MainHome;
