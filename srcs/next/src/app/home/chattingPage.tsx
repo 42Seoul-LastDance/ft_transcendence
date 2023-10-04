@@ -17,10 +17,9 @@ import {
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings'; // 설정 아이콘 추가
 import ChatSetting from './chatSetting';
-import { useChatSocket } from '../context/chatSocketContext';
 import { RootState } from '../redux/store';
 import { useSelector } from 'react-redux';
-import { ChatRoomDto } from '../interface';
+import { useChatSocket } from '../context/chatSocketContext';
 
 interface ChatMessage {
   userName: string;
@@ -152,7 +151,7 @@ const ChattingContent = () => {
             label="Message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyPress={handleKeyDown}
           />
           <Button
             id="sendBtn"
