@@ -59,7 +59,7 @@ export class FortytwoStrategy extends PassportStrategy(Strategy, 'fortytwo') {
         } catch (error) {
             // redirect to front login page
             console.log('front main?');
-            // return res.redirect(process.env.FRONT_ADDR);
+            // return res.redirect(process.env.FRONT_URL);
         }
     }
 }

@@ -76,10 +76,10 @@ export class AuthController {
                     maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
                     sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
                     secure: false,
-                    //domain: process.env.FRONT_ADDR + '/register',
+                    //domain: process.env.FRONT_URL + '/register',
                 });
 
-                // return res.redirect(process.env.FRONT_ADDR + '/register');
+                // return res.redirect(process.env.FRONT_URL + '/register');
             } else throw new InternalServerErrorException('from 42callback');
         }
         /*
@@ -105,7 +105,7 @@ export class AuthController {
         //         secure: false,
         //     });
         //     // console.log(res);    //cookie 잘 담겨있음 세상음
-        //     return res.redirect(process.env.FRONT_ADDR + '/register');
+        //     return res.redirect(process.env.FRONT_URL + '/register');
         // }
         // 지금 쿠키가 42 login url에 들어잇는걸 확인햇어요!! 오잉....
         //그래서 이게 왜 그런지 알아보는 중..
@@ -116,12 +116,12 @@ export class AuthController {
             console.log('2fa true, go to email!');
             await this.authService.sign2faToken(res, req.user);
             this.authService.sendMail(res, req.authDto.sub);
-            return res.redirect(process.env.FRONT_ADDR + '/tfa'); //  * 프론트의 2fa입력폼 페이지
+            return res.redirect(process.env.FRONT_URL + '/tfa'); //  * 프론트의 2fa입력폼 페이지
         } else {
             //2차 인증 없이 jwt 발급 후 메인으로 리다이렉트
             console.log('no need to 2fa, redirect to main page');
             await this.authService.signjwtToken(res, req.user);
-            return res.redirect(process.env.FRONT_ADDR + '/main'); // *성공 후 메인페이지
+            return res.redirect(process.env.FRONT_URL + '/main'); // *성공 후 메인페이지
         }
     }
 
@@ -152,7 +152,7 @@ export class AuthController {
             console.log('2fa verified, redirect to main page');
             this.authService.signjwtToken(res, req.authDto);
             res.clearCookie('2fa_token');
-            return res.redirect(process.env.FRONT_ADDR + '/main');
+            return res.redirect(process.env.FRONT_URL + '/main');
         } else throw new UnauthorizedException('verify failed');
     }
 

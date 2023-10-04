@@ -49,7 +49,7 @@ export class UserController {
         // );
         // res.clearCookie('enroll_token');
 
-        // return res.redirect(process.env.FRONT_ADDR + '/main');
+        // return res.redirect(process.env.FRONT_URL + '/main');
     }
 
     // @Patch('/signup/username')

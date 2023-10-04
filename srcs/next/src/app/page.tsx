@@ -7,6 +7,7 @@ import Divider from '@mui/material/Divider';
 
 export default function Home() {
   const router = useRouter();
+  console.log('addr:', process.env.NEXT_PUBLIC_BACK_URL);
 
   return (
     <main>

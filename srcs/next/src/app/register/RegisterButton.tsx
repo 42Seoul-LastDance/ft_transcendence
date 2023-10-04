@@ -15,7 +15,7 @@ const RegisterButtonContent = () => {
   const name = useSelector((state: userState) => state.name);
   const imageUrl = useSelector((state: userState) => state.imageUrl);
   const isAvailable = useSelector((state: RootState) => state.user.isAvailable);
-  const backAddr = process.env.BACK_ADDR;
+  const backAddr = process.env.BACK_URL;
   const { push } = useRouter();
   const [success, setSuccess] = useState<boolean | null>(null);
 

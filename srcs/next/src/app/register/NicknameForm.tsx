@@ -12,7 +12,7 @@ const NicknameFormContent = () => {
   const userName = useSelector((state: RootState) => state.user.name);
   const [isClickable, setIsClickable] = useState<boolean>(false);
   const [viewName, setViewName] = useState<string>('');
-  const backAddr = process.env.BACK_ADDR;
+  const backAddr = process.env.BACK_URL;
 
   useEffect(() => {
     checkDuplicate();
