@@ -12,6 +12,7 @@ import {
   SuperSocketProvider,
   useSuperSocket,
 } from '../context/superSocketContext';
+import { useEffect } from 'react';
 
 const ChatHomeContent = () => {
   const dispatch = useDispatch();
@@ -29,6 +30,10 @@ const ChatHomeContent = () => {
 };
 
 const MainHome = () => {
+  window.onpopstate = function(event) {
+    window.history.pushState(null, '', window.location.href);
+  }
+
   return (
     <>
       <Provider store={store}>

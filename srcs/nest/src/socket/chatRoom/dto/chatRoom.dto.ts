@@ -32,3 +32,12 @@ export class ChatRoomDto {
     @IsArray()
     muteList: Array<number> = [];
 }
+
+// myName
+// myPermisson
+
+//  enum Permission{
+//     OWNER = 0,
+//     MEMBER = 1,
+//     ADMIN = 2,
+//   }

@@ -20,11 +20,7 @@ import ChatSetting from './chatSetting';
 import { RootState } from '../redux/store';
 import { useSelector } from 'react-redux';
 import { useChatSocket } from '../context/chatSocketContext';
-
-interface ChatMessage {
-  userName: string;
-  content: string;
-}
+import { ChatMessage, SendMessageDto } from '../interface';
 
 // ㅅㅐ로고침하면 밖으로 나가게 해해야야함함
 
@@ -35,41 +31,33 @@ const ChattingContent = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // 설정 아이콘 클릭 시 설정창 표시 여부
   const chatSocket = useChatSocket();
   const curRoomInfo = useSelector((state: RootState) => state.user.curRoom);
-  const myName = useSelector((state: RootState) => state.user.name);
 
   if (!chatSocket.hasListeners('sendMessage')) {
     chatSocket.on('sendMessage', (data: ChatMessage) => {
-      const newMsg: ChatMessage = {
-        userName: data.userName,
-        content: data.content,
-      };
-      setChatMessages([...chatMessages, newMsg]);
-      console.log('sendMessage event Detected : ', newMsg);
+      setChatMessages([...chatMessages, data]);
     });
     console.log('sendMessage on!');
   }
 
   // 메세지 보낼 때 동작
   const handleSendMessage = () => {
-    if (message) {
-      const newMsg: ChatMessage = {
-        userName: myName,
-        content: message,
-      };
-      setChatMessages([...chatMessages, newMsg]);
+    if (!message) return;
+  	if (!curRoomInfo) throw new Error('curRoomInfo is null'); 
+
+    const newMsg: ChatMessage = {
+      userName: curRoomInfo.myName,
+      content: message,
+    };
+    setChatMessages([...chatMessages, newMsg]);	
+    const newSend: SendMessageDto = {
+      roomName: curRoomInfo.roomName,
+      status: curRoomInfo.status,
+      userName: curRoomInfo.myName,
+      content: message,
+    };
+      chatSocket.emit('sendMessage', newSend);
       setMessage('');
-      console.log('my msg: ', newMsg);
-      if (!curRoomInfo) throw new Error('curRoomInfo is null');
-
-      chatSocket.emit('sendMessage', {
-        roomName: curRoomInfo.roomName,
-        status: curRoomInfo.status,
-        userName: myName,
-        content: message,
-      });
-    }
   };
-
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
       handleSendMessage();
@@ -120,7 +108,7 @@ const ChattingContent = () => {
                   primary={
                     <div
                       style={{
-                        textAlign: myName === msg.userName ? 'right' : 'left',
+                        textAlign: '' === msg.userName ? 'right' : 'left',
                       }}
                     >
                       {msg.userName}
@@ -129,7 +117,7 @@ const ChattingContent = () => {
                   secondary={
                     <div
                       style={{
-                        textAlign: myName === msg.userName ? 'right' : 'left',
+                        textAlign: '' === msg.userName ? 'right' : 'left',
                       }}
                     >
                       {msg.content}

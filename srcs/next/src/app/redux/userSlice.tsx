@@ -39,5 +39,5 @@ const userSlice = createSlice({
 });
 
 export default userSlice;
-export const { setName, setImageUrl, setAvailable, setCurRoom } =
+export const { setImageUrl, setAvailable, setCurRoom, setName } =
   userSlice.actions;

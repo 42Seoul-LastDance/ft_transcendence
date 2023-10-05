@@ -77,7 +77,7 @@ export class UserService {
                 level: 0,
             } as User);
             const user = await this.userRepository.save(newUser);
-            // console.log('register user in UserService:', newUser);
+            console.log('register user in UserService:', newUser);
             return user;
         } catch (error) {
             if (error.code == '23505') throw new ConflictException('Existing username');

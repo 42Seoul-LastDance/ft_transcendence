@@ -5,32 +5,21 @@ import { useRouter } from 'next/navigation';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Link from 'next/link';
+import BACK_URL from './globals';
 
 export default function Home() {
   const router = useRouter();
-  console.log('addr:', process.env.NEXT_PUBLIC_BACK_URL);
 
   return (
     <main>
       <h1>42Login!</h1>
       <Divider />
+	 <Link href={`${BACK_URL}/auth/42login`}>
       <Button
-        variant="contained"
-        onClick={() => {
-          router.push('http://10.14.6.5:3000/auth/42login');
-        }}
-      >
+        variant="contained">
         42login
       </Button>
-      <Button
-        variant="contained"
-        onClick={() => {
-          router.push('/register');
-        }}
-      >
-        register
-      </Button>
-      <h1>make Room</h1>
+   </Link> 
       <Divider />
       <Link href="/home">
         <Button

@@ -19,7 +19,6 @@ import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { JwtEnrollGuard } from 'src/auth/jwtEnroll.guard';
 import { UserProfileDto } from './dto/userProfile.dto';
 
 @Controller('users')
@@ -28,29 +27,29 @@ export class UserController {
 
     //* user signup
 
-    @Post('/signup')
-    // @UseGuards(JwtEnrollGuard)
-    @UseInterceptors(FileInterceptor('profileImage'))
-    async signup(
-        // @Req() req,
-        // @Res() res: Response,
-        @UploadedFile() profileImage: Express.Multer.File, // TODO -> 테스트 필요 : 프론트에서 파일을 Body에 묶어서 보낼 수 있는지 확인
-        @Body('username') username: string, // * -> 프론트에서 Content-type 헤더를 multipart/form-data 로 설정하면 된다네요 by GPT ->great!!!
-    ) {
-        const user = await this.userService.getUserByUsername(username);
-        if (user) throw new BadRequestException('already used username');
+    // @Post('/signup')
+    // // @UseGuards(JwtEnrollGuard)
+    // @UseInterceptors(FileInterceptor('profileImage'))
+    // async signup(
+    //     // @Req() req,
+    //     // @Res() res: Response,
+    //     @UploadedFile() profileImage: Express.Multer.File, // TODO -> 테스트 필요 : 프론트에서 파일을 Body에 묶어서 보낼 수 있는지 확인
+    //     @Body('username') username: string, // * -> 프론트에서 Content-type 헤더를 multipart/form-data 로 설정하면 된다네요 by GPT ->great!!!
+    // ) {
+    //     const user = await this.userService.getUserByUsername(username);
+    //     if (user) throw new BadRequestException('already used username');
 
-        console.log(username, profileImage.filename);
-        //* authDto, username, imageUrl 필요
-        // await this.userService.registerUser(
-        //     req.authDto,
-        //     username,
-        //     profileImage.filename,
-        // );
-        // res.clearCookie('enroll_token');
+    //     console.log(username, profileImage.filename);
+    //     //* authDto, username, imageUrl 필요
+    //     // await this.userService.registerUser(
+    //     //     req.authDto,
+    //     //     username,
+    //     //     profileImage.filename,
+    //     // );
+    //     // res.clearCookie('enroll_token');
 
-        // return res.redirect(process.env.FRONT_URL + '/main');
-    }
+    //     // return res.redirect(process.env.FRONT_URL + '/main');
+    // }
 
     // @Patch('/signup/username')
     // @UseGuards(JwtEnrollGuard)

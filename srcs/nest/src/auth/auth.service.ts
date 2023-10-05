@@ -108,7 +108,7 @@ export class AuthService {
             return userExists;
         } catch (error) {
             if (error.getStatus() == 404) {
-                console.log('user does no exist, so must be saved.\n');
+                console.log('user does not exist, so must be saved.\n');
                 return await this.userService.registerUser(user, user.image_url);
             } else throw error;
         }

@@ -61,7 +61,7 @@ export class AuthController {
             res.status(HttpStatus.OK);
             const token = this.authService.generate2faToken(user.id, user.username);
             res.cookie('2fa_token', token, {
-                maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+                maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
                 // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
                 // secure: false,
             });
@@ -73,21 +73,22 @@ export class AuthController {
             return;
         }
         
-        const { token, refreshToken } = this.authService.generateAuthToken(user.id, user.username);
+        const { jwt, refreshToken } = await this.authService.generateAuthToken(user.id, user.username);
         res.status(HttpStatus.OK);
-        res.cookie('token', token, {
-            maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+        res.cookie('token', jwt, {
+            maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
             // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
             // secure: false,
         });
         res.cookie('refresh_Token', refreshToken, {
-            maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+            maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
             // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
             // secure: false,
         });
-        return res.status(200).json({
-            message: 'success',
-        });
+        // return res.status(200).json({  
+        //     message: 'success',
+        // });
+		return res.redirect(process.env.FRONT_URL + '/home');
     }
 
     @Get('verify2fa')
@@ -99,12 +100,12 @@ export class AuthController {
             res.clearCookie('2fa_token');
             const { jwt, refreshToken } = await this.authService.generateAuthToken(req.authDto.id, req.authDto.username );
             res.cookie('token', jwt, {
-                maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+                maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
                 // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
                 // secure: false,
             });
             res.cookie('refresh_Token', refreshToken, {
-                maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+                maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
                 // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
                 // secure: false,
             });

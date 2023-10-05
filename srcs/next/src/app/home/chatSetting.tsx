@@ -25,12 +25,26 @@ const ChatSetting: React.FC = () => {
   return (
     <List sx={{ width: 300, bgcolor: 'background.paper' }}>
       채팅방 유저 리스트
-      <CommonListItem text={curRoomInfo?.ownerName} onClick={handleClick} />
+      <Divider/>
+      오 - 너
+      {curRoomInfo?.ownerName && (
+      <CommonListItem text={curRoomInfo?.ownerName} 
+      onClick={handleClick}
+       />
+      )}
+      <Divider/>
+      관리자
       {curRoomInfo?.operatorList.map((member) => (
-        <CommonListItem text={member} onClick={handleClick} />
+        <CommonListItem text={member} 
+        onClick={handleClick}
+        />
       ))}
+      <Divider/>
+      먼지
       {curRoomInfo?.memberList.map((member) => (
-        <CommonListItem text={member} onClick={handleClick} />
+        <CommonListItem text={member} 
+        onClick={handleClick}
+        />
       ))}
       <Menu
         anchorEl={anchorEl}

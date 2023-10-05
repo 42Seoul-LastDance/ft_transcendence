@@ -48,6 +48,7 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   };
 
   const addNewRoom = () => {
+
     const newRoomInfo: RoomInfoDto = {
       roomName: roomname,
       userName: name,
@@ -62,6 +63,7 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
         dispatch(setCurRoom(data));
       });
     }
+
     chatSocket.emit('createChatRoom', newRoomInfo);
     dispatch(setIsJoined(true));
     onClose();

@@ -16,3 +16,4 @@ echo "----- Successfully installed -----"
 npm --prefix srcs run build
 npm --prefix srcs run start
 # npm --prefix srcs run dev
+ 
