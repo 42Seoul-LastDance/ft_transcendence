@@ -126,6 +126,8 @@ export class ChatRoomService {
             // 기존에 유저가 있던 채널이 있으면
             const userId = this.socketList.get(socket.id);
             const userName = (await this.userService.findUserById(userId)).username;
+
+            //? 유저가 privateroom에 있었으면 privateRoomList에서 찾아야하지 않을까요? (1) (juhoh)
             const pastRoom: ChatRoomDto = this.publicRoomList.get(pastRoomName);
             console.log('>>>>>pastRoom : ', pastRoom);
             socket.to(pastRoomName).emit('sendMessage', userName + '님이 방을 나가셨습니다.');
@@ -153,6 +155,7 @@ export class ChatRoomService {
         this.emitFailReason(socket, 'leavePastRoom', 'there was no past room.');
     }
 
+    //! 얘(아래함수)는 안쓰는데 원본 남겨둔 코드일까요? 2함수가 테스트용일까요..? (juhoh)
     async leavePastRoom(socket: Socket, userId: number) {
         const userName = (await this.userService.findUserById(userId)).username;
         const userSocket = this.userList.get(userId);
@@ -164,6 +167,8 @@ export class ChatRoomService {
 
         if (pastRoomName !== undefined) {
             //기존에 유저가 있던 채널이 있는지 확인
+
+            //? 유저가 privateroom에 있었으면 privateRoomList에서 찾아야하지 않을까요? (2) (juhoh)
             const pastRoom: ChatRoomDto = this.publicRoomList.get(pastRoomName);
             socket.to(pastRoomName).emit('sendMessage', userName + '님이 방을 나가셨습니다.');
             //user가 나갈 것임을 출력
@@ -283,18 +288,6 @@ export class ChatRoomService {
         if (targetSocket !== undefined) this.leavePastRoom2(socket, io);
         this.emitSuccess(socket, 'kickUser');
     }
-    
-    checkOperator(socket: Socket, roomName: string, status: RoomStatus) : boolean {
-        const id = this.getUserId(socket);
-        let room: ChatRoomDto;
-        if(status === RoomStatus.PUBLIC) room = this.publicRoomList.get(roomName);
-        else room = this.privateRoomList.get(roomName);
-
-        if(room.memberList.indexOf(id)  === undefined) return false;
-        return true;
-
-
-    }
 
     async muteUser(
         socket: Socket,
@@ -303,10 +296,8 @@ export class ChatRoomService {
         targetName: string,
         time: number,
     ): Promise<void> {
-        //! test  : op가 아니어도 된다면?! (front에서 혹시 잘못 띄우는지 확인)
-        if (this.checkOperator(socket, roomName, status) === false ){
-            console.log('test failed. not an operator to mute the user.');
-        }
+        //TODO : test  : op가 아니어도 된다면?! (front에서 혹시 잘못 띄우는지 확인)
+
         //TODO : test . mute  가 잘 사라지나.
         const removeMuteUser = (targetName, roomDto) => {
             roomDto.muteList.delete(targetName);
@@ -361,9 +352,11 @@ export class ChatRoomService {
     }
 
     async sendMessage(socket: Socket, payload: JSON) {
+        // TODO : muteList 검사 -> room
         // TODO : blockList 검사는 프론트랑 협의 하기
         //1. 해당 room에서 user가 muteList 에 있는지 조회.
         //2. broadcast
+        console.log('here: ', payload);
         let room: ChatRoomDto;
         if (payload['status'] == RoomStatus.PRIVATE) {
             room = this.privateRoomList.get(payload['roomName']);
@@ -371,7 +364,6 @@ export class ChatRoomService {
             room = this.publicRoomList.get(payload['roomName']);
         }
         const userId = (await this.userService.getUserByUsername(payload['userName'])).id;
-        //! test muteList 가 undefined인가 빈 리스트인가
         if (room.muteList === undefined) console.log('mutelist is undefine.\n');
         else if (room.muteList.find((element) => userId === element) !== undefined) return;
 

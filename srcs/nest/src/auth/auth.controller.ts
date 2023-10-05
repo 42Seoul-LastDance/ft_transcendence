@@ -55,93 +55,40 @@ export class AuthController {
         console.log('42 callback 함수 호출');
 
         //유저 검색해 신규 유저면 등록해줌 => 유저 리턴 (0912 작업 내용)
-        // const user = await this.authService.signUser(req.user);
+        const user = await this.authService.signUser(req.user);
 
-        //! (주현) 신규 유저면 우선 등록해두는게 맞는지 잘 모르겠어요. (회원가입창에서 등록 눌러야 회원 등록돼야한다고 생각)
-        //!     => 대세에 따르겠습니다 (하지만 일단 로직은 구현해둠ㅎ)
-        //생각한 로직 (신규 유저 바로 등록 안하는 로직) ==========================
-
-        let user;
-        try {
-            user = await this.userService.getUserBySlackId(req.user.slackId);
-        } catch (error) {
-            if (error.getStatus() == 404) {
-                //JwtAccess 토큰 발급 후 신규 유저 등록 페이지로 진행
-                console.log('new user: redirect to enroll page');
-                const enrollJwt = await this.authService.generateEnrollToken(req.user);
-                res.status(HttpStatus.OK);
-                res.cookie('enroll_token', enrollJwt, {
-                    // httpOnly: true,
-                    // maxAge: +process.env.COOKIE_MAX_AGE,
-                    maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-                    sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                    secure: false,
-                    //domain: process.env.FRONT_URL + '/register',
-                });
-
-                // return res.redirect(process.env.FRONT_URL + '/register');
-            } else throw new InternalServerErrorException('from 42callback');
-        }
-        /*
-        쿠키는 항상 특정 도메인(쿠키를 설정하는 서버의 도메인)과 연결된다는 점을 기억하세요.
-        빠른 리디렉션으로 인해 쿠키가 OAuth 페이지에 설정되는 것처럼 보이더라도 
-        쿠키는 실제로 내 도메인과 연결되어 있으며 내 도메인으로만 전송될 수 있습니다.
-        */
-        // const ifExists = await this.authService.checkUserIfExists(
-        //     res,
-        //     req.user,
-        // ); //그럼 그냥 cookie 설정을 여기서 해보죠
-        // if (!ifExists) {
-        //     //JwtAccess 토큰 발급 후 신규 유저 등록 페이지로 진행
-        //     console.log('new user: redirect to enroll page');
-        //     // await this.signEnrollToken(res, user);
-        //     const enrollJwt = await this.authService.generateEnrollToken(
-        //         req.user,
-        //     );
-        //     res.status(HttpStatus.OK);
-        //     res.cookie('enroll_token', enrollJwt, {
-        //         // httpOnly: true,
-        //         maxAge: +process.env.JWT_ENROLL_COOKIE_TIME,
-        //         secure: false,
-        //     });
-        //     // console.log(res);    //cookie 잘 담겨있음 세상음
-        //     return res.redirect(process.env.FRONT_URL + '/register');
-        // }
-        // 지금 쿠키가 42 login url에 들어잇는걸 확인햇어요!! 오잉....
-        //그래서 이게 왜 그런지 알아보는 중..
-        // ==================================================== End of 생각한 로직
-        const founduser = await this.userService.getUserBySlackId(req.user.slackId);
-        if (founduser.require2fa) {
+        if (user.require2fa === true) {
+            //TODO 2fa token 발급 후 메일 보내고 '2fa' 문자열 send
             res.status(HttpStatus.OK);
-            console.log('2fa true, go to email!');
-            await this.authService.sign2faToken(res, req.user);
-            this.authService.sendMail(res, req.authDto.sub);
-            return res.redirect(process.env.FRONT_URL + '/tfa'); //  * 프론트의 2fa입력폼 페이지
-        } else {
-            //2차 인증 없이 jwt 발급 후 메인으로 리다이렉트
-            console.log('no need to 2fa, redirect to main page');
-            await this.authService.signjwtToken(res, req.user);
-            return res.redirect(process.env.FRONT_URL + '/main'); // *성공 후 메인페이지
-        }
-    }
+            const token = this.authService.generate2fa(user.id);
+            res.cookie('2fa_token', token, {
+                maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+                // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+                // secure: false,
+            });
 
-    // @Get('require2fa')
-    // @UseGuards(Jwt2faGuard)
-    // // @UseGuards(JwtAuthGuard) //!test용 - user.sub 받아오려고 일단 진행중
-    // async twofactorAuthentication(@Req() req, @Res() res: Response) {
-    //     // 메일 보내기
-    //     try {
-    //         this.mailService.sendMail(req.authDto.sub);
-    //         res.status(HttpStatus.OK);
-    //     } catch (error) {
-    //         return new InternalServerErrorException(
-    //             'from twofactorAuthentication',
-    //         );
-    //         }
-    //     return res.status(200).json({
-    //         message: '2FA 코드가 이메일로 전송되었습니다. 코드를 확인해주세요.',
-    //     });
-    // }
+            //mail 보내기
+            return res.status(200).json({
+                message: '2fa',
+            });
+            return;
+        }
+
+        const { token, refreshToken } = this.authService.generateAuthToken(user);
+        res.cookie('token', token, {
+            maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+            // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+            // secure: false,
+        });
+        res.cookie('refreshToken', refreshToken, {
+            maxAge: +process.env.JWT_ENROLL_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+            // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+            // secure: false,
+        });
+        return res.status(200).json({
+            message: 'success',
+        });
+    }
 
     @Get('verify2fa')
     @UseGuards(Jwt2faGuard)

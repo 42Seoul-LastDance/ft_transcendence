@@ -62,11 +62,11 @@ export class UserService {
         return user;
     }
 
-    async registerUser(authDto: Auth42Dto, username: string, filename: string): Promise<User> {
+    async registerUser(authDto: Auth42Dto, filename: string): Promise<User> {
         try {
             const { email, slackId } = authDto;
             const newUser = this.userRepository.create({
-                username: username, //!random name으로 변경필요
+                username: slackId,
                 email: email,
                 profileurl: filename ? filename : 'default.png',
                 slackId: slackId,
