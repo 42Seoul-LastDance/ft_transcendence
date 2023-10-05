@@ -72,22 +72,17 @@ export class AuthService {
             email: user.email,
             slackId: user.slackId,
         };
-        const newAccessToken = await this.generateJwt(newPayload);
-
+        const newAccessToken = await this.generateJwtBySecret(newPayload);
         return newAccessToken;
-        // refresh 토큰 검증(guard) , 서버에서도 검증 -> 삭제되어있으면 x (로그아웃한거임)
-        // 검증했으면 jwt 토큰 발급해서 반환.
-        // this.jwtService.
     }
 
-    async generateAuthToken(user: User): Promise<{ jwt: string; refreshToken: string }> {
-        const jwt = await this.generateJwt({
-            sub: user.id,
-            userName: user.username,
-            email: user.email,
+    async generateAuthToken(id: number, username: string): Promise<{ jwt: string; refreshToken: string }> {
+        const jwt = await this.generateJwtBySecret({
+            sub: id,
+            userName: username,
         });
-        const refreshToken = await this.generateRefreshToken({ id: user.id });
-        this.userService.saveUserCurrentRefreshToken(user.id, refreshToken);
+        const refreshToken = await this.generateRefreshTokenBySecret({ id: id });
+        this.userService.saveUserCurrentRefreshToken(id, refreshToken);
 
         const returnObject: { jwt: string; refreshToken: string } = {
             jwt,
@@ -96,12 +91,14 @@ export class AuthService {
         return returnObject;
     }
 
-    async generate2faToken(userId): Promise<string> {
+    async generate2faToken(userId: number, userName: string): Promise<string> {
         const token = await this.generate2faTokenBySecret({
             sub: userId,
+            username: userName,
         });
         return token;
     }
+
     /**
      * Dto에 있는 정보가 DB에 없다면 유저를 만들고, 있다면 찾아서 반환하는 함수
      */
@@ -115,111 +112,6 @@ export class AuthService {
                 return await this.userService.registerUser(user, user.image_url);
             } else throw error;
         }
-    }
-
-    //* signIn 함수 원본 지킴이
-    // async signIn(
-    //     user: Auth42Dto,
-    // ): Promise<{ jwt: string; refreshToken: string }> {
-    //     if (!user) {
-    //         throw new BadRequestException('Unauthenticated');
-    //     }
-    //     try {
-    //         const userExists = await this.userService.findUserByEmail(
-    //             user.email,
-    //         );
-    //     } catch (error) {
-    //         if (error.getStatus() == 404) {
-    //             console.log('user does no exist, so must be saved.\n');
-    //             await this.userService.registerUser(user);
-    //         }
-    //     }
-    //     const id = await this.userService.getUserIdByEmail(user.email);
-    //     //ok 로직 보낸다. 그럼 frontend가 jwt 발급 로직 endpoint로 이동
-    //     //&& 창으로 'code 를 입력해서 인증을 완료하세요 ' 로직?
-
-    //     // TODO mailService 에서 verifyFactorAuthentication ㅇ
-    //     const jwt = await this.generateJwt({
-    //         sub: id,
-    //         email: user.email,
-    //     });
-    //     const refreshToken = await this.generateRefreshToken({ id });
-    //     this.userService.saveUserCurrentRefreshToken(id, refreshToken);
-
-    //     const returnObject: { jwt: string; refreshToken: string } = {
-    //         jwt,
-    //         refreshToken,
-    //     };
-    //     return returnObject;
-    // }
-
-    // async generateEnrollJwt(payload): Promise<string> {
-    //     return await this.jwtService.signAsync(payload, {
-    //         secret: process.env.JWT_ENROLL_SECRET,
-    //         expiresIn: process.env.JWT_ENROLL_TIME,
-    //     });
-    // }
-
-    //// async generateEnrollToken(authDto: Auth42Dto): Promise<string> {
-    ////     const enrollToken = await this.generateEnrollJwt({
-    ////         email: authDto.email,
-    ////         slackId: authDto.slackId,
-    ////         image_url: authDto.image_url,
-    ////         displayname: authDto.displayname,
-    // //         accesstoken: authDto.accesstoken,
-    // //     });
-    // //     return enrollToken;
-    //  // }
-
-    //// async signEnrollToken(@Res() res: Response, payload) {
-    //     //const enrollJwt = await this.generateEnrollToken(payload);
-    //   //  res.status(HttpStatus.OK);
-    // //    res.cookie('enroll_token', enrollJwt, {
-    //         // httpOnly: true,
-    //   //      maxAge: +process.env.JWT_ENROLL_COOKIE_TIME,
-    // //        secure: false,
-    ////     });
-    ////     return res;
-    //// }
-
-    // async sign2faToken(@Res() res: Response, payload) {
-    //     const secondFaJwt = await this.generate2faToken(payload);
-    //     res.status(HttpStatus.OK);
-    //     res.cookie('2fa_token', secondFaJwt, {
-    //         // httpOnly: true,
-    //         maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠
-    //         sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-    //         secure: false,
-    //     });
-    // }
-
-    // async signjwtToken(@Res() res: Response, payload) {
-    //     const { jwt, refreshToken } = await this.generateToken(payload);
-    //     res.status(HttpStatus.OK);
-    //     res.cookie('access_token', jwt, {
-    //         // httpOnly: true,
-    //         maxAge: +process.env.COOKIE_MAX_AGE,
-    //         sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-    //         secure: false,
-    //     });
-    //     res.cookie('refresh_token', refreshToken, {
-    //         // httpOnly: true,
-    //         // maxAge: +process.env.COOKIE_MAX_AGE,
-    //         maxAge: 100000000, //테스트용으로 숫자 길게 맘대로 해둠
-    //         sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-    //         secure: false,
-    //     });
-    // }
-
-    async signRegeneratejwt(@Res() res: Response, payload) {
-        const regeneratedToken = await this.regenerateJwt(payload);
-        res.cookie('access_token', regeneratedToken, {
-            // httpOnly: true,
-            maxAge: +process.env.COOKIE_MAX_AGE,
-            sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-            secure: false,
-        });
-        res.status(HttpStatus.OK);
     }
 
     async sendMail(@Res() res: Response, id: number): Promise<void> {
