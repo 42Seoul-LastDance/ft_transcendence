@@ -283,6 +283,18 @@ export class ChatRoomService {
         if (targetSocket !== undefined) this.leavePastRoom2(socket, io);
         this.emitSuccess(socket, 'kickUser');
     }
+    
+    checkOperator(socket: Socket, roomName: string, status: RoomStatus) : boolean {
+        const id = this.getUserId(socket);
+        let room: ChatRoomDto;
+        if(status === RoomStatus.PUBLIC) room = this.publicRoomList.get(roomName);
+        else room = this.privateRoomList.get(roomName);
+
+        if(room.memberList.indexOf(id)  === undefined) return false;
+        return true;
+
+
+    }
 
     async muteUser(
         socket: Socket,
@@ -291,8 +303,10 @@ export class ChatRoomService {
         targetName: string,
         time: number,
     ): Promise<void> {
-        //TODO : test  : op가 아니어도 된다면?! (front에서 혹시 잘못 띄우는지 확인)
-
+        //! test  : op가 아니어도 된다면?! (front에서 혹시 잘못 띄우는지 확인)
+        if (this.checkOperator(socket, roomName, status) === false ){
+            console.log('test failed. not an operator to mute the user.');
+        }
         //TODO : test . mute  가 잘 사라지나.
         const removeMuteUser = (targetName, roomDto) => {
             roomDto.muteList.delete(targetName);
@@ -347,11 +361,9 @@ export class ChatRoomService {
     }
 
     async sendMessage(socket: Socket, payload: JSON) {
-        // TODO : muteList 검사 -> room
         // TODO : blockList 검사는 프론트랑 협의 하기
         //1. 해당 room에서 user가 muteList 에 있는지 조회.
         //2. broadcast
-        console.log('here: ', payload);
         let room: ChatRoomDto;
         if (payload['status'] == RoomStatus.PRIVATE) {
             room = this.privateRoomList.get(payload['roomName']);
@@ -359,6 +371,7 @@ export class ChatRoomService {
             room = this.publicRoomList.get(payload['roomName']);
         }
         const userId = (await this.userService.getUserByUsername(payload['userName'])).id;
+        //! test muteList 가 undefined인가 빈 리스트인가
         if (room.muteList === undefined) console.log('mutelist is undefine.\n');
         else if (room.muteList.find((element) => userId === element) !== undefined) return;
 
