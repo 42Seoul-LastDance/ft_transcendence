@@ -9,7 +9,7 @@ export const enum Emoji {
 }
 
 export const enum PlayerSide {
-	NONE = -1,
+    NONE = -1,
     LEFT = 0,
     RIGHT = 1,
 }
@@ -20,22 +20,27 @@ export const enum GameMode {
     HARD = 1,
 }
 
-export interface StartGameJson{
-	side: PlayerSide,
-	ballDirX: number,
-	ballDirY: number,
-	ballDirZ: number,
-	isFirst: boolean
+export interface StartGameJson {
+    side: PlayerSide;
+    ballDirX: number;
+    ballDirY: number;
+    ballDirZ: number;
+    leftScore: number;
+    rightScore: number;
+    ballSpeed: number;
+    isFirst: boolean;
+    leftName: string;
+    rightName: string;
 }
 
-export interface SendEmojiJson{
-	type: Emoji
+export interface SendEmojiJson {
+    type: Emoji;
 }
 
-export interface HandShakeJson{
-	side: PlayerSide
+export interface HandShakeJson {
+    side: PlayerSide;
 }
 
-export interface EmojiScreenProps {
-	screenSide : PlayerSide
+export interface UserPannelProps {
+    screenSide: PlayerSide;
 }

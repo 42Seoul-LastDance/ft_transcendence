@@ -14,6 +14,7 @@ export interface GameRoom {
     gameStatus: number; //enum
     socket?: [Socket | undefined, Socket | undefined];
     ready?: [boolean | undefined, boolean | undefined];
+    name?: [string | undefined, string | undefined];
     //when game starts
     startTime?: Date | undefined;
     score?: [number | undefined, number | undefined];
@@ -30,7 +31,8 @@ export interface GameRoom {
 
 export interface Player {
     socket: Socket;
-    userId?: number | undefined;
+    userId: number;
+    userName: string;
     gameType?: number | undefined; //enum
     gameMode?: number | undefined; //enum
     side?: number | undefined; //enum

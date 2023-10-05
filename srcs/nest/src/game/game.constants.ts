@@ -5,25 +5,27 @@ export const MINF: number = 0.2;
 export const MAXF: number = 0.7;
 
 //scorePoint()
-export const MAXSCORE: number = 5;
+export const MAXSCORE: number = 100;
 
 //TimeZone
 export const TIMEZONE: string = 'Asia/Seoul';
 
+//equals()
+export const EPSILON = 0.1;
+
 //Game: Ball
 export const PADDING: number = 1;
+export const SCORE_PADDING: number = 1.5;
 //TODO hard mode ball speed
-export const BALL_SPEED: [number, number] = [15, 15]; //[NORMAL, HARD]
+export const BALL_SPEED: [number, number] = [15, 50]; //[NORMAL, HARD]
 export const BALL_POS_X_MIN: number = -19.3 - PADDING;
 export const BALL_POS_X_MAX: number = 19.3 + PADDING;
-export const BALL_POS_Y_MIN: number = 0.8 - PADDING / 100;
-export const BALL_POS_Y_MAX: number = 0.8 + PADDING / 100;
+export const BALL_POS_Y: number = 0.8;
 export const BALL_POS_Z_MIN: number = -14.3 - PADDING;
 export const BALL_POS_Z_MAX: number = 14.3 + PADDING;
 export const BALL_SCALE_X: number = 0.5;
 export const BALL_SCALE_Y: number = 0.5;
 export const BALL_SCALE_Z: number = 0.5;
-
 //Game: Paddle_common
 export const PADDLE_SPEED: number = 1000;
 export const PADDLE_SCALE_X: number = 0.3;

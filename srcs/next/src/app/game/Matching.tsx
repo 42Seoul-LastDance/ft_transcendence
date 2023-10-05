@@ -9,15 +9,17 @@ import { GameMode, HandShakeJson } from '../Enums';
 
 const Matching = () => {
     const [isMatching, setIsMatching] = useState<boolean>(false);
-    const isCustomGame = useSelector((state: RootState) => state.match.isCustom);
-	const isMatched = useSelector((state: RootState) => state.match.isCustom);
+    const isCustomGame = useSelector(
+        (state: RootState) => state.match.isCustom,
+    );
+    const isMatched = useSelector((state: RootState) => state.match.isCustom);
     const dispatch = useDispatch();
 
     const socket = useGameSocket();
 
     if (!socket.hasListeners('handShake')) {
         socket.on('handShake', (json: HandShakeJson) => {
-			dispatch(setSide({ side: json.side }));
+            dispatch(setSide({ side: json.side }));
             dispatch(setIsMatched({ isMatched: true }));
         });
     }
@@ -31,8 +33,6 @@ const Matching = () => {
                             setIsMatching(true);
                             socket.emit('pushQueue', {
                                 gameMode: GameMode.NORMAL,
-                                // userSlice에서 받아온 ID
-                                userId: 'kwsong',
                             });
                         }}
                     >
@@ -43,8 +43,6 @@ const Matching = () => {
                             setIsMatching(true);
                             socket.emit('pushQueue', {
                                 gameMode: GameMode.HARD,
-                                // userSlice에서 받아온 ID
-                                userId: 'kwsong',
                             });
                         }}
                     >

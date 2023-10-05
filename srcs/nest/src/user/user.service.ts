@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
     ConflictException,
     Injectable,
@@ -17,7 +18,10 @@ import { UserProfileDto } from './dto/userProfile.dto';
 
 @Injectable()
 export class UserService {
-    constructor(private userRepository: UserRepository) {}
+    constructor(
+        @InjectRepository(User)
+        private readonly userRepository: UserRepository,
+    ) {}
 
     async findUserByEmail(email: string): Promise<User> {
         const user = await this.userRepository.findOne({
@@ -40,7 +44,9 @@ export class UserService {
     }
 
     async findUserById(id: number): Promise<User> {
-        const user = await this.userRepository.findOne({ where: { id: id } });
+        const user = await this.userRepository.findOne({
+            where: { id: id },
+        });
         if (!user) {
             console.log('findUserById error - not found');
             throw new NotFoundException(`user with id ${id} not found`);

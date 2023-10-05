@@ -5,14 +5,18 @@ export interface MatchState {
     isCustom: boolean;
     isMatched: boolean;
     side: PlayerSide;
-	emoji: string;
+    emoji: string;
+    leftName: string;
+    rightName: string;
 }
 
 const initialState: MatchState = {
     isCustom: false,
     isMatched: false,
     side: PlayerSide.NONE,
-	emoji: '',
+    emoji: '',
+    leftName: '?',
+    rightName: '?',
 };
 
 export const matchSlice = createSlice({
@@ -31,11 +35,19 @@ export const matchSlice = createSlice({
         setSide: (state, action: PayloadAction<{ side: PlayerSide }>) => {
             state.side = action.payload.side;
         },
-		setEmoji: (state, action: PayloadAction<{ emoji: string }>) => {
+        setEmoji: (state, action: PayloadAction<{ emoji: string }>) => {
             state.emoji = action.payload.emoji;
+        },
+        setNames: (
+            state,
+            action: PayloadAction<{ leftName: string; rightName: string }>,
+        ) => {
+            state.leftName = action.payload.leftName;
+            state.rightName = action.payload.rightName;
         },
     },
 });
 
 export default matchSlice.reducer;
-export const { setIsMatched, setSide, setIsCustom, setEmoji } = matchSlice.actions;
+export const { setIsMatched, setSide, setIsCustom, setEmoji, setNames } =
+    matchSlice.actions;

@@ -1,13 +1,15 @@
+/* eslint-disable prettier/prettier */
 import {
     OnGatewayConnection,
     OnGatewayDisconnect,
     SubscribeMessage,
     WebSocketGateway,
     WebSocketServer,
-    // ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { GameService } from './game.service';
+// import { JwtService } from '@nestjs/jwt';
+
 @WebSocketGateway({
     port: 3000,
     cors: {
@@ -17,14 +19,28 @@ import { GameService } from './game.service';
     namespace: 'Game',
 }) // 데코레이터 인자로 포트 줄 수 있음
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    constructor(private gameService: GameService) {}
+    constructor(
+        private gameService: GameService, // private jwtService: JwtService,
+    ) {}
 
     @WebSocketServer()
     server: Server;
 
-    handleConnection(client: Socket) {
+    async handleConnection(client: Socket) {
         //TODO jwt check logic
-        this.gameService.createPlayer(client);
+        // const tokenString: string = client.handshake.query.token as string;
+        // try {
+        //     const decodedToken = this.jwtService.verify(tokenString, {
+        //         secret: process.env.JWT_SECRET_KEY,
+        //     });
+        //     await this.gameService.createPlayer(client, decodedToken.sub);
+        // } catch (error) {
+        //     client.disconnect(true);
+        //     console.log('player JWT not valid');
+        //     return;
+        // }
+        //! TEST CODE below
+        await this.gameService.createPlayer(client, '1111');
         console.log('new connection, player enrolled:', client.id);
     }
 
@@ -40,11 +56,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     pushQueue(client: Socket, clientInfo: JSON) {
         //TESTCODE
         console.log('pushQueue:', client.id);
-        this.gameService.pushQueue(
-            client.id,
-            +clientInfo['gameMode'],
-            +clientInfo['userId'],
-        );
+        this.gameService.pushQueue(client.id, +clientInfo['gameMode']);
     }
 
     //큐에 있던 플레이어 나감
@@ -57,31 +69,22 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     //* Friend Game ======================================
     @SubscribeMessage('inviteGame')
-    inviteGame(client: Socket, gameInfo: JSON) {
-        this.gameService.inviteGame(
+    async inviteGame(client: Socket, gameInfo: JSON) {
+        await this.gameService.inviteGame(
             client.id,
             +gameInfo['gameMode'],
-            +gameInfo['userId'],
-            +gameInfo['friendId'],
+            gameInfo['friendName'],
         );
     }
 
     @SubscribeMessage('agreeInvite')
     agreeInvite(client: Socket, gameInfo: JSON) {
-        this.gameService.agreeInvite(
-            client.id,
-            +gameInfo['userId'],
-            +gameInfo['friendId'],
-        );
+        this.gameService.agreeInvite(client.id, gameInfo['friendName']);
     }
 
     @SubscribeMessage('denyInvite')
     denyInvite(client: Socket, gameInfo: JSON) {
-        this.gameService.denyInvite(
-            client.id,
-            +gameInfo['userId'],
-            +gameInfo['friendId'],
-        );
+        this.gameService.denyInvite(client.id, gameInfo['friendName']);
     }
 
     //* Game Room ======================================
@@ -103,7 +106,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage('validCheck')
     async validCheck(client: Socket, gameInfo: JSON) {
         //TESTCODE
-        console.log('validCheck:', client.id);
+        // console.log('validCheck:', client.id);
         await this.gameService.validCheck(client.id, gameInfo);
     }
 
