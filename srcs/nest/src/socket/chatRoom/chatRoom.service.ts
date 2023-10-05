@@ -391,12 +391,9 @@ export class ChatRoomService {
             var receiverSocket = this.userList.get(memberId);
             var receiverId = this.getUserId(receiverSocket);
             if (blockList.indexOf(receiverId) === -1){
-                //emit
+                receiverSocket.emit('sendMessage', { userName: payload['userName'], content: payload['content'] });
             }
-        } //퇴근하신다네용 커밋메시지 제가 
-
-            .to(payload['roomName'])
-            .emit('sendMessage', { userName: payload['userName'], content: payload['content'] });
+        }
         console.log('successfully sent message.');
     }
 
