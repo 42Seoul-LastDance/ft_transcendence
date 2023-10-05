@@ -1,3 +1,4 @@
+// RoomInfoInnerDto
 export interface ChatRoomDto {
   operatorList: string[];
   memberList: string[];
@@ -9,10 +10,13 @@ export interface ChatRoomDto {
   status: RoomStatus; // 또는 RoomStatus 타입으로 정의
   password: string | null;
   requirePassword: boolean;
-  myPermission: Permission;
-  myName: string;
+  userName: string;
+  userPermission: UserPermission;
 }
+// chatRoom Service.ts 저장 한번만 해주세용 intell
+// complete
 
+//createRoomDto
 export interface RoomInfoDto {
   roomName: string;
   password: string | null;
@@ -25,10 +29,10 @@ export enum RoomStatus {
   PUBLIC = 'PUBLIC',
 }
 
-export enum Permission{
-  OWNER = 0,
-  MEMBER = 1,
-  ADMIN = 2,
+export enum UserPermission {
+  MEMBER = 0,
+  OPERATOR = 1,
+  OWNER = 2,
 }
 
 export interface ChatMessage {

@@ -13,11 +13,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // const socket = io('http://10.14.4.2:3000', {
-  //     withCredentials: false,
-  // });
-  // socket.connect();
-  //initSocket();
   return (
     <html>
       <body>{children}</body>

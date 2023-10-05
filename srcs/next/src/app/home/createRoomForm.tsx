@@ -11,7 +11,7 @@ import { RoomInfoDto, RoomStatus } from '../interface';
 import { useRouter } from 'next/navigation';
 import { setIsJoined } from '../redux/roomSlice';
 import { RootState } from '../redux/store';
-import { setCurRoom, setName } from '../redux/userSlice';
+import { setChatRoom, setName } from '../redux/userSlice';
 
 export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const chatSocket = useChatSocket();
@@ -23,7 +23,7 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const [requirePassword, setIsLocked] = useState<boolean>(false);
   const [password, setPassword] = useState<string>('');
   const [showPasswordInput, setShowPasswordInput] = useState<boolean>(false);
-  const name = useSelector((state: RootState) => state.user.name);
+  const name = useSelector((state: RootState) => state.user.chatRoom?.userName);
 
   const handleRoomNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRoomname(event.target.value);
@@ -49,9 +49,8 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
 
   const addNewRoom = () => {
 
-    const newRoomInfo: RoomInfoDto = {
+    const newRoom: RoomInfoDto = {
       roomName: roomname,
-      userName: name,
       password: password ? password : null,
       requirePassword: requirePassword,
       status: isPrivate ? RoomStatus.PRIVATE : RoomStatus.PUBLIC,
@@ -60,14 +59,13 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
     if (!chatSocket.hasListeners('createChatRoom')) {
       chatSocket.on('createChatRoom', (data) => {
         console.log('create Chat Room : ', data);
-        dispatch(setCurRoom(data));
+        dispatch(setChatRoom(data));
       });
     }
 
-    chatSocket.emit('createChatRoom', newRoomInfo);
+    chatSocket.emit('createChatRoom', newRoom);
     dispatch(setIsJoined(true));
     onClose();
-    // router.push('/chatRoom');
   };
 
   return (

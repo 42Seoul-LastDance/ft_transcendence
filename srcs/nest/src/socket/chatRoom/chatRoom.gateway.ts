@@ -48,7 +48,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     handleDisconnect(socket: Socket) {
         const userId = this.chatroomService.getUserId(socket);
         console.log('disconnect userId : ', userId);
-        this.chatroomService.leavePastRoom2(socket, this.server);
+        this.chatroomService.leavePastRoom(socket, this.server);
         this.chatroomService.deleteUser(socket);
         console.log(socket.id, ': lost connection. (Chat)');
     }
@@ -80,7 +80,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         // requirePassword: boolean
         // operatorList: Array<string>
         // memberList: Array<string>
-        const chatRoomInfo = this.chatroomService.getChatRoomInfo(payload['roomName'], payload['status']);
+        const chatRoomInfo = this.chatroomService.getChatRoomInfo(socket, payload['roomName'], payload['status']);
         socket.emit('getChatRoomInfo', chatRoomInfo);
         // Object.fromEntries(chatRoomList)
     }

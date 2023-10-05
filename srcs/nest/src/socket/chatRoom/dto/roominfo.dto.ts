@@ -5,8 +5,8 @@ export class RoomInfoDto {
     @IsString()
     roomName: string;
 
-    @IsString()
-    userName: string;
+    // @IsString()
+    // userName: string;
 
     @IsString()
     password: string | null;

@@ -12,7 +12,7 @@ import CommonListItem from './CommonListItem';
 const ChatSetting: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
-  const curRoomInfo = useSelector((state: RootState) => state.user.curRoom);
+  const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
 
   const handleClick = (event: MouseEvent<HTMLDivElement>) => {
     setAnchorEl(event.currentTarget);
@@ -27,21 +27,21 @@ const ChatSetting: React.FC = () => {
       채팅방 유저 리스트
       <Divider/>
       오 - 너
-      {curRoomInfo?.ownerName && (
-      <CommonListItem text={curRoomInfo?.ownerName} 
+      {chatRoom?.ownerName && (
+      <CommonListItem text={chatRoom?.ownerName} 
       onClick={handleClick}
        />
       )}
       <Divider/>
       관리자
-      {curRoomInfo?.operatorList.map((member) => (
+      {chatRoom?.operatorList.map((member) => (
         <CommonListItem text={member} 
         onClick={handleClick}
         />
       ))}
       <Divider/>
       먼지
-      {curRoomInfo?.memberList.map((member) => (
+      {chatRoom?.memberList.map((member) => (
         <CommonListItem text={member} 
         onClick={handleClick}
         />
