@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import {
-    GameMode,
     GameType,
     PlayerSide,
     GameStatus,
@@ -14,10 +13,6 @@ import {
     Emoji,
 } from './game.enum';
 import {
-    MIN,
-    MAX,
-    MINF,
-    MAXF,
     MAXSCORE,
     TIMEZONE,
     BALL_SPEED,
@@ -40,9 +35,9 @@ import {
     PADDLE_ROTATE_X,
     PADDLE_ROTATE_Y,
     PADDLE_ROTATE_Z,
-    PADDING,
     EPSILON,
     SCORE_PADDING,
+    BALL_PADDING,
 } from './game.constants';
 import { GameRoom, Player } from './game.interface';
 import { Game } from './game.entity';
@@ -87,11 +82,11 @@ export class GameService {
             if (player.gameType === GameType.MATCH) {
                 if (this.matchQueue[player.gameMode] === player.socket.id)
                     this.matchQueue[player.gameMode] = undefined;
-                else throw new BadRequestException('player not in the queue');
-            } else if (player.gameType === GameType.FRIEND) {
-                if (this.friendGameList.get(player.userName)) {
+                // else throw new BadRequestException('player not in the queue');
+            } else {
+                if (this.friendGameList.get(player.userName))
                     this.friendGameList.delete(player.userName);
-                } else throw new BadRequestException('friend: bad request');
+                // else throw new BadRequestException('friend: bad request');
             }
         } else {
             //in room (waiting or game)
@@ -110,7 +105,7 @@ export class GameService {
                     (player.side + 1) % 2,
                     GameEndStatus.DISCONNECT,
                 );
-            } else throw new BadRequestException('무슨 에러지..?');
+            } //else throw new BadRequestException('무슨 에러지..?');
             //gameroom 없애기
             this.gameRoomList.delete(player.roomId);
         }
@@ -137,7 +132,7 @@ export class GameService {
         ) {
             this.matchQueue[this.playerList.get(playerId).gameMode] = undefined;
             this.resetPlayer(this.playerList.get(playerId));
-        } else throw new BadRequestException('player was not in Queue');
+        } //else throw new BadRequestException('player was not in Queue');
     }
 
     //* Friend Game ======================================
@@ -228,6 +223,7 @@ export class GameService {
     //* In Game ======================================
     movePaddle(playerId: string, gameInfo: JSON) {
         const roomId = this.playerList.get(playerId).roomId;
+        if (roomId === undefined) return;
         const side = this.playerList.get(playerId).side;
         const rival = this.gameRoomList.get(roomId).socket[(side + 1) % 2];
         if (
@@ -236,14 +232,14 @@ export class GameService {
             gameInfo['paddlePosZ'] < PADDLE_POS_Z_MIN ||
             gameInfo['paddlePosZ'] > PADDLE_POS_Z_MAX
         ) {
-            console.log(
-                '<<movePaddle>>\nx:',
-                gameInfo['paddlePosX'],
-                '\ny:',
-                gameInfo['paddlePosY'],
-                '\nz:',
-                gameInfo['paddlePosZ'],
-            );
+            // console.log(
+            //     '<<movePaddle>>\nx:',
+            //     gameInfo['paddlePosX'],
+            //     '\ny:',
+            //     gameInfo['paddlePosY'],
+            //     '\nz:',
+            //     gameInfo['paddlePosZ'],
+            // );
             this.finishGame(roomId, (side + 1) % 2, GameEndStatus.CHEATING);
             return;
         }
@@ -257,6 +253,7 @@ export class GameService {
     sendEmoji(playerId: string, emoji: string) {
         if (+emoji < Emoji.HI || Emoji.BADWORDS < +emoji) return;
         const player = this.playerList.get(playerId);
+        if (player.roomId === undefined) return;
         const side = player.side;
         const rivalSocket = this.gameRoomList.get(player.roomId).socket[
             (side + 1) % 2
@@ -266,18 +263,16 @@ export class GameService {
 
     async validCheck(playerId: string, gameInfo: JSON) {
         const player = this.playerList.get(playerId);
-        //TESTCODE: to be deleted
-        if (BALL_SPEED[player.gameMode] !== gameInfo['ballSpeed'])
-            console.log('>>>>>>>> JSON number NOT okay: modify immediately');
+        if (player.roomId === undefined) return;
         //end of TESTCODE
         if (
             //ball
             BALL_SPEED[player.gameMode] !== gameInfo['ballSpeed'] ||
-            BALL_POS_X_MIN > gameInfo['ballPosX'] ||
-            BALL_POS_X_MAX < gameInfo['ballPosX'] ||
+            BALL_POS_X_MIN - BALL_PADDING > gameInfo['ballPosX'] ||
+            BALL_POS_X_MAX + BALL_PADDING < gameInfo['ballPosX'] ||
             !this.equals(gameInfo['ballPosY'], BALL_POS_Y) ||
-            BALL_POS_Z_MIN > gameInfo['ballPosZ'] ||
-            BALL_POS_Z_MAX < gameInfo['ballPosZ'] ||
+            BALL_POS_Z_MIN - BALL_PADDING > gameInfo['ballPosZ'] ||
+            BALL_POS_Z_MAX + BALL_PADDING < gameInfo['ballPosZ'] ||
             BALL_SCALE_X !== gameInfo['ballScaleX'] ||
             BALL_SCALE_Y !== gameInfo['ballScaleY'] ||
             BALL_SCALE_Z !== gameInfo['ballScaleZ'] ||
@@ -351,11 +346,11 @@ export class GameService {
             );
             console.log(
                 BALL_SPEED[player.gameMode] !== gameInfo['ballSpeed'],
-                BALL_POS_X_MIN > gameInfo['ballPosX'],
-                BALL_POS_X_MAX < gameInfo['ballPosX'],
+                BALL_POS_X_MIN - BALL_PADDING > gameInfo['ballPosX'],
+                BALL_POS_X_MAX + BALL_PADDING < gameInfo['ballPosX'],
                 !this.equals(gameInfo['ballPosY'], BALL_POS_Y),
-                BALL_POS_Z_MIN > gameInfo['ballPosZ'],
-                BALL_POS_Z_MAX < gameInfo['ballPosZ'],
+                BALL_POS_Z_MIN - BALL_PADDING > gameInfo['ballPosZ'],
+                BALL_POS_Z_MAX + BALL_PADDING < gameInfo['ballPosZ'],
                 BALL_SCALE_X !== gameInfo['ballScaleX'],
                 BALL_SCALE_Y !== gameInfo['ballScaleY'],
                 BALL_SCALE_Z !== gameInfo['ballScaleZ'],
@@ -399,18 +394,19 @@ export class GameService {
 
     async ballHit(leftId: string, gameInfo: JSON) {
         const roomId = this.playerList.get(leftId).roomId;
+        if (roomId === undefined) return;
         const rivalSocket =
             this.gameRoomList.get(roomId).socket[PlayerSide.RIGHT];
         //validCheck
-        if (this.isBallOkay(roomId, gameInfo) === false) {
-            console.log('ballHit: cheating detacted');
-            await this.finishGame(
-                roomId,
-                PlayerSide.RIGHT,
-                GameEndStatus.CHEATING,
-            );
-            return;
-        }
+        // if (this.isBallOkay(roomId, gameInfo) === false) {
+        //     console.log('ballHit: cheating detacted');
+        //     await this.finishGame(
+        //         roomId,
+        //         PlayerSide.RIGHT,
+        //         GameEndStatus.CHEATING,
+        //     );
+        //     return;
+        // }
         //score check
         if (
             gameInfo['ballPosX'] <= BALL_POS_X_MIN + SCORE_PADDING ||
@@ -433,20 +429,27 @@ export class GameService {
                 gameInfo['ballPosX'],
                 gameInfo['ballPosZ'],
             );
-            console.log(
-                'ballDirX',
-                gameInfo['ballPosX'],
-                'ballDirY',
-                gameInfo['ballPosY'],
-                'ballDirZ',
-                gameInfo['ballPosZ'],
-                '\nballPosX',
-                this.gameRoomList.get(roomId).posX,
-                'ballPosZ',
-                this.gameRoomList.get(roomId).posZ,
-            );
+            // console.log(
+            //     'ballDirX',
+            //     gameInfo['ballPosX'],
+            //     'ballDirY',
+            //     gameInfo['ballPosY'],
+            //     'ballDirZ',
+            //     gameInfo['ballPosZ'],
+            //     '\nballPosX',
+            //     this.gameRoomList.get(roomId).posX,
+            //     'ballPosZ',
+            //     this.gameRoomList.get(roomId).posZ,
+            // );
             rivalSocket.emit('ballHit', gameInfo);
         }
+    }
+
+    async outGame(playerId: string) {
+        const roomId = this.playerList.get(playerId).roomId;
+        if (roomId === undefined) return;
+        const rivalSide = (this.playerList.get(playerId).side + 1) % 2;
+        await this.finishGame(roomId, rivalSide, GameEndStatus.OUTGAME);
     }
 
     //* other functions ======================================
@@ -526,10 +529,7 @@ export class GameService {
         this.gameRoomList.get(roomId).winner = side;
         this.gameRoomList.get(roomId).loser = (side + 1) % 2;
         this.gameRoomList.get(roomId).endGameStatus = endGameStatus;
-        if (
-            endGameStatus === GameEndStatus.CHEATING ||
-            endGameStatus === GameEndStatus.DISCONNECT
-        ) {
+        if (endGameStatus !== GameEndStatus.NORMAL) {
             this.gameRoomList.get(roomId).score[side] = MAXSCORE;
             this.gameRoomList.get(roomId).score[(side + 1) % 2] = 0;
         }
@@ -636,29 +636,22 @@ export class GameService {
         friendId?: number | undefined,
     ) {
         const player: Player = this.playerList.get(playerId);
-        if (player?.roomId)
+        if (player === undefined) throw new BadRequestException('wrong player');
+        if (player.roomId)
             throw new BadRequestException('player already in gameRoom');
         if (friendId) player.friendId = friendId;
         player.gameType = gameType;
         player.gameMode = gameMode;
-        if (gameMode === GameMode.NONE)
-            throw new BadRequestException('gameMode invalid');
     }
 
     //game 각 라운드 시작 시 공 방향 세팅
     getBallStartDir(roomId: number): any {
-        const a = (Math.random() * (MAX - MIN) + MIN) * -2 + 1;
-        const b =
-            ((Math.random() * (MAX - MIN) + MIN) * -2 + 1) *
-            (Math.random() * (MAXF - MINF) + MINF);
+        const a = Math.round(Math.random()) * 2 - 1; //-1 or 1
+        const b = Math.random() * 3 - 1.5; //-1.5 ~ 1.5
         const c = Math.sqrt(a * a + b * b);
 
-        let dirX = 0;
-        let dirZ = 0;
-        if (c !== 0) {
-            dirX = a / c;
-            dirZ = b / c;
-        }
+        const dirX = a / c;
+        const dirZ = b / c;
         this.updateBall(roomId, dirX, dirZ);
         console.log(
             'ballDirX',
@@ -690,47 +683,47 @@ export class GameService {
         this.gameRoomList.get(roomId).posZ = posZ !== undefined ? posZ : 0;
     }
     //ballHit valid check
-    isBallOkay(roomId: number, gameInfo: JSON): boolean {
-        const diffPosXZ =
-            (gameInfo['ballPosX'] - this.gameRoomList.get(roomId).posX) /
-            (gameInfo['ballPosZ'] - this.gameRoomList.get(roomId).posZ);
+    // isBallOkay(roomId: number, gameInfo: JSON): boolean {
+    //     const diffPosXZ =
+    //         (gameInfo['ballPosX'] - this.gameRoomList.get(roomId).posX) /
+    //         (gameInfo['ballPosZ'] - this.gameRoomList.get(roomId).posZ);
 
-        const dirXZ =
-            this.gameRoomList.get(roomId).dirX /
-            this.gameRoomList.get(roomId).dirZ;
+    //     const dirXZ =
+    //         this.gameRoomList.get(roomId).dirX /
+    //         this.gameRoomList.get(roomId).dirZ;
 
-        if (
-            diffPosXZ - dirXZ < -2 * PADDING ||
-            2 * PADDING < diffPosXZ - dirXZ ||
-            gameInfo['ballPosX'] < BALL_POS_X_MIN ||
-            gameInfo['ballPosX'] > BALL_POS_X_MAX ||
-            !this.equals(gameInfo['ballPosY'], BALL_POS_Y) ||
-            gameInfo['ballPosZ'] < BALL_POS_Z_MIN ||
-            gameInfo['ballPosZ'] > BALL_POS_Z_MAX
-        ) {
-            console.log(
-                'ballX:',
-                gameInfo['ballPosX'],
-                this.gameRoomList.get(roomId).posX,
-                gameInfo['ballPosX'] - this.gameRoomList.get(roomId).posX,
-                '\nballZ:',
-                gameInfo['ballPosZ'],
-                this.gameRoomList.get(roomId).posZ,
-                gameInfo['ballPosZ'] - this.gameRoomList.get(roomId).posZ,
-                '\ndiffPosXZ:',
-                diffPosXZ,
-                '\ndirX, dirZ',
-                this.gameRoomList.get(roomId).dirX,
-                this.gameRoomList.get(roomId).dirZ,
-                '\ndirXZ:',
-                dirXZ,
-                '\ndiffPosXZ - dirXZ:',
-                diffPosXZ - dirXZ,
-            );
-            return false;
-        }
-        return true;
-    }
+    //     if (
+    //         diffPosXZ - dirXZ < -2 ||
+    //         2 < diffPosXZ - dirXZ ||
+    //         gameInfo['ballPosX'] < BALL_POS_X_MIN ||
+    //         gameInfo['ballPosX'] > BALL_POS_X_MAX ||
+    //         !this.equals(gameInfo['ballPosY'], BALL_POS_Y) ||
+    //         gameInfo['ballPosZ'] < BALL_POS_Z_MIN ||
+    //         gameInfo['ballPosZ'] > BALL_POS_Z_MAX
+    //     ) {
+    //         // console.log(
+    //         //     'ballX:',
+    //         //     gameInfo['ballPosX'],
+    //         //     this.gameRoomList.get(roomId).posX,
+    //         //     gameInfo['ballPosX'] - this.gameRoomList.get(roomId).posX,
+    //         //     '\nballZ:',
+    //         //     gameInfo['ballPosZ'],
+    //         //     this.gameRoomList.get(roomId).posZ,
+    //         //     gameInfo['ballPosZ'] - this.gameRoomList.get(roomId).posZ,
+    //         //     '\ndiffPosXZ:',
+    //         //     diffPosXZ,
+    //         //     '\ndirX, dirZ',
+    //         //     this.gameRoomList.get(roomId).dirX,
+    //         //     this.gameRoomList.get(roomId).dirZ,
+    //         //     '\ndirXZ:',
+    //         //     dirXZ,
+    //         //     '\ndiffPosXZ - dirXZ:',
+    //         //     diffPosXZ - dirXZ,
+    //         // );
+    //         return false;
+    //     }
+    //     return true;
+    // }
 
     //게임 중단/종료 시 플레이어 리셋
     resetPlayer(player: Player) {

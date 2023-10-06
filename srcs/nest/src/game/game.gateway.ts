@@ -110,7 +110,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         await this.gameService.validCheck(client.id, gameInfo);
     }
 
-    //ballHit
     @SubscribeMessage('ballHit')
     async ballHit(client: Socket, gameInfo: JSON) {
         //TESTCODE
@@ -122,5 +121,10 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage('sendEmoji')
     sendEmoji(client: Socket, emoji: string) {
         this.gameService.sendEmoji(client.id, emoji['type']);
+    }
+
+    @SubscribeMessage('outGame')
+    async outGame(client: Socket) {
+        await this.gameService.outGame(client.id);
     }
 }

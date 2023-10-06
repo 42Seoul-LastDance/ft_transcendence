@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 // Socket.IO 소켓 초기화
-var gameSocket: Socket = io('http://localhost:3000/Game', {
+var gameSocket: Socket = io('http://10.28.4.13:3000/Game', {
     withCredentials: false,
 });
 

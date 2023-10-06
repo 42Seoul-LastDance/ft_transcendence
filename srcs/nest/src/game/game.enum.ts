@@ -20,6 +20,7 @@ export enum GameEndStatus {
     NORMAL = 0,
     CHEATING = 1,
     DISCONNECT = 2,
+    OUTGAME = 3,
     NONE = -1,
 }
 
