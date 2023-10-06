@@ -23,7 +23,10 @@ export class ChatRoomService {
     private socketList: Map<string, number> = new Map<string, number>(); //{socket id , username->id}
     private blockList: Map<number, Array<number>> = new Map<number, Array<number>>(); //{user id , blockUserList} // ! -> DB에서 한번 가져 들고왔다가 지속 업데데이트
 
-    constructor(private userService: UserService, private blockedUsersService: BlockedUsersService,) {
+    constructor(
+        private userService: UserService,
+        private blockedUsersService: BlockedUsersService,
+    ) {
         const chatRoom = {
             roomName: 'default room',
             ownerName: 'ebang',
@@ -36,9 +39,9 @@ export class ChatRoomService {
 
     private async getMemberList(chatRoom: ChatRoomDto): Promise<Array<string>> {
         const memberList: Array<string> = [];
-        
+
         let userName;
-        for(const member of chatRoom.memberList){
+        for (const member of chatRoom.memberList) {
             userName = (await this.userService.findUserById(member)).username;
             memberList.push(userName);
         }
@@ -47,18 +50,18 @@ export class ChatRoomService {
 
     private async getOperatorList(chatRoom: ChatRoomDto): Promise<Array<string>> {
         const memberList: Array<string> = [];
-        
+
         let userName;
-        for(const member of chatRoom.operatorList){
+        for (const member of chatRoom.operatorList) {
             userName = (await this.userService.findUserById(member)).username;
             memberList.push(userName);
         }
         return memberList;
     }
 
-    private async getBlockListById(socket: Socket) : Promise<Array<number>> {
+    private async getBlockListById(socket: Socket): Promise<Array<number>> {
         return this.blockList.get(socket.id);
-        
+
         //Array<User>
     }
 
@@ -112,29 +115,26 @@ export class ChatRoomService {
         return keyArray;
     }
     private getUserPermission(room: ChatRoomDto, userId: number, userName: string) {
-        let result: UserPermission;     
+        let result: UserPermission;
 
         result = UserPermission.MEMBER;
         for (const memberId of room.operatorList) {
-            if (memberId === userId) 
-                result =  UserPermission.ADMIN;
+            if (memberId === userId) result = UserPermission.ADMIN;
         }
-        if(room.ownerName === userName)
-            result = UserPermission.OWNER;
+        if (room.ownerName === userName) result = UserPermission.OWNER;
 
         return result;
     }
-    
-    
-    getChatRoomInfo(socket : Socket, roomName: string, roomstatus: RoomStatus) {
+
+    getChatRoomInfo(socket: Socket, roomName: string, roomstatus: RoomStatus) {
         //public/private 중 특정 방 정보를 준다.
         let chatroomDto: ChatRoomDto;
         if (roomstatus === RoomStatus.PUBLIC) chatroomDto = this.publicRoomList.get(roomName);
         else chatroomDto = this.privateRoomList.get(roomName);
-        
+
         const userId = this.getUserId(socket);
-        
-        const userName = ( await this.userService.findUserById(userId)).username;
+
+        const userName = (await this.userService.findUserById(userId)).username;
         const userPermission: UserPermission = this.getUserPermission(chatroomDto, userId, userName);
         const roomInfo = {
             roomName: chatroomDto.roomName,
@@ -143,12 +143,11 @@ export class ChatRoomService {
             requirePassword: chatroomDto.requirePassword,
             operatorList: this.getOperatorList(chatroomDto),
             memberList: this.getMemberList(chatroomDto),
-            myName: userName ? userName : null, 
-            myPermission: userPermission, 
-        }
+            myName: userName ? userName : null,
+            myPermission: userPermission,
+        };
         return roomInfo;
     }
-    
 
     async createChatRoom(socket: Socket, roomInfoDto: RoomInfoDto, io: Server): Promise<void> {
         //check duplicate
@@ -163,7 +162,7 @@ export class ChatRoomService {
         const roomDto: ChatRoomDto = new ChatRoomDto();
 
         roomDto.roomName = roomInfoDto.roomName;
-		// 아래 주석 대신 socket으로 찾은 userName 예스
+        // 아래 주석 대신 socket으로 찾은 userName 예스
         //roomDto.ownerName = roomInfoDto.userName;
         roomDto.requirePassword = roomInfoDto.requirePassword;
         roomDto.status = roomInfoDto.status;
@@ -189,10 +188,10 @@ export class ChatRoomService {
             const userName = (await this.userService.findUserById(userId)).username;
 
             //? 유저가 privateroom에 있었으면 privateRoomList에서 찾아야하지 않을까요? (1) (juhoh) -> 맞는 것 같습니다
-            
+
             let pastRoom;
             pastRoom = this.publicRoomList.get(pastRoomName);
-            if(pastRoom === undefined) pastRoom = this.privateRoomList.get(pastRoomName);
+            if (pastRoom === undefined) pastRoom = this.privateRoomList.get(pastRoomName);
 
             console.log('>>>>>pastRoom : ', pastRoom);
             socket.to(pastRoomName).emit('sendMessage', userName + '님이 방을 나가셨습니다.');
@@ -309,9 +308,10 @@ export class ChatRoomService {
         let room;
         if (roomStatus === RoomStatus.PUBLIC) room = this.publicRoomList.get(roomName);
         else room = this.privateRoomList.get(roomName);
-        const condition= (id) => { if(id === userId) return true;}
-        if (room.operatorList.findIndex(condition) === -1)
-            return false;
+        const condition = (id) => {
+            if (id === userId) return true;
+        };
+        if (room.operatorList.findIndex(condition) === -1) return false;
         return true;
     }
 
@@ -324,8 +324,7 @@ export class ChatRoomService {
     ): Promise<void> {
         //! test  : op가 아니어도 된다면?! (front에서 혹시 잘못 띄우는지 확인)
         const userId = this.getUserId(socket);
-        if (this.checkOperator(roomName, status, userId) === false)
-            console.log('test failed. user is not an oper.');
+        if (this.checkOperator(roomName, status, userId) === false) console.log('test failed. user is not an oper.');
 
         //TODO : test . mute  가 잘 사라지나.
         const removeMuteUser = (targetName, roomDto) => {
@@ -342,20 +341,17 @@ export class ChatRoomService {
         }, time * 1000);
     }
 
-
     async blockUser(socket: Socket, targetName: string): Promise<void> {
         //1. map에서 가져옴
         //2. 추가후 다시 갱신
         //! test
-        if (!this.blockList.has(socket.id)) console.log('test failed: socket.id에 해당하는 키 값이 존재하지 않습니다.');
-        const blockedList = this.blockList.get(socket.id);
-        // //! test
-        // if (blockedList === undefined) console.log('test failed : blockList의 Array값이 undefined입니다.');
         const userId = this.getUserId(socket);
         const targetId = (await this.userService.getUserByUsername(targetName)).id;
-        const condition = (element) => element === targetId;
-        if (blockedList.find(condition) !== undefined) return this.emitFailReason(socket, 'blockUser', 'already blocked.');
+        const blockedList = this.blockList.get(userId);
+        if (blockedList === undefined) console.log('test failed: user id에 해당하는 키 값이 존재하지 않습니다.');
+        if (blockedList.indexOf(targetId) === -1) return this.emitFailReason(socket, 'blockUser', 'already blocked.');
         blockedList.push(targetId);
+        //TODO DB에도 저장.
         this.emitSuccess(socket, 'blockUser');
     }
 
@@ -363,21 +359,21 @@ export class ChatRoomService {
         //1. socket.id를 통해 blockList의 value(Array<string>) 가져오기
         //2. value에서 targetName 찾기
         //3. targetName 제거
-        const blockedList = this.blockList.get(socket.id);
-        // ? blockedList 에서 키를 못찾거나 밸류가 없으면?
-        //!test
-        if (!this.blockList.has(socket.id)) console.log('test failed: socket.id에 해당하는 키 값이 존재하지 않습니다.');
-        // //! test
-        // if (blockedList === undefined) console.log('test failed : blockList의 Array값이 undefined입니다.');
+        const userId = this.getUserId(socket);
         const targetId = (await this.userService.getUserByUsername(targetName)).id;
-        const condition = (element) => element === targetId;
+        const blockedList = this.blockList.get(userId);
+        //!test
+        if (blockedList === undefined) console.log('test failed: user id에 해당하는 키 값이 존재하지 않습니다.');
+        if (blockedList.indexOf(targetId) === -1)
+            return this.emitFailReason(socket, 'blockUser', 'was not blocked yet');
+        const condition = (id) => id === targetId;
         const idx = blockedList.findIndex(condition);
         blockedList.splice(idx, 1);
+        //TODO DB에서도 삭제.
         this.emitSuccess(socket, 'unBlockUser');
     }
 
     async sendMessage(socket: Socket, payload: JSON) {
-
         let room: ChatRoomDto;
         if (payload['status'] == RoomStatus.PRIVATE) {
             room = this.privateRoomList.get(payload['roomName']);
@@ -386,16 +382,18 @@ export class ChatRoomService {
         }
 
         const userId = this.getUserId(socket);
-        socket.to(room.roomName).emit('sendMessage', { userName: payload['userName'], content: payload['content'] })
+        socket.to(room.roomName).emit('sendMessage', { userName: payload['userName'], content: payload['content'] });
         console.log('successfully sent message.');
     }
 
-   /*
+    /*
    userName 에게 myName이 수신할 지 여부를 반환하는 함수
    */
-    receiveMessage(socket: Socket, userName: string) : boolean {
+    receiveMessage(socket: Socket, userName: string): boolean {
         const userId = this.getUserId(socket);
         const blockedList = this.blockList.get(userId);
+        if (blockedList.indexOf(userId) === -1) return true;
+        return false;
     }
 
     async inviteUser(socket: Socket, roomName: string, username: string) {
