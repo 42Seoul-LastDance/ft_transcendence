@@ -7,6 +7,7 @@ import BACK_URL from '../globals';
 import { RootState } from '../redux/store';
 import tryAuth from '../auth';
 import { useSelector } from 'react-redux';
+import IoEventListner from '../socket';
 
 // SocketContext 생성
 const ChatSocketContext = createContext<Socket | undefined>(undefined);
@@ -52,24 +53,12 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (chatSocket.connected) chatSocket.disconnect();
 
-    // socket io event hoooook
-    const IoAddEventListener = (
-      chatSocket: Socket,
-      eventName: string,
-      eventHandler: (data: any) => void,
-    ) => {
-      if (!chatSocket.hasListeners(eventName)) {
-        chatSocket.on(eventName, eventHandler);
-      }
-    };
-
-    IoAddEventListener(chatSocket, 'disconnect', reconnectSocket);
-    IoAddEventListener(chatSocket, 'expiredToken', handleExpiredToken);
-    IoAddEventListener(chatSocket, 'getChatRoomList', handleGetChatRoomList);
-    IoAddEventListener(chatSocket, 'connectSuccess', handleConnectSuccess);
+    IoEventListner(chatSocket, 'disconnect', reconnectSocket);
+    IoEventListner(chatSocket, 'expiredToken', handleExpiredToken);
+    IoEventListner(chatSocket, 'getChatRoomList', handleGetChatRoomList);
+    IoEventListner(chatSocket, 'connectSuccess', handleConnectSuccess);
 
     chatSocket.connect();
-
     return () => {
       chatSocket.disconnect();
     };
