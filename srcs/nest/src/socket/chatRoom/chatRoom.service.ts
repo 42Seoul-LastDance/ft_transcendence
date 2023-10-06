@@ -21,7 +21,7 @@ export class ChatRoomService {
     private privateRoomList: Map<string, ChatRoomDto> = new Map<string, ChatRoomDto>();
     private userList: Map<number, Socket> = new Map<number, Socket>(); //{username->id, Socket}
     private socketList: Map<string, number> = new Map<string, number>(); //{socket id , username->id}
-    private blockList: Map<string, Array<number>> = new Map<string, Array<number>>(); //{socket id , blockUserList} // ! -> DB에 저장
+    private blockList: Map<number, Array<number>> = new Map<number, Array<number>>(); //{user id , blockUserList} // ! -> DB에서 한번 가져 들고왔다가 지속 업데데이트
 
     constructor(private userService: UserService, private blockedUsersService: BlockedUsersService,) {
         const chatRoom = {
@@ -351,10 +351,10 @@ export class ChatRoomService {
         const blockedList = this.blockList.get(socket.id);
         // //! test
         // if (blockedList === undefined) console.log('test failed : blockList의 Array값이 undefined입니다.');
-        const condition = (element) => element === socket.id;
-        const blockedElement = blockedList.find(condition);
-        if (blockedElement !== undefined) this.emitFailReason(socket, 'blockUser', 'already blocked.');
+        const userId = this.getUserId(socket);
         const targetId = (await this.userService.getUserByUsername(targetName)).id;
+        const condition = (element) => element === targetId;
+        if (blockedList.find(condition) !== undefined) return this.emitFailReason(socket, 'blockUser', 'already blocked.');
         blockedList.push(targetId);
         this.emitSuccess(socket, 'blockUser');
     }
@@ -386,15 +386,16 @@ export class ChatRoomService {
         }
 
         const userId = this.getUserId(socket);
-        const blockList = await this.blockedUsersService.getBlockUserListById(userId);
-        for(const memberId of room.memberList){
-            var receiverSocket = this.userList.get(memberId);
-            var receiverId = this.getUserId(receiverSocket);
-            if (blockList.indexOf(receiverId) === -1){
-                receiverSocket.emit('sendMessage', { userName: payload['userName'], content: payload['content'] });
-            }
-        }
+        socket.to(room.roomName).emit('sendMessage', { userName: payload['userName'], content: payload['content'] })
         console.log('successfully sent message.');
+    }
+
+   /*
+   userName 에게 myName이 수신할 지 여부를 반환하는 함수
+   */
+    receiveMessage(socket: Socket, userName: string) : boolean {
+        const userId = this.getUserId(socket);
+        const blockedList = this.blockList.get(userId);
     }
 
     async inviteUser(socket: Socket, roomName: string, username: string) {
