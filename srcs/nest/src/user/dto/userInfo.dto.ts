@@ -3,7 +3,7 @@ import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
 export class UserInfoDto {
     @IsNotEmpty()
     @IsString()
-    username: string;
+    userName: string;
 
     @IsString()
     profileurl: string;

@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { BlockedUsersRepository } from './blockedUsers.repository';
 import { BlockedUsers } from './blockedUsers.entity';
-
+import { InjectRepository } from '@nestjs/typeorm';
 @Injectable()
 export class BlockedUsersService {
-    constructor(private blockedUsersRepository: BlockedUsersRepository) {}
+    constructor(
+        @InjectRepository(BlockedUsers)
+        private blockedUsersRepository: BlockedUsersRepository,
+    ) {}
 
     async addBlockUser(userId: number, targetId: number): Promise<void> {
         if ((await this.isBlocked(userId, targetId)) === true) return;
@@ -29,8 +32,10 @@ export class BlockedUsersService {
     }
 
     async getBlockUserListById(id: number): Promise<Array<number>> {
-        const blockList = new Array<number>();
+        const blockList: Array<number> = [];
+        console.log('repository 정체를 밝혀라 undefined 냐', this.blockedUsersRepository);
         const foundBlockUsers: BlockedUsers[] = await this.blockedUsersRepository.find({
+            // TypeError: Cannot read properties of undefined (reading 'find')
             where: { requestUserId: id },
             select: { targetUserId: true },
         });

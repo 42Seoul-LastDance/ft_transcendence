@@ -20,44 +20,62 @@ import ChatSetting from './chatSetting';
 import { RootState } from '../redux/store';
 import { useSelector } from 'react-redux';
 import { useChatSocket } from '../context/chatSocketContext';
-import { ChatMessage, SendMessageDto } from '../interface';
+import { ChatMessage, receiveMessage, SendMessageDto } from '../interface';
 
 // ㅅㅐ로고침하면 밖으로 나가게 해해야야함함
 
 const ChattingContent = () => {
-  // const [username, setUsername] = useState('');
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); // ChatMessage[] 타입 명시
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // 설정 아이콘 클릭 시 설정창 표시 여부
   const chatSocket = useChatSocket();
-  const curRoomInfo = useSelector((state: RootState) => state.user.curRoom);
+  const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
+  const isMyName = (userName: string) => userName === chatRoom?.userName;
 
-  if (!chatSocket.hasListeners('sendMessage')) {
-    chatSocket.on('sendMessage', (data: ChatMessage) => {
-      setChatMessages([...chatMessages, data]);
+  const blockCheck = (userName: string) => {
+    return new Promise<boolean>((resolve, reject) => {
+      if (!chatSocket.hasListeners('receiveMessage')) {
+        chatSocket.once('receiveMessage', (data: receiveMessage) => {
+          console.log('server receive: ', data);
+          resolve(data.canReceive === true);
+        });
+      }
+      chatSocket.emit('receiveMessage', {
+        userName: userName,
+      });
     });
-    console.log('sendMessage on!');
-  }
+  };
+
+  chatSocket.once('sendMessage', (data: ChatMessage) => {
+    // if (isMyName(data.userName)) setChatMessages([...chatMessages, data]);
+    // else if (await blockCheck(data.userName))
+    //   setChatMessages([...chatMessages, data]);
+    // else console.log('Recv Msg from blocked user');
+    setChatMessages([...chatMessages, data]);
+  });
 
   // 메세지 보낼 때 동작
   const handleSendMessage = () => {
     if (!message) return;
-  	if (!curRoomInfo) throw new Error('curRoomInfo is null'); 
+    if (!chatRoom) throw new Error('chatRoom is null');
 
     const newMsg: ChatMessage = {
-      userName: curRoomInfo.myName,
+      userName: chatRoom.userName,
       content: message,
     };
-    setChatMessages([...chatMessages, newMsg]);	
+
+    setChatMessages([...chatMessages, newMsg]);
     const newSend: SendMessageDto = {
-      roomName: curRoomInfo.roomName,
-      status: curRoomInfo.status,
-      userName: curRoomInfo.myName,
+      roomName: chatRoom.roomName,
+      status: chatRoom.status,
+      userName: chatRoom.userName,
       content: message,
     };
-      chatSocket.emit('sendMessage', newSend);
-      setMessage('');
+
+    chatSocket.emit('sendMessage', newSend);
+    setMessage('');
   };
+
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
       handleSendMessage();
@@ -105,26 +123,11 @@ const ChattingContent = () => {
             {chatMessages.map((msg, index) => (
               <ListItem key={index}>
                 <ListItemText
-                  primary={
-                    <div
-                      style={{
-                        textAlign: '' === msg.userName ? 'right' : 'left',
-                      }}
-                    >
-                      {msg.userName}
-                    </div>
-                  }
-                  secondary={
-                    <div
-                      style={{
-                        textAlign: '' === msg.userName ? 'right' : 'left',
-                      }}
-                    >
-                      {msg.content}
-                    </div>
-                  }
-                  primaryTypographyProps={{ variant: 'subtitle1' }}
-                  secondaryTypographyProps={{ variant: 'body1' }}
+                  primary={msg.userName}
+                  secondary={msg.content}
+                  style={{
+                    textAlign: isMyName(msg.userName) ? 'right' : 'left',
+                  }}
                 />
               </ListItem>
             ))}
@@ -138,7 +141,9 @@ const ChattingContent = () => {
             variant="outlined"
             label="Message"
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e: {
+              target: { value: React.SetStateAction<string> };
+            }) => setMessage(e.target.value)}
             onKeyPress={handleKeyDown}
           />
           <Button

@@ -12,11 +12,7 @@ export class UserProfileDto {
 
     @IsNotEmpty()
     @IsString()
-    username: string;
-
-    // @IsNotEmpty()
-    // @IsString()
-    // profileurl: string;
+    userName: string;
 
     @IsNotEmpty()
     @IsNumber()

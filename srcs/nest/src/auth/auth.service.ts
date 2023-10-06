@@ -76,10 +76,10 @@ export class AuthService {
         return newAccessToken;
     }
 
-    async generateAuthToken(id: number, username: string): Promise<{ jwt: string; refreshToken: string }> {
+    async generateAuthToken(id: number, userName: string): Promise<{ jwt: string; refreshToken: string }> {
         const jwt = await this.generateJwtBySecret({
             sub: id,
-            userName: username,
+            userName: userName,
         });
         const refreshToken = await this.generateRefreshTokenBySecret({ id: id });
         this.userService.saveUserCurrentRefreshToken(id, refreshToken);
@@ -94,7 +94,7 @@ export class AuthService {
     async generate2faToken(userId: number, userName: string): Promise<string> {
         const token = await this.generate2faTokenBySecret({
             sub: userId,
-            username: userName,
+            userName: userName,
         });
         return token;
     }

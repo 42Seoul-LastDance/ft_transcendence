@@ -2,12 +2,11 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { io, Socket } from 'socket.io-client';
 import { setRoomNameList } from '../redux/roomSlice';
-import { RoomStatus } from '../interface';
+import { ChatRoomDto, RoomStatus } from '../interface';
 import BACK_URL from '../globals';
+import { getCookie } from '../Cookie';
 
-const token =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MjQyIiwibmFtZSI6InRlc3RtYW4iLCJpYXQiOjE1MTYyMjM0MjM0fQ.jZsy7aTM-GcoSbQW6TERNuTCBCvIS-7l_qfm5PMg0-U';
-
+export const token = getCookie('token');
 // Socket.IO 소켓 초기화
 export var chatSocket: Socket = io(`${BACK_URL}/RoomChat`, {
   // forceNew: true,
@@ -46,7 +45,7 @@ export function ChatSocketProvider({
   useEffect(() => {
     if (chatSocket.connected) chatSocket.disconnect();
     if (!chatSocket.hasListeners('getChatRoomList')) {
-      chatSocket.on('getChatRoomList', (data) => {
+      chatSocket.on('getChatRoomList', (data: string[]) => {
         dispatch(setRoomNameList(data));
       });
     }

@@ -12,12 +12,9 @@ import {
   SuperSocketProvider,
   useSuperSocket,
 } from '../context/superSocketContext';
-import { useEffect } from 'react';
 
 const ChatHomeContent = () => {
-  const dispatch = useDispatch();
   const isJoined = useSelector((state: RootState) => state.room.isJoined);
-  const chatSocket = useChatSocket();
 
   return (
     <>
@@ -30,9 +27,9 @@ const ChatHomeContent = () => {
 };
 
 const MainHome = () => {
-  window.onpopstate = function(event) {
-    window.history.pushState(null, '', window.location.href);
-  }
+  // window.onpopstate = function(event) {
+  //   window.history.pushState(null, '', window.location.href);
+  // }
 
   return (
     <>

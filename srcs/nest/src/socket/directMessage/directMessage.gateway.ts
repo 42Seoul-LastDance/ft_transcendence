@@ -31,8 +31,8 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
 
     // * 커넥션 핸들링 ========================================================
     async handleConnection(socket: Socket) {
-        console.log('token: ', socket.handshake.query.token); // * 테스트용
-        console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
+        // console.log('token: ', socket.handshake.query.token); // * 테스트용
+        // console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
         const tokenString: string = socket.handshake.query.token as string;
         try {
             const decodedToken = this.jwtService.verify(tokenString, {
@@ -41,6 +41,7 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
             await this.directMessageService.addNewUser(socket, decodedToken.sub);
         } catch (error) {
             socket.disconnect(true);
+            console.log(error);
             return;
         }
         console.log(socket.id, ': new connection. (DM)');

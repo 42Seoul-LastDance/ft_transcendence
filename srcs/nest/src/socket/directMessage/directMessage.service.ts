@@ -4,6 +4,7 @@ import { Socket } from 'socket.io';
 import { DirectMessage } from './directMessage.entity';
 import { DateTime } from 'luxon';
 const TIMEZONE: string = 'Asia/Seoul';
+
 @Injectable()
 export class DirectMessageService {
     private userList: Map<number, Socket> = new Map<number, Socket>(); // {user ID, Socket}

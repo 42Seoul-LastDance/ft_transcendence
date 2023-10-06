@@ -19,16 +19,19 @@ const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    setToken: (state, action: PayloadAction<string>) => {
+    setToken: (state: userState, action: PayloadAction<string>) => {
       state.token = action.payload;
     },
-    setImageUrl: (state, action: PayloadAction<string>) => {
+    setImageUrl: (state: userState, action: PayloadAction<string>) => {
       state.imageUrl = action.payload;
     },
-    setAvailable: (state, action: PayloadAction<boolean>) => {
+    setAvailable: (state: userState, action: PayloadAction<boolean>) => {
       state.isAvailable = action.payload;
     },
-    setChatRoom: (state, action: PayloadAction<ChatRoomDto>) => {
+    setChatRoom: (
+      state: userState,
+      action: PayloadAction<ChatRoomDto | null>,
+    ) => {
       state.chatRoom = action.payload;
     },
     // getToken: (state, action: PayloadAction<string>) => {
@@ -37,5 +40,4 @@ const userSlice = createSlice({
 });
 
 export default userSlice;
-export const { setImageUrl, setAvailable, setChatRoom } =
-  userSlice.actions;
+export const { setImageUrl, setAvailable, setChatRoom } = userSlice.actions;

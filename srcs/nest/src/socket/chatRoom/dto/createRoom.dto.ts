@@ -1,7 +1,7 @@
 import { IsBoolean, IsEnum, IsString } from 'class-validator';
 import { RoomStatus } from '../roomStatus.enum';
 
-export class RoomInfoDto {
+export class CreateRoomDto {
     @IsString()
     roomName: string;
 
