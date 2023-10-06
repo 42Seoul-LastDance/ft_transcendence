@@ -55,3 +55,8 @@ export interface JoinRoomDto {
   result: boolean;
   reason: string | null;
 }
+
+export enum TokenType {
+  Access = 0,
+  Refresh = 1,
+}

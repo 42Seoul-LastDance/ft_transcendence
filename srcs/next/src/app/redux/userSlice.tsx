@@ -4,14 +4,14 @@ import { ChatRoomDto } from '../interface';
 export interface userState {
   imageUrl: string | null;
   isAvailable: boolean | null;
-  token: string | null;
+  token: string;
   chatRoom: ChatRoomDto | null;
 }
 
 const initialState: userState = {
   imageUrl: null,
   isAvailable: null,
-  token: null,
+  token: '',
   chatRoom: null,
 };
 
@@ -34,10 +34,9 @@ const userSlice = createSlice({
     ) => {
       state.chatRoom = action.payload;
     },
-    // getToken: (state, action: PayloadAction<string>) => {
-    // }
   },
 });
 
 export default userSlice;
-export const { setImageUrl, setAvailable, setChatRoom } = userSlice.actions;
+export const { setToken, setImageUrl, setAvailable, setChatRoom } =
+  userSlice.actions;

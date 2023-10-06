@@ -221,11 +221,14 @@ export class ChatRoomService {
                 io.emit('getChatRoomList', this.getChatRoomList());
             } else {
                 //한 유저만 chatRoom에서 삭제
-                const condition = (element) => element === pastRoomName;
-                let idx = pastRoom.memberList.findIndex(condition);
-                pastRoom.memberList.splice(idx, 1); //memberList
-                idx = pastRoom.muteList.findIndex(condition); //muteList
-                if (idx !== -1) pastRoom.muteList.splice(idx, 1);
+                // const condition = (element) => element === pastRoomName; //d이거도 이상한데요?? 이거 왜 멤버리스트에서 이전 방 이름을 검사하고있지??
+                // let idx = pastRoom.memberList.findIndex(condition); //이거 받아서 삭제할라고 인덱스 받는 거같아요 멤버리스트에서 자기 제거하려구 -> 방에서 자기 이름을 찾아야 하는거 아닌가요?.?
+                // pastRoom.memberList.splice(idx, 1); //memberList
+
+                pastRoom.memberList.delete(userId);
+                pastRoom.muteList.delete(userId);
+                // idx = pastRoom.muteList.findIndex(condition); //muteList
+                // if (idx !== -1) pastRoom.muteList.splice(idx, 1);
                 socket.leave(pastRoomName);
                 console.log('LPR2 : after ', socket.id, ' leave : ', socket.rooms);
             }

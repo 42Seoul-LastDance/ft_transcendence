@@ -31,7 +31,7 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
 
     // * 커넥션 핸들링 ========================================================
     async handleConnection(socket: Socket) {
-        // console.log('token: ', socket.handshake.query.token); // * 테스트용
+        console.log('token: ', socket.handshake.query.token); // * 테스트용
         // console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
         const tokenString: string = socket.handshake.query.token as string;
         try {

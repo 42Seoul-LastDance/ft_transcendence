@@ -80,7 +80,7 @@ export class AuthController {
             // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
             // secure: false,
         });
-        res.cookie('refresh_Token', refreshToken, {
+        res.cookie('refresh_token', refreshToken, {
             maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
             // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
             // secure: false,
@@ -88,7 +88,7 @@ export class AuthController {
         // return res.status(200).json({
         //     message: 'success',
         // });
-        return res.redirect(process.env.FRONT_URL + '/home');
+        return res.redirect(process.env.FRONT_URL + '/home'); //TODO : 로직 변경
     }
 
     @Get('verify2fa')
@@ -102,12 +102,12 @@ export class AuthController {
                 req.authDto.id,
                 req.authDto.userName,
             );
-            res.cookie('token', jwt, {
+            res.cookie('access_token', jwt, {
                 maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
                 // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
                 // secure: false,
             });
-            res.cookie('refresh_Token', refreshToken, {
+            res.cookie('refresh_token', refreshToken, {
                 maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
                 // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
                 // secure: false,

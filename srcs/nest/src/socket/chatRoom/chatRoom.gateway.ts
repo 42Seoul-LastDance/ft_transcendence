@@ -29,7 +29,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     // * 커넥션 핸들링 ========================================================
     async handleConnection(socket: Socket) {
-        // console.log('token: ', socket.handshake.query.token); // * 테스트용
+        console.log('token: ', socket.handshake.query.token); // * 테스트용
         // console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
         const tokenString: string = socket.handshake.query.token as string;
         try {
@@ -38,6 +38,9 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
             });
             await this.chatroomService.addNewUser(socket, decodedToken.sub, this.server);
         } catch (error) {
+            if (!error.message || error.message === 'jwt expired') {
+                socket.emit('expiredToken');
+            }
             socket.disconnect(true);
             console.log(error);
             return;

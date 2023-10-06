@@ -2,11 +2,16 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { io, Socket } from 'socket.io-client';
 import { setRoomNameList } from '../redux/roomSlice';
-import { ChatRoomDto, RoomStatus } from '../interface';
+import { RoomStatus, TokenType } from '../interface';
 import BACK_URL from '../globals';
+import { RootState } from '../redux/store';
+import tryAuth from '../auth';
+import { useSelector } from 'react-redux';
 import { getCookie } from '../Cookie';
+import { setToken } from '../redux/userSlice';
 
-export const token = getCookie('token');
+var token = '';
+
 // Socket.IO 소켓 초기화
 export var chatSocket: Socket = io(`${BACK_URL}/RoomChat`, {
   // forceNew: true,
@@ -16,34 +21,53 @@ export var chatSocket: Socket = io(`${BACK_URL}/RoomChat`, {
   query: {
     token,
   },
-  // * 실 구현은 auth.token
   // auth: {
-  // token,
-  // }
+  //   token,
+  // },
+  reconnection: true,
+  reconnectionDelay: 3000,
 });
 
 // SocketContext 생성
 const ChatSocketContext = createContext<Socket | undefined>(undefined);
 
 // 커스텀 훅 정의
-export function useChatSocket() {
+export const useChatSocket = () => {
   const socket = useContext(ChatSocketContext);
   if (!socket) {
     throw new Error('useSocket must be used within a SocketProvider');
   }
   return socket;
-}
+};
 
 // SocketProvider 컴포넌트 정의
-export function ChatSocketProvider({
+export const ChatSocketProvider = ({
   children,
 }: {
   children: React.ReactNode;
-}) {
-  // 소켓 초기화와 컨텍스트 제공을 한꺼번에 수행
+}) => {
   const dispatch = useDispatch();
+
   useEffect(() => {
     if (chatSocket.connected) chatSocket.disconnect();
+
+    // ERR : 입뺀 당하면 재연결을 안 함
+    if (!chatSocket.hasListeners('disconnect')) {
+      chatSocket.on('disconnect', () => {
+        chatSocket.connect();
+      });
+    }
+
+    dispatch(setToken(getCookie('access_token')));
+    token = useSelector((state: RootState) => state.user.token);
+
+    if (!chatSocket.hasListeners('expiredToken')) {
+      chatSocket.on('expiredToken', () => {
+        tryAuth();
+      });
+    }
+
+    // 기타 🎸
     if (!chatSocket.hasListeners('getChatRoomList')) {
       chatSocket.on('getChatRoomList', (data: string[]) => {
         dispatch(setRoomNameList(data));
@@ -67,4 +91,4 @@ export function ChatSocketProvider({
       {children}
     </ChatSocketContext.Provider>
   );
-}
+};
