@@ -37,49 +37,43 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
     reconnectionDelay: 3000,
   });
 
+  // Io event handler
+  const reconnectSocket = () => chatSocket.connect();
+
+  const handleExpiredToken = tryAuth;
+
+  const handleGetChatRoomList = (data: string[]) =>
+    dispatch(setRoomNameList(data));
+
+  const handleConnectSuccess = () => {
+    chatSocket.emit('getChatRoomList', { roomStatus: RoomStatus.PUBLIC });
+  };
+
   useEffect(() => {
     if (chatSocket.connected) chatSocket.disconnect();
 
-    function reconnectSocket() {
-      chatSocket.connect();
-    }
+    // socket io event hoooook
+    const IoAddEventListener = (
+      chatSocket: Socket,
+      eventName: string,
+      eventHandler: (data: any) => void,
+    ) => {
+      if (!chatSocket.hasListeners(eventName)) {
+        chatSocket.on(eventName, eventHandler);
+      }
+    };
 
-    function handleExpiredToken() {
-      tryAuth();
-    }
-
-    function handleGetChatRoomList(data: string[]) {
-      dispatch(setRoomNameList(data));
-    }
-
-    function handleConnectSuccess() {
-      chatSocket.emit('getChatRoomList', {
-        roomStatus: RoomStatus.PUBLIC,
-      });
-    }
-
-    if (!chatSocket.hasListeners('disconnect')) {
-      chatSocket.on('disconnect', reconnectSocket);
-    }
-
-    if (!chatSocket.hasListeners('expiredToken')) {
-      chatSocket.on('expiredToken', handleExpiredToken);
-    }
-
-    if (!chatSocket.hasListeners('getChatRoomList')) {
-      chatSocket.on('getChatRoomList', handleGetChatRoomList);
-    }
-
-    if (!chatSocket.hasListeners('connectSuccess')) {
-      chatSocket.on('connectSuccess', handleConnectSuccess);
-    }
+    IoAddEventListener(chatSocket, 'disconnect', reconnectSocket);
+    IoAddEventListener(chatSocket, 'expiredToken', handleExpiredToken);
+    IoAddEventListener(chatSocket, 'getChatRoomList', handleGetChatRoomList);
+    IoAddEventListener(chatSocket, 'connectSuccess', handleConnectSuccess);
 
     chatSocket.connect();
 
     return () => {
       chatSocket.disconnect();
     };
-  }, []);
+  }, [chatSocket, dispatch]);
 
   return (
     <ChatSocketContext.Provider value={chatSocket}>
