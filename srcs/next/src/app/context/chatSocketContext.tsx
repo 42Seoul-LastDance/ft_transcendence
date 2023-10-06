@@ -2,31 +2,11 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { io, Socket } from 'socket.io-client';
 import { setRoomNameList } from '../redux/roomSlice';
-import { RoomStatus, TokenType } from '../interface';
+import { RoomStatus } from '../interface';
 import BACK_URL from '../globals';
 import { RootState } from '../redux/store';
 import tryAuth from '../auth';
 import { useSelector } from 'react-redux';
-import { getCookie } from '../Cookie';
-import { setToken } from '../redux/userSlice';
-
-var token = '';
-
-// Socket.IO 소켓 초기화
-export var chatSocket: Socket = io(`${BACK_URL}/RoomChat`, {
-  // forceNew: true,
-  withCredentials: false,
-  autoConnect: false,
-  transports: ['websocket'],
-  query: {
-    token,
-  },
-  // auth: {
-  //   token,
-  // },
-  reconnection: true,
-  reconnectionDelay: 3000,
-});
 
 // SocketContext 생성
 const ChatSocketContext = createContext<Socket | undefined>(undefined);
@@ -41,46 +21,61 @@ export const useChatSocket = () => {
 };
 
 // SocketProvider 컴포넌트 정의
-export const ChatSocketProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch();
+  const token = useSelector((state: RootState) => state.user.token);
+
+  // Socket.IO 소켓 초기화
+  const chatSocket: Socket = io(`${BACK_URL}/RoomChat`, {
+    withCredentials: false,
+    autoConnect: false,
+    transports: ['websocket'],
+    query: {
+      token,
+    },
+    reconnection: true,
+    reconnectionDelay: 3000,
+  });
 
   useEffect(() => {
     if (chatSocket.connected) chatSocket.disconnect();
 
-    // ERR : 입뺀 당하면 재연결을 안 함
-    if (!chatSocket.hasListeners('disconnect')) {
-      chatSocket.on('disconnect', () => {
-        chatSocket.connect();
+    function reconnectSocket() {
+      chatSocket.connect();
+    }
+
+    function handleExpiredToken() {
+      tryAuth();
+    }
+
+    function handleGetChatRoomList(data: string[]) {
+      dispatch(setRoomNameList(data));
+    }
+
+    function handleConnectSuccess() {
+      chatSocket.emit('getChatRoomList', {
+        roomStatus: RoomStatus.PUBLIC,
       });
     }
 
-    dispatch(setToken(getCookie('access_token')));
-    token = useSelector((state: RootState) => state.user.token);
+    if (!chatSocket.hasListeners('disconnect')) {
+      chatSocket.on('disconnect', reconnectSocket);
+    }
 
     if (!chatSocket.hasListeners('expiredToken')) {
-      chatSocket.on('expiredToken', () => {
-        tryAuth();
-      });
+      chatSocket.on('expiredToken', handleExpiredToken);
     }
 
-    // 기타 🎸
     if (!chatSocket.hasListeners('getChatRoomList')) {
-      chatSocket.on('getChatRoomList', (data: string[]) => {
-        dispatch(setRoomNameList(data));
-      });
+      chatSocket.on('getChatRoomList', handleGetChatRoomList);
     }
+
     if (!chatSocket.hasListeners('connectSuccess')) {
-      chatSocket.on('connectSuccess', () => {
-        chatSocket.emit('getChatRoomList', {
-          roomStatus: RoomStatus.PUBLIC,
-        });
-      });
+      chatSocket.on('connectSuccess', handleConnectSuccess);
     }
+
     chatSocket.connect();
+
     return () => {
       chatSocket.disconnect();
     };
@@ -92,3 +87,5 @@ export const ChatSocketProvider = ({
     </ChatSocketContext.Provider>
   );
 };
+
+export default ChatSocketProvider;
