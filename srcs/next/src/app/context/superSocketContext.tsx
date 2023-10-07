@@ -1,40 +1,42 @@
-import React, { createContext, useContext, useEffect } from 'react';
-import { io, Socket } from 'socket.io-client';
-import BACK_URL from '../globals';
-import { useSelector } from 'react-redux';
-import { RootState } from '../redux/store';
-import tryAuth from '../auth';
-import { createSocket } from './socket';
+// import React, { createContext, useContext, useEffect } from 'react';
+// import { io, Socket } from 'socket.io-client';
+// import BACK_URL from '../globals';
+// import { useSelector } from 'react-redux';
+// import { RootState } from '../redux/store';
+// import tryAuth from '../auth';
+// import { createSocket } from './socket';
 
-// Socket.IO 소켓 초기화
+// // Socket.IO 소켓 초기화
 
-// SocketContext 생성
-const SuperSocketContext = createContext<Socket | undefined>(undefined);
+// // SocketContext 생성
+// const SuperSocketContext = createContext<Socket | undefined>(undefined);
 
-// 커스텀 훅 정의
-export function useSuperSocket() {
-  const socket = useContext(SuperSocketContext);
-  if (!socket) {
-    throw new Error('useSocket must be used within a SocketProvider');
-  }
-  return socket;
-}
+// // 커스텀 훅 정의
+// export function useSuperSocket() {
+//   const socket = useContext(SuperSocketContext);
+//   if (!socket) {
+//     throw new Error('useSocket must be used within a SocketProvider');
+//   }
+//   return socket;
+// }
 
-// SocketProvider 컴포넌트 정의
-const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
-  const token = useSelector((state: RootState) => state.user.token);
-  const superSocket: Socket = createSocket('DM', token);
+// // SocketProvider 컴포넌트 정의
+// const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
+//   const token = useSelector((state: RootState) => state.user.token);
+//   const superSocket: Socket = createSocket('DM', token);
 
-  useEffect(() => {
-    tryAuth();
-    if (!superSocket.connected) superSocket.connect();
-  }, []);
+//   useEffect(() => {
+//     tryAuth();
 
-  return (
-    <SuperSocketContext.Provider value={superSocket}>
-      {children}
-    </SuperSocketContext.Provider>
-  );
-};
+//     console.log('[Socket.IO] socket info', superSocket);
+//     if (!superSocket.connected) superSocket.connect();
+//   }, []);
 
-export default SuperSocketProvider;
+//   return (
+//     <SuperSocketContext.Provider value={superSocket}>
+//       {children}
+//     </SuperSocketContext.Provider>
+//   );
+// };
+
+// export default SuperSocketProvider;

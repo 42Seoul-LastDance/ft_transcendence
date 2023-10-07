@@ -3,11 +3,14 @@ import { useDispatch } from 'react-redux';
 import { io, Socket } from 'socket.io-client';
 import { setRoomNameList } from '../redux/roomSlice';
 import { RoomStatus } from '../interface';
-import BACK_URL from '../globals';
 import { RootState } from '../redux/store';
 import tryAuth from '../auth';
 import { useSelector } from 'react-redux';
-import { IoEventListner, createSocket } from './socket';
+import { IoEventListner, IoEventOnce, createSocket } from './socket';
+import { getCookie } from '../Cookie';
+import BACK_URL from '../globals';
+import { get } from 'http';
+import { profile } from 'console';
 
 // SocketContext 생성
 const ChatSocketContext = createContext<Socket | undefined>(undefined);
@@ -21,37 +24,47 @@ export const useChatSocket = () => {
   return socket;
 };
 
+var chatSocket: Socket = createSocket('RoomChat', null);
+
 // SocketProvider 컴포넌트 정의
 const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch();
   const token = useSelector((state: RootState) => state.user.token);
-  const chatSocket: Socket = createSocket('chat', token);
-
-  // Io event handler
-  const reconnectSocket = () => chatSocket.connect();
-
-  const handleExpiredToken = tryAuth;
-
-  const handleGetChatRoomList = (data: string[]) =>
-    dispatch(setRoomNameList(data));
-
-  const handleConnectSuccess = () => {
-    chatSocket.emit('getChatRoomList', { roomStatus: RoomStatus.PUBLIC });
-  };
 
   useEffect(() => {
-    if (chatSocket.connected) chatSocket.disconnect();
+    const handleSendToken = () => {
+      console.log('[Connect] handShake');
+      const key = getCookie('token');
+      chatSocket.emit('getTokenByFront', key);
+    };
 
-    IoEventListner(chatSocket, 'disconnect', reconnectSocket);
-    IoEventListner(chatSocket, 'expiredToken', handleExpiredToken);
-    IoEventListner(chatSocket, 'getChatRoomList', handleGetChatRoomList);
-    IoEventListner(chatSocket, 'connectSuccess', handleConnectSuccess);
+    // const handleTryAuth = () => {
+    //   tryAuth();
+    //   console.log('[handle] tryAuth() token', token);
+    //   console.log('[handle] createSocket', chatSocket);
+    //   chatSocket.emit('expiredToken', {
+    //     token: token,
+    //   });
+    // };
+
+    const handleGetChatRoomList = (data: string[]) =>
+      dispatch(setRoomNameList(data));
+
+    const handleConnectSuccess = () => {
+      console.log('[Connect] Success');
+      chatSocket.emit('getChatRoomList', { roomStatus: RoomStatus.PUBLIC });
+    };
+
+    IoEventListner(chatSocket, 'handShake', handleSendToken);
+    // IoEventListner(chatSocket, 'expiredToken', handleTryAuth);
+    IoEventOnce(chatSocket, 'getChatRoomList', handleGetChatRoomList);
+    IoEventOnce(chatSocket, 'connectSuccess', handleConnectSuccess);
 
     chatSocket.connect();
     return () => {
       chatSocket.disconnect();
     };
-  }, [chatSocket, dispatch]);
+  }, []);
 
   return (
     <ChatSocketContext.Provider value={chatSocket}>

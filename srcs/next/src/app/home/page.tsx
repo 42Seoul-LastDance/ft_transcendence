@@ -4,8 +4,8 @@ import { Provider, useSelector } from 'react-redux';
 import store, { RootState } from '../redux/store';
 import ChattingTabs from './chattingTabs';
 import ChattingContent from './chattingPage';
+// import SuperSocketProvider from '../context/superSocketContext';
 import ChatSocketProvider from '../context/chatSocketContext';
-import SuperSocketProvider from '../context/superSocketContext';
 
 const ChatHomeContent = () => {
   const isJoined = useSelector((state: RootState) => state.room.isJoined);
@@ -24,11 +24,11 @@ const MainHome = () => {
   return (
     <>
       <Provider store={store}>
-        <SuperSocketProvider>
-          <ChatSocketProvider>
-            <ChatHomeContent />
-          </ChatSocketProvider>
-        </SuperSocketProvider>
+        {/* <SuperSocketProvider> */}
+        <ChatSocketProvider>
+          <ChatHomeContent />
+        </ChatSocketProvider>
+        {/* </SuperSocketProvider> */}
       </Provider>
     </>
   );

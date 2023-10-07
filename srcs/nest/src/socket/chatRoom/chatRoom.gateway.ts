@@ -29,22 +29,29 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     // * 커넥션 핸들링 ========================================================
     async handleConnection(socket: Socket) {
-        console.log('token: ', socket.handshake.query.token); // * 테스트용
-        // console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
-        const tokenString: string = socket.handshake.query.token as string;
-        try {
-            const decodedToken = this.jwtService.verify(tokenString, {
-                secret: process.env.JWT_SECRET_KEY,
-            });
-            await this.chatroomService.addNewUser(socket, decodedToken.sub, this.server);
-        } catch (error) {
-            if (!error.message || error.message === 'jwt expired') {
-                socket.emit('expiredToken');
+        socket.emit('handShake', async () => {
+            // console.log('token: ', socket.handshake.query.token); // * 테스트용
+            // console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
+            const tokenString: string = socket.handshake.query.token as string;
+            try {
+                const decodedToken = this.jwtService.verify(tokenString, {
+                    secret: process.env.JWT_SECRET_KEY,
+                });
+                await this.chatroomService.addNewUser(socket, decodedToken.sub, this.server);
+            } catch (error) {
+                console.log('error : ', error.message);
+                if (
+                    // error.message === 'jwt malformed' ||
+                    // error.message === 'jwt must be provided' ||
+                    error.message === 'jwt expired'
+                ) {
+                    socket.emit('expiredToken');
+                }
+                socket.disconnect(true);
+                console.log(error);
+                return;
             }
-            socket.disconnect(true);
-            console.log(error);
-            return;
-        }
+        });
         console.log(socket.id, ': new connection. (Chat)');
         socket.emit('connectSuccess');
     }
@@ -62,6 +69,22 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // getBlockUser(socket: Socket) {
     //     const blockList = this.chatroomService.getUserBlockList(socket);
     //     socket.emit('getBlockUser', blockList);
+    // }
+
+    @SubscribeMessage('getTokenByFront')
+    handShakee(socket: Socket, payload: string) {
+        socket.handshake.query = {
+            token: payload,
+        };
+        console.log('handShake token', socket.handshake.query.token);
+    }
+
+    // @SubscribeMessage('expireToken')
+    // expireToken(socket: Socket, payload: string) {
+    //     console.log('expireToken : ', payload);
+    //     socket.handshake.query = {
+    //         token: payload,
+    //     };
     // }
 
     @SubscribeMessage('getChatRoomList')
