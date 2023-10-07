@@ -7,7 +7,7 @@ import BACK_URL from '../globals';
 import { RootState } from '../redux/store';
 import tryAuth from '../auth';
 import { useSelector } from 'react-redux';
-import IoEventListner from '../socket';
+import { IoEventListner, createSocket } from './socket';
 
 // SocketContext 생성
 const ChatSocketContext = createContext<Socket | undefined>(undefined);
@@ -25,18 +25,7 @@ export const useChatSocket = () => {
 const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch();
   const token = useSelector((state: RootState) => state.user.token);
-
-  // Socket.IO 소켓 초기화
-  const chatSocket: Socket = io(`${BACK_URL}/RoomChat`, {
-    withCredentials: false,
-    autoConnect: false,
-    transports: ['websocket'],
-    query: {
-      token,
-    },
-    reconnection: true,
-    reconnectionDelay: 3000,
-  });
+  const chatSocket: Socket = createSocket('chat', token);
 
   // Io event handler
   const reconnectSocket = () => chatSocket.connect();

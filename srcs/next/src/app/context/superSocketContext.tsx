@@ -1,25 +1,12 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 import BACK_URL from '../globals';
-
-const token =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MjQyIiwibmFtZSI6InRlc3RtYW4iLCJpYXQiOjE1MTYyMjM0MjM0fQ.jZsy7aTM-GcoSbQW6TERNuTCBCvIS-7l_qfm5PMg0-U';
+import { useSelector } from 'react-redux';
+import { RootState } from '../redux/store';
+import tryAuth from '../auth';
+import { createSocket } from './socket';
 
 // Socket.IO 소켓 초기화
-export var superSocket: Socket = io(`${BACK_URL}/DM`, {
-  // forceNew: true,
-  withCredentials: false,
-  autoConnect: true,
-  transports: ['websocket'],
-  closeOnBeforeunload: true,
-  query: {
-    token,
-  },
-  // * 실 구현은 auth.token
-  // auth: {
-  // token,
-  // }
-});
 
 // SocketContext 생성
 const SuperSocketContext = createContext<Socket | undefined>(undefined);
@@ -34,16 +21,13 @@ export function useSuperSocket() {
 }
 
 // SocketProvider 컴포넌트 정의
-export function SuperSocketProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
+  const token = useSelector((state: RootState) => state.user.token);
+  const superSocket: Socket = createSocket('DM', token);
+
   useEffect(() => {
+    tryAuth();
     if (!superSocket.connected) superSocket.connect();
-    // return () => {
-    //   superSocket.disconnect();
-    // };
   }, []);
 
   return (
@@ -51,4 +35,6 @@ export function SuperSocketProvider({
       {children}
     </SuperSocketContext.Provider>
   );
-}
+};
+
+export default SuperSocketProvider;
