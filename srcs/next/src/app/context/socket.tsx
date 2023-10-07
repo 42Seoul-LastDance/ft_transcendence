@@ -1,6 +1,6 @@
 import { Socket, io } from 'socket.io-client';
-import BACK_URL from '../globals';
 import { getCookie } from '../Cookie';
+import { BACK_URL } from '../globals';
 
 // socket io event hook
 export const IoEventOnce = (
@@ -8,9 +8,9 @@ export const IoEventOnce = (
   eventName: string,
   eventHandler: (data: any) => void,
 ) => {
-  if (!chatSocket.hasListeners(eventName)) {
-    chatSocket.once(eventName, eventHandler);
-    console.log(`[Socket.IO] ${eventName} event once`);
+  if (!chatSocket?.hasListeners(eventName)) {
+    chatSocket?.once(eventName, eventHandler);
+    console.log(`[Socket.IO] once ${eventName}`);
   }
 };
 
@@ -19,9 +19,9 @@ export const IoEventListner = (
   eventName: string,
   eventHandler: (data: any) => void,
 ) => {
-  if (!chatSocket.hasListeners(eventName)) {
-    chatSocket.on(eventName, eventHandler);
-    console.log(`[Socket.IO] ${eventName} event listen`);
+  if (!chatSocket?.hasListeners(eventName)) {
+    chatSocket?.on(eventName, eventHandler);
+    console.log(`[Socket.IO] listen ${eventName}`);
   }
 };
 

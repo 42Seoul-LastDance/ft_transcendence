@@ -45,6 +45,7 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
             return;
         }
         console.log(socket.id, ': new connection. (DM)');
+        socket.emit('connectSuccess');
     }
 
     handleDisconnect(socket: Socket) {
@@ -53,6 +54,7 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
     }
 
     // * Sender =============================================================
+
     @SubscribeMessage('sendMessasge')
     async sendMessage(socket: Socket, payload: JSON) {
         // payload['targetName']: string,

@@ -11,9 +11,9 @@ npm cache clean --force
 # npm install --prefix srcs --save @mui/material @emotion/react @emotion/styled @fontsource/roboto @mui/icons-material
 # npm install --prefix srcs --save babel-loader @babel/preset-react @babel/preset-env ts-loader
 
-echo "----- Successfully installed -----"
+echo "----- 😎 Successfully installed -----"
 
-npm --prefix srcs run build
-npm --prefix srcs run start
-# npm --prefix srcs run dev
+# npm --prefix srcs run build
+# npm --prefix srcs run start
+npm --prefix srcs run dev
  

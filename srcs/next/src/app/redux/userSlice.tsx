@@ -4,14 +4,14 @@ import { ChatRoomDto } from '../interface';
 export interface userState {
   imageUrl: string | null;
   isAvailable: boolean | null;
-  token: string;
+  token: string | null;
   chatRoom: ChatRoomDto | null;
 }
 
 const initialState: userState = {
   imageUrl: null,
   isAvailable: null,
-  token: '',
+  token: null,
   chatRoom: null,
 };
 

@@ -29,29 +29,32 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     // * 커넥션 핸들링 ========================================================
     async handleConnection(socket: Socket) {
-        socket.emit('handShake', async () => {
-            // console.log('token: ', socket.handshake.query.token); // * 테스트용
-            // console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
-            const tokenString: string = socket.handshake.query.token as string;
-            try {
-                const decodedToken = this.jwtService.verify(tokenString, {
-                    secret: process.env.JWT_SECRET_KEY,
-                });
-                await this.chatroomService.addNewUser(socket, decodedToken.sub, this.server);
-            } catch (error) {
-                console.log('error : ', error.message);
-                if (
-                    // error.message === 'jwt malformed' ||
-                    // error.message === 'jwt must be provided' ||
-                    error.message === 'jwt expired'
-                ) {
-                    socket.emit('expiredToken');
-                }
-                socket.disconnect(true);
-                console.log(error);
-                return;
+        console.log('token: ', socket.handshake.query.token); // * 테스트용
+        // console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
+        const tokenString: string = socket.handshake.query.token as string;
+        try {
+            const decodedToken = this.jwtService.verify(tokenString, {
+                secret: process.env.JWT_SECRET_KEY,
+            });
+            await this.chatroomService.addNewUser(socket, decodedToken.sub, this.server);
+        } catch (error) {
+            console.log('error : ', error.message);
+            if (
+                // => null 들어가면 (토큰 형식 안맞)
+                // error.message === 'jwt malformed' ||
+                // => undefined 비어 있으면 (토큰 안들어옴)
+                // error.message === 'jwt must be provided' ||
+                error.message === 'jwt expired'
+            ) {
+                // `${BACK_URL}/auth/regenerateToken`
+                // * 토큰 만료 => 근데 왜 404 날라와요?.. ?
+                socket.emit('expiredToken');
             }
-        });
+            socket.disconnect(true);
+            console.log(error);
+            return;
+        }
+        // });
         console.log(socket.id, ': new connection. (Chat)');
         socket.emit('connectSuccess');
     }
@@ -71,21 +74,13 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     //     socket.emit('getBlockUser', blockList);
     // }
 
-    @SubscribeMessage('getTokenByFront')
-    handShakee(socket: Socket, payload: string) {
+    @SubscribeMessage('expireToken')
+    expireToken(socket: Socket, payload: string) {
+        console.log('expireToken : ', payload);
         socket.handshake.query = {
             token: payload,
         };
-        console.log('handShake token', socket.handshake.query.token);
     }
-
-    // @SubscribeMessage('expireToken')
-    // expireToken(socket: Socket, payload: string) {
-    //     console.log('expireToken : ', payload);
-    //     socket.handshake.query = {
-    //         token: payload,
-    //     };
-    // }
 
     @SubscribeMessage('getChatRoomList')
     getChatRoomList(socket: Socket) {
