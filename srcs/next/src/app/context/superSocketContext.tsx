@@ -2,10 +2,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Socket } from 'socket.io-client';
 import { IoEventListner, createSocket } from './socket';
 import { getCookie } from '../Cookie';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../redux/store';
-import { setToken } from '../redux/userSlice';
-import { get } from 'http';
 
 // SocketContext 생성
 const SuperSocketContext = createContext<Socket | undefined>(undefined);
@@ -17,9 +13,11 @@ export const useSuperSocket = () => {
 };
 
 // SocketProvider 컴포넌트 정의
+const superSocket = createSocket('DM', getCookie('access_token'));
+
 const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
   // 소켓 상태 관리
-  const [superSocket, setSuperSocket] = useState<Socket | undefined>(undefined);
+  // const [superSocket, setSuperSocket] = useState<Socket | undefined>(undefined);
 
   const handleConnectSuccess = () => {
     console.log('[Connect] superSocket Success');
@@ -32,20 +30,9 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    const socket = createSocket('DM', getCookie('access_token'));
-    setSuperSocket(socket);
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (superSocket) {
-      IoEventListner(superSocket, 'connectSuccess', handleConnectSuccess);
-      IoEventListner(superSocket, 'expireToken', handleTryAuth);
-    }
-    superSocket?.connect();
+    IoEventListner(superSocket, 'connectSuccess', handleConnectSuccess);
+    IoEventListner(superSocket, 'expireToken', handleTryAuth);
+    if (!superSocket.connected) superSocket.connect();
   }, []);
 
   return (
