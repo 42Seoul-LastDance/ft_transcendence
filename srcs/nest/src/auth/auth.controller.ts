@@ -114,6 +114,18 @@ export class AuthController {
         } else throw new UnauthorizedException('verify failed');
     }
 
+    @Get('/regenerateToken')
+    @UseGuards(RegenerateAuthGuard)
+    async regenerateToken(@Req() req, @Res() res) {
+        const regeneratedToken = await this.authService.regenerateJwt(res);
+        res.cookie('token', regeneratedToken, {
+            maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+            // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+            // secure: false,
+        });
+        return res.send();
+    }
+
     @Post('/logout')
     @UseGuards(JwtAuthGuard)
     async logout(@Req() req: any, @Res() res: Response) {
