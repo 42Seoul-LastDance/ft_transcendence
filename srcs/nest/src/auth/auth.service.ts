@@ -37,13 +37,26 @@ export class AuthService {
     }
 
     getRefreshTokenFromRequest(req: Request): string | undefined {
-        if (req.headers.cookie) {
-            const cookies = req.headers.cookie.split(';');
-            for (const cookie of cookies) {
-                const [name, value] = cookie.trim().split('=');
-                if (name === 'refresh_token') {
-                    return decodeURIComponent(value);
-                }
+        // console.log(req.headers);
+        // 이런형식으로 들어 와 요 ~ --jaejkim 10/08
+        // {
+        //     authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNjk2NzU1NTE1LCJleHAiOjE2OTg4MjkxMTV9.ksj-_2CXbMxJGPpi1wi2niD1cd-SFFe0GMIuv-V3k3I',
+        // }
+
+        //  X
+        // if (req.headers.cookie) {
+        //     const cookies = req.headers.cookie.split(';');
+        //     for (const cookie of cookies) {
+        //         const [name, value] = cookie.trim().split('=');
+        //         if (name === 'refresh_token') {
+        //             return decodeURIComponent(value);
+        //         }
+        //     }
+        // }
+        if (req.headers.authorization) {
+            const [bearer, token] = req.headers.authorization.split(' ');
+            if (bearer === 'Bearer' && token) {
+                return token;
             }
         }
         return undefined;
@@ -73,6 +86,7 @@ export class AuthService {
             slackId: user.slackId,
         };
         const newAccessToken = await this.generateJwtBySecret(newPayload);
+        console.log('newAccessToken: ', newAccessToken);
         return newAccessToken;
     }
 

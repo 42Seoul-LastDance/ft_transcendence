@@ -26,13 +26,13 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const handleTryAuth = () => {
-    // const value = getCookie('token');
+    // const value = getCookie('access_token');
     console.log('super socket try auth');
-    // superSocket?.emit('expireToken', getCookie('token'));
+    // superSocket?.emit('expireToken', getCookie('access_token'));
   };
 
   useEffect(() => {
-    const socket = createSocket('DM', getCookie('token'));
+    const socket = createSocket('DM', getCookie('access_token'));
     setSuperSocket(socket);
 
     return () => {

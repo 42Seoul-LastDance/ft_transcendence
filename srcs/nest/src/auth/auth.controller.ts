@@ -75,7 +75,7 @@ export class AuthController {
 
         const { jwt, refreshToken } = await this.authService.generateAuthToken(user.id, user.userName);
         res.status(HttpStatus.OK);
-        res.cookie('token', jwt, {
+        res.cookie('access_token', jwt, {
             maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
             // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
             // secure: false,
@@ -115,6 +115,21 @@ export class AuthController {
             res.status(HttpStatus.OK);
             res.send();
         } else throw new UnauthorizedException('verify failed');
+    }
+
+    @Get('/regenerateToken')
+    @UseGuards(JwtAuthGuard)
+    async regenerateToken(@Req() req, @Res() res: Response) {
+        console.log('regenerateToken called');
+        const newToken = await this.authService.regenerateJwt(req);
+        res.clearCookie('access_token');
+        res.cookie('access_token', newToken, {
+            maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+            // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+            // secure: false,
+        });
+        res.status(HttpStatus.OK);
+        res.send();
     }
 
     @Post('/logout')

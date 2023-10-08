@@ -55,14 +55,14 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
                 socket.emit('expireToken');
             }
             socket.disconnect(true);
-            console.log(error);
+            // console.log(error);
             return;
         }
         // });
         console.log(socket.id, ': new connection. (Chat)');
         socket.emit('connectSuccess');
         //test
-        socket.emit('expireToken');
+        // socket.emit('expireToken');
     }
 
     handleDisconnect(socket: Socket) {

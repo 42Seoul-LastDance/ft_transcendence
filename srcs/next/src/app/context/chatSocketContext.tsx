@@ -11,6 +11,7 @@ import { setToken } from '../redux/userSlice';
 import axios from 'axios';
 import { BACK_URL } from '../globals';
 import { useRouter } from 'next/navigation';
+import { access } from 'fs';
 
 // SocketContext 생성
 const ChatSocketContext = createContext<Socket | undefined>(undefined);
@@ -30,33 +31,29 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   // refresh 토큰으로 access 토큰 재발급 로직
   const handleTryAuth = async () => {
-    // const refreshToken = getCookie('refresh_token');
-    // if (!refreshToken) router.push('/');
+    const refreshToken = getCookie('refresh_token');
+    if (!refreshToken) router.push('/');
 
-    // const response = await axios.get(`${BACK_URL}/auth/regenerateToken`, {
-    //   headers: { Authorization: `Bearer ${refreshToken}` },
-    // });
+    const response = await axios.get(`${BACK_URL}/auth/regenerateToken`, {
+      headers: { Authorization: `Bearer ${refreshToken}` },
+    });
 
-    // switch (response.status) {
-    //   case 200:
-    //     const accessToken = getCookie('token');
-    //     dispatch(setToken(accessToken));
-    //     break;
-    //   case 401:
-    //     router.push('/');
-    //     break;
-    //   default:
-    //     console.log('refresh token: ', response.status);
-    // }
-    // const token = getCookie('token');
-    // console.log('token: ', token);
+    switch (response.status) {
+      case 200:
+        break;
+      case 401:
+        router.push('/');
+        break;
+      default:
+        console.log('refresh token: ', response.status);
+    }
 
+    const newToken = getCookie('access_token');
     if (chatSocket?.connected) {
-      const token = getCookie('token');
       chatSocket?.emit('expireToken', token);
 
       chatSocket.auth = {
-        token: ' 바뀜 암 튼 바뀜 근데 refresh api는 고장남 ㅋㅋㅋㅋ',
+        token: newToken,
       };
       setChatSocket(chatSocket);
     }
@@ -71,7 +68,7 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    const socket = createSocket('RoomChat', getCookie('token'));
+    const socket = createSocket('RoomChat', getCookie('access_token'));
     setChatSocket(socket);
 
     return () => {
