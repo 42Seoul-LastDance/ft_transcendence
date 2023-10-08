@@ -40,22 +40,22 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     switch (response.status) {
       case 200:
+        const newToken = getCookie('access_token');
+        console.log('new token: ', newToken);
+        if (chatSocket?.connected) {
+          chatSocket?.emit('expireToken', token);
+
+          chatSocket.auth = {
+            token: newToken,
+          };
+          setChatSocket(chatSocket);
+        }
         break;
       case 401:
         router.push('/');
         break;
       default:
         console.log('refresh token: ', response.status);
-    }
-
-    const newToken = getCookie('access_token');
-    if (chatSocket?.connected) {
-      chatSocket?.emit('expireToken', token);
-
-      chatSocket.auth = {
-        token: newToken,
-      };
-      setChatSocket(chatSocket);
     }
   };
 

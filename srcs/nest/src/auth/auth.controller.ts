@@ -118,11 +118,11 @@ export class AuthController {
     }
 
     @Get('/regenerateToken')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(RegenerateAuthGuard)
     async regenerateToken(@Req() req, @Res() res: Response) {
         console.log('regenerateToken called');
         const newToken = await this.authService.regenerateJwt(req);
-        res.clearCookie('access_token');
+        console.log('newToken : ', newToken);
         res.cookie('access_token', newToken, {
             maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
             // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.

@@ -86,7 +86,6 @@ export class AuthService {
             slackId: user.slackId,
         };
         const newAccessToken = await this.generateJwtBySecret(newPayload);
-        console.log('newAccessToken: ', newAccessToken);
         return newAccessToken;
     }
 
