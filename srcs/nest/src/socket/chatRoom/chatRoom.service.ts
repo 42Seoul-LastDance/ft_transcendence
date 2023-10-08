@@ -210,7 +210,7 @@ export class ChatRoomService {
 
             console.log('>>>>>pastRoom : ', pastRoom);
             socket.to(pastRoomName).emit('sendMessage', userName + '님이 방을 나가셨습니다.');
-            if (userName === pastRoom.ownerName) {
+            if (userName === pastRoom?.ownerName) {
                 // owner가 나갈 경우 방 폭파
                 socket.to(pastRoomName).emit('explodeChatRoom', '방 소유자가 나갔으므로 채팅방이 사라집니다.');
                 // 방 타입 검사 후 해당 리스트에서 key-value쌍 item 삭제
@@ -225,8 +225,8 @@ export class ChatRoomService {
                 // let idx = pastRoom.memberList.findIndex(condition); //이거 받아서 삭제할라고 인덱스 받는 거같아요 멤버리스트에서 자기 제거하려구 -> 방에서 자기 이름을 찾아야 하는거 아닌가요?.?
                 // pastRoom.memberList.splice(idx, 1); //memberList
 
-                pastRoom.memberList.delete(userId);
-                pastRoom.muteList.delete(userId);
+                pastRoom?.memberList.delete(userId);
+                pastRoom?.muteList.delete(userId);
                 // idx = pastRoom.muteList.findIndex(condition); //muteList
                 // if (idx !== -1) pastRoom.muteList.splice(idx, 1);
                 socket.leave(pastRoomName);

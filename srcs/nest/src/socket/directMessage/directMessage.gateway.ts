@@ -31,6 +31,7 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
 
     // * 커넥션 핸들링 ========================================================
     async handleConnection(socket: Socket) {
+        // socket.emit('expireToken', async () => {
         // console.log('token: ', socket.handshake.query.token); // * 테스트용
         console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
         const tokenString: string = socket.handshake.auth.token as string;
@@ -46,6 +47,7 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
         }
         console.log(socket.id, ': new connection. (DM)');
         socket.emit('connectSuccess');
+        // });
     }
 
     handleDisconnect(socket: Socket) {
@@ -61,5 +63,10 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
         // payload['message]: string
         await this.directMessageService.sendMessage(socket, payload['content'], payload['targetId']);
         // socket.emit('sendMessage', ...);
+    }
+
+    @SubscribeMessage('expireToken')
+    expireToken(socket: Socket, payload: string) {
+        console.log('hahaha');
     }
 }

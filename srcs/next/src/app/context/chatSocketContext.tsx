@@ -5,7 +5,7 @@ import { setRoomNameList } from '../redux/roomSlice';
 import { RoomStatus } from '../interface';
 import { RootState } from '../redux/store';
 import { useSelector } from 'react-redux';
-import { IoEventListner, createSocket } from './socket';
+import { IoEventListner, IoEventOnce, createSocket } from './socket';
 import { getCookie } from '../Cookie';
 import { setToken } from '../redux/userSlice';
 import axios from 'axios';
@@ -24,32 +24,42 @@ export const useChatSocket = () => {
 // SocketProvider 컴포넌트 정의
 const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch();
-  const router = useRouter();
   const token = useSelector((state: RootState) => state.user.token);
+  const router = useRouter();
   const [chatSocket, setChatSocket] = useState<Socket | undefined>(undefined);
 
   // refresh 토큰으로 access 토큰 재발급 로직
   const handleTryAuth = async () => {
-    const refreshToken = getCookie('refresh_token');
-    if (!refreshToken) router.push('/');
+    // const refreshToken = getCookie('refresh_token');
+    // if (!refreshToken) router.push('/');
 
-    const response = await axios.get(`${BACK_URL}/auth/regenerateToken`, {
-      headers: { Authorization: `Bearer ${refreshToken}` },
-    });
+    // const response = await axios.get(`${BACK_URL}/auth/regenerateToken`, {
+    //   headers: { Authorization: `Bearer ${refreshToken}` },
+    // });
 
-    switch (response.status) {
-      case 200:
-        const accessToken = getCookie('token');
-        dispatch(setToken(accessToken));
-        break;
-      case 401:
-        router.push('/');
-        break;
-      default:
-        console.log('refresh token: ', response.status);
+    // switch (response.status) {
+    //   case 200:
+    //     const accessToken = getCookie('token');
+    //     dispatch(setToken(accessToken));
+    //     break;
+    //   case 401:
+    //     router.push('/');
+    //     break;
+    //   default:
+    //     console.log('refresh token: ', response.status);
+    // }
+    // const token = getCookie('token');
+    // console.log('token: ', token);
+
+    if (chatSocket?.connected) {
+      const token = getCookie('token');
+      chatSocket?.emit('expireToken', token);
+
+      chatSocket.auth = {
+        token: ' 바뀜 암 튼 바뀜 근데 refresh api는 고장남 ㅋㅋㅋㅋ',
+      };
+      setChatSocket(chatSocket);
     }
-    console.log('[handle] tryAuth() token', token);
-    chatSocket?.emit('expiredToken', token);
   };
 
   const handleGetChatRoomList = (data: string[]) =>
@@ -73,7 +83,7 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
     if (chatSocket?.connected) chatSocket?.disconnect();
 
     if (chatSocket) {
-      IoEventListner(chatSocket, 'expiredToken', handleTryAuth);
+      IoEventOnce(chatSocket, 'expireToken', handleTryAuth);
       IoEventListner(chatSocket, 'getChatRoomList', handleGetChatRoomList);
       IoEventListner(chatSocket, 'connectSuccess', handleConnectSuccess);
       console.log('[Handle] chat socket info', chatSocket);

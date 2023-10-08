@@ -2,6 +2,10 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Socket } from 'socket.io-client';
 import { IoEventListner, createSocket } from './socket';
 import { getCookie } from '../Cookie';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../redux/store';
+import { setToken } from '../redux/userSlice';
+import { get } from 'http';
 
 // SocketContext 생성
 const SuperSocketContext = createContext<Socket | undefined>(undefined);
@@ -21,6 +25,12 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
     console.log('[Connect] superSocket Success');
   };
 
+  const handleTryAuth = () => {
+    // const value = getCookie('token');
+    console.log('super socket try auth');
+    // superSocket?.emit('expireToken', getCookie('token'));
+  };
+
   useEffect(() => {
     const socket = createSocket('DM', getCookie('token'));
     setSuperSocket(socket);
@@ -31,11 +41,12 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (superSocket?.connected) superSocket?.disconnect();
-    if (superSocket)
+    if (superSocket) {
       IoEventListner(superSocket, 'connectSuccess', handleConnectSuccess);
+      IoEventListner(superSocket, 'expireToken', handleTryAuth);
+    }
     superSocket?.connect();
-  }, [superSocket]);
+  }, []);
 
   return (
     <SuperSocketContext.Provider value={superSocket}>

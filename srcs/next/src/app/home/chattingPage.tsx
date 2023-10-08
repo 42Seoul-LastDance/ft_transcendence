@@ -71,8 +71,9 @@ const ChattingContent = () => {
       userName: chatRoom.userName,
       content: message,
     };
+    // console.log('client send: ', chatSocket?.auth.token);
 
-    chatSocket.emit('sendMessage', newSend);
+    // chatSocket.emit('sendMessage', newSend);
     setMessage('');
   };
 
