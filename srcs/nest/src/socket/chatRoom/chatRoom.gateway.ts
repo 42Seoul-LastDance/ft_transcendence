@@ -30,8 +30,8 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // * 커넥션 핸들링 ========================================================
     async handleConnection(socket: Socket) {
         console.log('token: ', socket.handshake.query.token); // * 테스트용
-        // console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
-        const tokenString: string = socket.handshake.query.token as string;
+        console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
+        const tokenString: string = socket.handshake.auth.token as string;
         try {
             const decodedToken = this.jwtService.verify(tokenString, {
                 secret: process.env.JWT_SECRET_KEY,

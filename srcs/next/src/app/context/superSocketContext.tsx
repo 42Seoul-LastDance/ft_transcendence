@@ -1,11 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Socket } from 'socket.io-client';
-import { useSelector } from 'react-redux';
-import { RootState } from '../redux/store';
 import { IoEventListner, createSocket } from './socket';
 import { getCookie } from '../Cookie';
-
-// Socket.IO 소켓 초기화
 
 // SocketContext 생성
 const SuperSocketContext = createContext<Socket | undefined>(undefined);
@@ -18,7 +14,7 @@ export const useSuperSocket = () => {
 
 // SocketProvider 컴포넌트 정의
 const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
-  // const token = useSelector((state: RootState) => state.user.token);
+  // 소켓 상태 관리
   const [superSocket, setSuperSocket] = useState<Socket | undefined>(undefined);
 
   const handleConnectSuccess = () => {
@@ -35,9 +31,11 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    IoEventListner(superSocket!, 'connectSuccess', handleConnectSuccess);
-    if (!superSocket?.connected) superSocket?.connect();
-  }, []);
+    if (superSocket?.connected) superSocket?.disconnect();
+    if (superSocket)
+      IoEventListner(superSocket, 'connectSuccess', handleConnectSuccess);
+    superSocket?.connect();
+  }, [superSocket]);
 
   return (
     <SuperSocketContext.Provider value={superSocket}>

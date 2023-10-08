@@ -24,11 +24,11 @@ const MainHome = () => {
   return (
     <>
       <Provider store={store}>
-        {/* <SuperSocketProvider> */}
-        <ChatSocketProvider>
-          <ChatHomeContent />
-        </ChatSocketProvider>
-        {/* </SuperSocketProvider> */}
+        <SuperSocketProvider>
+          <ChatSocketProvider>
+            <ChatHomeContent />
+          </ChatSocketProvider>
+        </SuperSocketProvider>
       </Provider>
     </>
   );

@@ -76,10 +76,10 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
       IoEventListner(chatSocket, 'expiredToken', handleTryAuth);
       IoEventListner(chatSocket, 'getChatRoomList', handleGetChatRoomList);
       IoEventListner(chatSocket, 'connectSuccess', handleConnectSuccess);
+      console.log('[Handle] chat socket info', chatSocket);
+      chatSocket?.connect();
     }
 
-    console.log('[Handle] socket info', chatSocket);
-    chatSocket?.connect();
     return () => {
       chatSocket?.disconnect();
     };

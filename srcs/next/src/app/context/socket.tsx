@@ -1,5 +1,4 @@
 import { Socket, io } from 'socket.io-client';
-import { getCookie } from '../Cookie';
 import { BACK_URL } from '../globals';
 
 // socket io event hook
@@ -35,8 +34,8 @@ export const createSocket = (
     transports: ['websocket'],
     closeOnBeforeunload: true,
     reconnection: true,
-    query: {
-      token,
+    auth: {
+      token: token,
     },
   });
 };
