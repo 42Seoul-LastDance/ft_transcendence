@@ -12,7 +12,7 @@ services:
         env_file:
             - ./.env
         ports:
-            - '8000:4242'
+            - '4242:4242'
         restart: always
         depends_on:
             - postgresql
@@ -28,7 +28,7 @@ services:
         env_file:
             - ./.env
         ports:
-            - '8080:3000'
+            - '3000:3000'
         restart: always
 
     postgresql:

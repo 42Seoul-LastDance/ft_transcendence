@@ -1,49 +1,38 @@
-import React, { createContext, useContext, useEffect } from 'react';
-import { io, Socket } from 'socket.io-client';
-import BACK_URL from '../globals';
-
-const token =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MjQyIiwibmFtZSI6InRlc3RtYW4iLCJpYXQiOjE1MTYyMjM0MjM0fQ.jZsy7aTM-GcoSbQW6TERNuTCBCvIS-7l_qfm5PMg0-U';
-
-// Socket.IO 소켓 초기화
-export var superSocket: Socket = io(`${BACK_URL}/DM`, {
-  // forceNew: true,
-  withCredentials: false,
-  autoConnect: true,
-  transports: ['websocket'],
-  closeOnBeforeunload: true,
-  query: {
-    token,
-  },
-  // * 실 구현은 auth.token
-  // auth: {
-  // token,
-  // }
-});
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Socket } from 'socket.io-client';
+import { IoEventListner, createSocket } from './socket';
+import { getCookie } from '../Cookie';
 
 // SocketContext 생성
 const SuperSocketContext = createContext<Socket | undefined>(undefined);
 
 // 커스텀 훅 정의
-export function useSuperSocket() {
+export const useSuperSocket = () => {
   const socket = useContext(SuperSocketContext);
-  if (!socket) {
-    throw new Error('useSocket must be used within a SocketProvider');
-  }
   return socket;
-}
+};
 
 // SocketProvider 컴포넌트 정의
-export function SuperSocketProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const superSocket = createSocket('DM', getCookie('access_token'));
+
+const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
+  // 소켓 상태 관리
+  // const [superSocket, setSuperSocket] = useState<Socket | undefined>(undefined);
+
+  const handleConnectSuccess = () => {
+    console.log('[Connect] superSocket Success');
+  };
+
+  const handleTryAuth = () => {
+    // const value = getCookie('access_token');
+    console.log('super socket try auth');
+    // superSocket?.emit('expireToken', getCookie('access_token'));
+  };
+
   useEffect(() => {
+    IoEventListner(superSocket, 'connectSuccess', handleConnectSuccess);
+    IoEventListner(superSocket, 'expireToken', handleTryAuth);
     if (!superSocket.connected) superSocket.connect();
-    // return () => {
-    //   superSocket.disconnect();
-    // };
   }, []);
 
   return (
@@ -51,4 +40,6 @@ export function SuperSocketProvider({
       {children}
     </SuperSocketContext.Provider>
   );
-}
+};
+
+export default SuperSocketProvider;

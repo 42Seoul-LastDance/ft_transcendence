@@ -59,7 +59,7 @@ export class AuthController {
 
         if (user.require2fa === true) {
             res.status(HttpStatus.OK);
-            const token = this.authService.generate2faToken(user.id, user.username);
+            const token = this.authService.generate2faToken(user.id, user.userName);
             res.cookie('2fa_token', token, {
                 maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
                 // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
@@ -72,23 +72,23 @@ export class AuthController {
             });
             return;
         }
-        
-        const { jwt, refreshToken } = await this.authService.generateAuthToken(user.id, user.username);
+
+        const { jwt, refreshToken } = await this.authService.generateAuthToken(user.id, user.userName);
         res.status(HttpStatus.OK);
-        res.cookie('token', jwt, {
+        res.cookie('access_token', jwt, {
             maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
             // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
             // secure: false,
         });
-        res.cookie('refresh_Token', refreshToken, {
+        res.cookie('refresh_token', refreshToken, {
             maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
             // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
             // secure: false,
         });
-        // return res.status(200).json({  
+        // return res.status(200).json({
         //     message: 'success',
         // });
-		return res.redirect(process.env.FRONT_URL + '/home');
+        return res.redirect(process.env.FRONT_URL + '/home'); //TODO : 로직 변경
     }
 
     @Get('verify2fa')
@@ -98,13 +98,16 @@ export class AuthController {
         if (isAuthenticated) {
             //jwt 발급
             res.clearCookie('2fa_token');
-            const { jwt, refreshToken } = await this.authService.generateAuthToken(req.authDto.id, req.authDto.username );
-            res.cookie('token', jwt, {
+            const { jwt, refreshToken } = await this.authService.generateAuthToken(
+                req.authDto.id,
+                req.authDto.userName,
+            );
+            res.cookie('access_token', jwt, {
                 maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
                 // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
                 // secure: false,
             });
-            res.cookie('refresh_Token', refreshToken, {
+            res.cookie('refresh_token', refreshToken, {
                 maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
                 // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
                 // secure: false,
@@ -116,9 +119,10 @@ export class AuthController {
 
     @Get('/regenerateToken')
     @UseGuards(RegenerateAuthGuard)
-    async regenerateToken(@Req() req, @Res() res) {
-        const regeneratedToken = await this.authService.regenerateJwt(res);
-        res.cookie('token', regeneratedToken, {
+    async regenerateToken(@Req() req, @Res() res: Response) {
+        console.log('regenerateToken called');
+        const newToken = await this.authService.regenerateJwt(req);
+        res.cookie('access_token', newToken, {
             maxAge: +process.env.COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
             // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
             // secure: false,

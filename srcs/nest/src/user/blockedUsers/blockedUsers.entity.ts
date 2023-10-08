@@ -1,7 +1,7 @@
 import { IsNumber } from 'class-validator';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity()
+@Entity({ name: 'blockedUsers', schema: 'public' })
 export class BlockedUsers {
     @PrimaryGeneratedColumn('increment')
     id: number;

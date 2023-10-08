@@ -7,11 +7,11 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
 import { useDispatch, useSelector } from 'react-redux';
 import { useChatSocket } from '../context/chatSocketContext';
-import { RoomInfoDto, RoomStatus } from '../interface';
+import { ChatRoomDto, RoomInfoDto, RoomStatus } from '../interface';
 import { useRouter } from 'next/navigation';
 import { setIsJoined } from '../redux/roomSlice';
 import { RootState } from '../redux/store';
-import { setChatRoom, setName } from '../redux/userSlice';
+import { setChatRoom } from '../redux/userSlice';
 
 export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const chatSocket = useChatSocket();
@@ -48,7 +48,6 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   };
 
   const addNewRoom = () => {
-
     const newRoom: RoomInfoDto = {
       roomName: roomname,
       password: password ? password : null,
@@ -57,12 +56,13 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
     };
 
     if (!chatSocket.hasListeners('createChatRoom')) {
-      chatSocket.on('createChatRoom', (data) => {
+      chatSocket.on('createChatRoom', (data: ChatRoomDto) => {
         console.log('create Chat Room : ', data);
         dispatch(setChatRoom(data));
       });
     }
 
+    console.log('만든 방', newRoom);
     chatSocket.emit('createChatRoom', newRoom);
     dispatch(setIsJoined(true));
     onClose();

@@ -1,23 +1,14 @@
 'use client';
 
-import { Provider, useDispatch, useSelector } from 'react-redux';
+import { Provider, useSelector } from 'react-redux';
 import store, { RootState } from '../redux/store';
 import ChattingTabs from './chattingTabs';
 import ChattingContent from './chattingPage';
-import {
-  ChatSocketProvider,
-  useChatSocket,
-} from '../context/chatSocketContext';
-import {
-  SuperSocketProvider,
-  useSuperSocket,
-} from '../context/superSocketContext';
-import { useEffect } from 'react';
+import ChatSocketProvider from '../context/chatSocketContext';
+import SuperSocketProvider from '../context/superSocketContext';
 
 const ChatHomeContent = () => {
-  const dispatch = useDispatch();
   const isJoined = useSelector((state: RootState) => state.room.isJoined);
-  const chatSocket = useChatSocket();
 
   return (
     <>
@@ -30,10 +21,6 @@ const ChatHomeContent = () => {
 };
 
 const MainHome = () => {
-  window.onpopstate = function(event) {
-    window.history.pushState(null, '', window.location.href);
-  }
-
   return (
     <>
       <Provider store={store}>

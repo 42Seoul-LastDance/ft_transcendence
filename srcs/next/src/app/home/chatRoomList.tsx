@@ -6,7 +6,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import CreateRoomButton from './createRoomButton';
 import { useChatSocket } from '../context/chatSocketContext';
-import { ChatRoomDto, RoomStatus } from '../interface'; // ChatRoomDto 및 ChatRoomListDto는 사용되지 않으므로 import 제거
+import { ChatRoomDto, RoomStatus, JoinRoomDto } from '../interface'; // ChatRoomDto 및 ChatRoomListDto는 사용되지 않으므로 import 제거
 import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import { useDispatch } from 'react-redux';
@@ -20,6 +20,7 @@ const style = {
 };
 
 const ChatRoomList: React.FC = () => {
+  const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const chatSocket = useChatSocket();
   const dispatch = useDispatch();
 
@@ -28,23 +29,32 @@ const ChatRoomList: React.FC = () => {
   );
 
   const joinRoom = (roomName: string) => {
-    if (!chatSocket.hasListeners('getChatRoomInfo')) {
-      chatSocket.on('getChatRoomInfo', (data: ChatRoomDto) => {
-        if (data.requirePassword === true) {
-          const password = prompt('비밀번호를 입력하세요');
-          console.log('password: ', data.password);
-          if (password === data.password) {
-            dispatch(setChatRoom(data));
-            dispatch(setIsJoined(true));
-          } else {
-            alert('비밀번호가 틀렸습니다');
-          }
-        } else if (data.requirePassword === false) {
-          dispatch(setChatRoom(data));
+    if (!chatSocket.hasListeners('joinPublicChatRoom')) {
+      chatSocket.on('joinPublicChatRoom', (data: JoinRoomDto) => {
+        if (data.result === true) {
           dispatch(setIsJoined(true));
         } else {
-          console.log('curRoom.requirePassword : 이것은 backend 잘못이여');
+          dispatch(setIsJoined(false));
+          dispatch(setChatRoom(null));
+          console.log('방 입장 실패함 ', data.reason);
+          console.log(data);
         }
+      });
+    }
+
+    if (!chatSocket.hasListeners('getChatRoomInfo')) {
+      chatSocket.on('getChatRoomInfo', (data: ChatRoomDto) => {
+        console.log('getChatRoomInfo data ', data);
+        dispatch(setChatRoom(data));
+        let password: string | null = null;
+        if (data.requirePassword === true)
+          password = prompt('비밀번호를 입력하세요');
+
+        dispatch(setIsJoined(false));
+        chatSocket.emit('joinPublicChatRoom', {
+          roomName: roomName,
+          password: password,
+        });
       });
     }
 
@@ -52,27 +62,27 @@ const ChatRoomList: React.FC = () => {
       roomName: roomName,
       status: RoomStatus.PUBLIC,
     });
-    console.log('join!!');
   };
 
   return (
     <>
-      <List sx={style} component="nav" aria-label="mailbox folders">
-        {roomNameList.map((roomName) => (
-          <ListItem
-            key={roomName}
-            divider
-            onClick={() => {
-              joinRoom(roomName);
-            }}
-          >
-            <ListItemText
-              primary={`방 이름: ${roomName}`}
-              // secondary={`잠금 여부: ${roomName}`}
-            />
-          </ListItem>
-        ))}
-      </List>
+      <>
+        <List sx={style} component="nav" aria-label="mailbox folders">
+          {roomNameList.map((roomName: string) => {
+            return roomName !== chatRoom?.roomName ? (
+              <ListItem
+                key={roomName}
+                divider
+                onClick={() => {
+                  joinRoom(roomName);
+                }}
+              >
+                <ListItemText primary={`방 이름: ${roomName}`} />
+              </ListItem>
+            ) : null;
+          })}
+        </List>
+      </>
       <CreateRoomButton />
     </>
   );

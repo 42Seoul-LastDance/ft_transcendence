@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { BlockedUsersRepository } from './blockedUsers.repository';
 import { BlockedUsers } from './blockedUsers.entity';
-
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserService } from '../user.service';
 @Injectable()
 export class BlockedUsersService {
-    constructor(private blockedUsersRepository: BlockedUsersRepository) {}
+    constructor(
+        @InjectRepository(BlockedUsers)
+        private blockedUsersRepository: BlockedUsersRepository,
+        private userSerivce: UserService,
+    ) {}
 
     async addBlockUser(userId: number, targetId: number): Promise<void> {
         if ((await this.isBlocked(userId, targetId)) === true) return;
@@ -29,8 +34,9 @@ export class BlockedUsersService {
     }
 
     async getBlockUserListById(id: number): Promise<Array<number>> {
-        const blockList = new Array<number>();
+        const blockList: Array<number> = [];
         const foundBlockUsers: BlockedUsers[] = await this.blockedUsersRepository.find({
+            // TypeError: Cannot read properties of undefined (reading 'find')
             where: { requestUserId: id },
             select: { targetUserId: true },
         });
@@ -41,4 +47,17 @@ export class BlockedUsersService {
     }
 
     //TODO : 프론트에서 필요한 정보로 바꿔서 주기.
+    // async getBlockUserListById(id: number): Promise<Array<string>> {
+    //     const blockList: Array<string> = [];
+    //     const foundBlockUsers: BlockedUsers[] = await this.blockedUsersRepository.find({
+    //         // TypeError: Cannot read properties of undefined (reading 'find')
+    //         where: { requestUserId: id },
+    //         select: { targetUserId: true },
+    //     });
+    //     // foundBlockUsers.forEach((blockedUser) => {
+    //     //     var userName = ( await this.userSerivce.findUserById(blockedUser)).userName;
+    //     //     blockList.push(userName);
+    //     // });
+    //     return blockList;
+    // }
 }

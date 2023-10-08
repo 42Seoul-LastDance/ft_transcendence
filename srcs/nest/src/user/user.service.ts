@@ -52,9 +52,9 @@ export class UserService {
         return user;
     }
 
-    async getUserByUsername(name: string): Promise<User> {
+    async getUserByUserName(name: string): Promise<User> {
         const user = await this.userRepository.findOne({
-            where: { username: name },
+            where: { userName: name },
         });
         if (!user) {
             throw new NotFoundException();
@@ -66,7 +66,7 @@ export class UserService {
         try {
             const { email, slackId } = authDto;
             const newUser = this.userRepository.create({
-                username: slackId,
+                userName: slackId,
                 email: email,
                 profileurl: filename ? filename : 'default.png',
                 slackId: slackId,
@@ -80,20 +80,20 @@ export class UserService {
             console.log('register user in UserService:', newUser);
             return user;
         } catch (error) {
-            if (error.code == '23505') throw new ConflictException('Existing username');
+            if (error.code == '23505') throw new ConflictException('Existing userName');
             else throw new InternalServerErrorException('from registerUser');
         }
     }
 
-    async updateUsernameBySlackId(slackId: string, username: string): Promise<User> {
+    async updateUserNameBySlackId(slackId: string, userName: string): Promise<User> {
         try {
             const user = await this.getUserBySlackId(slackId);
-            user.username = username;
+            user.userName = userName;
             await this.userRepository.save(user);
             return user;
         } catch (error) {
-            if (error.code == '23505') throw new ConflictException('Existing username');
-            else throw new InternalServerErrorException('from updateUsername');
+            if (error.code == '23505') throw new ConflictException('Existing userName');
+            else throw new InternalServerErrorException('from updateuserName');
         }
     }
 
@@ -166,7 +166,7 @@ export class UserService {
                 slackId: Like(`${slackId}%`),
             },
             order: {
-                username: 'ASC', // Ascending order (alphabetically)
+                userName: 'ASC', // Ascending order (alphabetically)
             },
         });
 
@@ -201,14 +201,14 @@ export class UserService {
         else return false;
     }
 
-    async getUserProfile(userId: number): Promise<UserProfileDto> {
+    async getUserProfile(username: string): Promise<UserProfileDto> {
         //TODO UserProfileDto 업데이트하고 추가로 진행
-        const user = await this.findUserById(userId);
+        const user = await this.getUserByUserName(username);
 
         const userProfileDto: UserProfileDto = {
             //TODO UserProfileDto 업데이트하고 추가로 진행
             id: user.id,
-            username: user.username,
+            userName: user.userName,
             slackId: user.slackId,
             // profileurl: user.profileurl,
             exp: user.exp,
@@ -218,8 +218,8 @@ export class UserService {
         return userProfileDto;
     }
 
-    async getUserProfileImage(userId: number): Promise<{ image: Buffer; mimeType: string }> {
-        const user = await this.findUserById(userId);
+    async getUserProfileImage(username: string): Promise<{ image: Buffer; mimeType: string }> {
+        const user = await this.getUserByUserName(username);
         const profileImgTarget = user.profileurl || 'default.png';
         const imagePath = __dirname + '/../../profile/' + profileImgTarget;
         const image = readFileSync(imagePath); // 이미지 파일을 읽어옴

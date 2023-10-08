@@ -25,14 +25,15 @@ export class RegenerateAuthGuard implements CanActivate {
 
     private getRefreshTokenFromHeader(request: Request): string | null {
         // HTTP 요청 헤더에서 "refresh_token" 값을 가져옵니다.
-        const reqCookie = request.headers.cookie;
+        const reqCookie = request.headers.authorization;
         if (!reqCookie) return null;
         const cookies = reqCookie.split(' ');
 
-        for (const cookie of cookies) {
-            if (cookie.startsWith('refresh_token=')) return cookie.slice('refresh_token='.length);
-        }
+        // for (const cookie of cookies) {
+        //     if (cookie.startsWith('refresh_token=')) return cookie.slice('refresh_token='.length);
+        // }
         // "refresh_token" 헤더가 없거나 문자열이 아닌 경우 null을 반환합니다.
-        return null;
+        // return null;
+        return cookies[1];
     }
 }

@@ -4,14 +4,14 @@ import { IsString } from 'class-validator';
 import { userRole } from './user-role.enum';
 
 @Entity({ name: 'user', schema: 'public' })
-@Unique(['username']) // * username이 중복될 경우 알아서 오류를 내뱉음. : try catch 구문 사용.
+@Unique(['userName']) // * userName이 중복될 경우 알아서 오류를 내뱉음. : try catch 구문 사용.
 export class User {
     @PrimaryGeneratedColumn('increment')
     id: number;
 
     @Column({ nullable: true })
     @IsString()
-    username: string;
+    userName: string;
 
     @Column()
     @IsString()

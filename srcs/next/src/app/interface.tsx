@@ -36,13 +36,27 @@ export enum UserPermission {
 }
 
 export interface ChatMessage {
-	userName: string;
-	content: string;
+  userName: string;
+  content: string;
 }
 
 export interface SendMessageDto {
-	roomName : string,
-	status: RoomStatus,
-	userName: string,
-	content: string,
+  roomName: string;
+  status: RoomStatus;
+  userName: string;
+  content: string;
+}
+
+export interface receiveMessage {
+  canReceive: boolean;
+}
+
+export interface JoinRoomDto {
+  result: boolean;
+  reason: string | null;
+}
+
+export enum TokenType {
+  Access = 0,
+  Refresh = 1,
 }
