@@ -31,12 +31,13 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     async handleConnection(socket: Socket) {
         // socket.emit('expireToken', async () => {
         // console.log('token: ', socket.handshake.query.token); // * 테스트용
-        console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
-        if (socket.handshake.auth.token == 'hihi') {
-            console.log('hihi');
-        }
+        console.log('HANDLE CONNECTION 함수 called');
+        console.log('socket.handshake.auth.token : ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
         const tokenString: string = socket.handshake.auth.token as string;
         try {
+            if (!tokenString) {
+                throw new Error('jwt is empty.');
+            }
             const decodedToken = this.jwtService.verify(tokenString, {
                 secret: process.env.JWT_SECRET_KEY,
             });
@@ -52,6 +53,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
             ) {
                 // `${BACK_URL}/auth/regenerateToken`
                 // * 토큰 만료 => 근데 왜 404 날라와요?.. ?
+                console.log('expireToken emit called');
                 socket.emit('expireToken');
             }
             socket.disconnect(true);
@@ -217,11 +219,19 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     @SubscribeMessage('blockUser')
     async blockUser(socket: Socket, payload: JSON) {
         this.chatroomService.blockUser(socket, payload['targetName']);
+        this.server.serverSideEmit('blockUser', {
+            userId: this.chatroomService.getUserId(socket),
+            targetId: payload['targetName'],
+        });
     }
 
     @SubscribeMessage('unBlockUser')
     async unBlockUser(socket: Socket, payload: JSON) {
         this.chatroomService.unBlockUser(socket, payload['targetName']);
+        this.server.serverSideEmit('blockUser', {
+            userId: this.chatroomService.getUserId(socket),
+            targetId: payload['targetName'],
+        });
     }
 
     @SubscribeMessage('inviteUser')

@@ -13,7 +13,7 @@ import { Response } from 'express';
 1. 사용자가 인증을 위해 42서비스로 리다이렉트 된다. 42 서비스에서 로그인 하고 권한을 부여받게 된다.
 2. 사용자가 권한을 부여하면 42 서비스는 엑세스코드를 생성하고, 이 코드를 callback url로 전송한다.
 3. PassportStrategy 클래스는 전달받은 엑세코드를 사용하여 엑세스 토큰을 요청하고, 42 서비스로부터 엑세스 토큰을 받아온다.
-4. validate 메서드가 호출되고, 이떄 전달된 엑세스 토큰과 리프레시 토큰을 사용해서 인증 검증 로직을 수행한다.
+4. validate 메서드 호출되고, 이떄 전달된 엑세스 토큰과 리프레시 토큰을 사용해서 인증 검증 로직을 수행한다.
 5. validate 메서드에서는 인증 검증 후에 엑세스 토큰을 반환한다.
 */
 // interface UserInfo {
@@ -34,6 +34,7 @@ export class FortytwoStrategy extends PassportStrategy(Strategy, 'fortytwo') {
             clientID: process.env.FT_CLIENT_ID,
             clientSecret: process.env.FT_CLIENT_SECRET,
             callbackURL: process.env.FT_CALLBACK,
+            // crossOriginIsolated:
         });
     }
 

@@ -17,6 +17,5 @@ export class Friend {
 
     @Column()
     @IsEnum(FriendStatus)
-    status: number; //어떤 status 인가요? 만약 on//offline 이라면 user가 갖고 있습니다! -ebang
-    //친구 요청인지 수락된 친구인지 확인하는 용도입니다
+    status: FriendStatus;
 }

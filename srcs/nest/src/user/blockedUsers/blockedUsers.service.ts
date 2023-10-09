@@ -11,7 +11,7 @@ export class BlockedUsersService {
         private userSerivce: UserService,
     ) {}
 
-    async addBlockUser(userId: number, targetId: number): Promise<void> {
+    async blockUserById(userId: number, targetId: number): Promise<void> {
         if ((await this.isBlocked(userId, targetId)) === true) return;
         const blockInfo = this.blockedUsersRepository.create({
             requestUserId: userId,
@@ -20,7 +20,7 @@ export class BlockedUsersService {
         await this.blockedUsersRepository.save(blockInfo);
     }
 
-    async deleteBlockUserById(userId: number, targetId: number): Promise<void> {
+    async unblockUserById(userId: number, targetId: number): Promise<void> {
         await this.blockedUsersRepository.delete({ requestUserId: userId, targetUserId: targetId });
     }
 
@@ -46,18 +46,17 @@ export class BlockedUsersService {
         return blockList;
     }
 
-    //TODO : 프론트에서 필요한 정보로 바꿔서 주기.
-    // async getBlockUserListById(id: number): Promise<Array<string>> {
-    //     const blockList: Array<string> = [];
-    //     const foundBlockUsers: BlockedUsers[] = await this.blockedUsersRepository.find({
-    //         // TypeError: Cannot read properties of undefined (reading 'find')
-    //         where: { requestUserId: id },
-    //         select: { targetUserId: true },
-    //     });
-    //     // foundBlockUsers.forEach((blockedUser) => {
-    //     //     var userName = ( await this.userSerivce.findUserById(blockedUser)).userName;
-    //     //     blockList.push(userName);
-    //     // });
-    //     return blockList;
-    // }
+    //*REST API
+    async getBlockUsernameListById(id: number): Promise<Array<string>> {
+        const blockList: Array<string> = [];
+        const foundBlockUsers: BlockedUsers[] = await this.blockedUsersRepository.find({
+            // TypeError: Cannot read properties of undefined (reading 'find')
+            where: { requestUserId: id },
+            select: { targetUserId: true },
+        });
+        foundBlockUsers.forEach(async (blockedUser) => {
+            blockList.push((await this.userSerivce.findUserById(blockedUser.targetUserId)).userName);
+        });
+        return blockList;
+    }
 }

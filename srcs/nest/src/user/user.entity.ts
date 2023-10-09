@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, Unique } from 'typeorm';
-import { userStatus } from './user-status.enum';
+import { UserStatus } from './user-status.enum';
 import { IsString } from 'class-validator';
 import { userRole } from './user-role.enum';
 
@@ -37,9 +37,9 @@ export class User {
     @IsString()
     code2fa: string;
 
-    @Column({ default: userStatus.OFFLINE })
+    @Column({ default: UserStatus.OFFLINE })
     @IsString()
-    status: userStatus;
+    status: UserStatus;
 
     @Column({ default: 0 })
     @IsString()

@@ -81,9 +81,8 @@ export class AuthService {
 
         const user = await this.userService.findUserById(payload.id);
         const newPayload = {
-            sub: payload.id,
-            email: user.email,
-            slackId: user.slackId,
+            sub: user.id,
+            userName: user.userName,
         };
         const newAccessToken = await this.generateJwtBySecret(newPayload);
         return newAccessToken;

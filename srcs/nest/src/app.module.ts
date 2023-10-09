@@ -11,6 +11,7 @@ import { BlockedUsersModule } from './user/blockedUsers/blockedUsers.module';
 import { DirectMessageModule } from './socket/directMessage/directMessage.module';
 import { BlockedUsers } from './user/blockedUsers/blockedUsers.entity';
 import { DirectMessage } from './socket/directMessage/directMessage.entity';
+import { FriendModule } from './user/friend/friend.module';
 
 @Module({
     imports: [
@@ -30,6 +31,7 @@ import { DirectMessage } from './socket/directMessage/directMessage.entity';
         EventsModule,
         BlockedUsersModule,
         DirectMessageModule,
+        FriendModule,
     ],
     controllers: [AppController],
     providers: [AppService],

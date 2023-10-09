@@ -368,7 +368,7 @@ export class ChatRoomService {
         if (blockedList === undefined) console.log('test failed: user id에 해당하는 키 값이 존재하지 않습니다.');
         if (blockedList.indexOf(targetId) === -1) return this.emitFailReason(socket, 'blockUser', 'already blocked.');
         blockedList.push(targetId);
-        this.blockedUsersService.addBlockUser(userId, targetId); //DB
+        await this.blockedUsersService.blockUserById(userId, targetId); //DB
         this.emitSuccess(socket, 'blockUser');
     }
 
@@ -386,7 +386,7 @@ export class ChatRoomService {
         const condition = (id) => id === targetId;
         const idx = blockedList.findIndex(condition);
         blockedList.splice(idx, 1);
-        this.blockedUsersService.deleteBlockUserById(userId, targetId); //DB
+        await this.blockedUsersService.unblockUserById(userId, targetId); //DB
         this.emitSuccess(socket, 'unBlockUser');
     }
 

@@ -144,14 +144,14 @@ export class UserController {
             if (error.getStatus() == 404) throw new NotFoundException('no such user');
             else throw new InternalServerErrorException();
         }
-        if (user) throw new BadRequestException(' exist');
+        if (user) throw new BadRequestException(`${name} already exist`);
     }
 
-    // @Get('/status')
-    // @UseGuards(JwtAuthGuard)
-    // getStatus(@Param() id) {
-    //     // TODO: 서로 친구인지 조회 필요
-    // }
+    @Get('/status/:id')
+    @UseGuards(JwtAuthGuard)
+    getStatus(@Param() id) {
+        // TODO: 서로 친구인지 조회 필요
+    }
 
     // @Get()
     // findAll(): Promise<User[]> {
