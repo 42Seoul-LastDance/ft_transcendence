@@ -5,7 +5,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import CreateRoomButton from './createRoomButton';
 import { useChatSocket } from '../../context/chatSocketContext';
-import { ChatRoomDto, RoomStatus } from '../../interface'; // ChatRoomDto 및 ChatRoomListDto는 사용되지 않으므로 import 제거
+import { ChatRoomDto, RoomStatus } from '../../interface';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import { useDispatch } from 'react-redux';
@@ -60,23 +60,21 @@ const ChatRoomList: React.FC = () => {
 
   return (
     <>
-      <>
-        <List sx={style} component="nav" aria-label="mailbox folders">
-          {roomNameList.map((roomName: string) => {
-            return roomName !== chatRoom?.roomName ? (
-              <ListItem
-                key={roomName}
-                divider
-                onClick={() => {
-                  joinRoom(roomName);
-                }}
-              >
-                <ListItemText primary={`방 이름: ${roomName}`} />
-              </ListItem>
-            ) : null;
-          })}
-        </List>
-      </>
+      <List sx={style} component="nav" aria-label="mailbox folders">
+        {roomNameList.map((roomName: string) => {
+          return roomName !== chatRoom?.roomName ? (
+            <ListItem
+              key={roomName}
+              divider
+              onClick={() => {
+                joinRoom(roomName);
+              }}
+            >
+              <ListItemText primary={`방 이름: ${roomName}`} />
+            </ListItem>
+          ) : null;
+        })}
+      </List>
       <CreateRoomButton />
     </>
   );
