@@ -15,6 +15,8 @@ import * as bcrypt from 'bcryptjs';
 import { existsSync, readFileSync, unlinkSync } from 'fs';
 import { extname } from 'path';
 import { UserProfileDto } from './dto/userProfile.dto';
+import { userStatus } from './user-status.enum';
+import { POINT, LEVELUP } from 'src/game/game.constants';
 
 @Injectable()
 export class UserService {
@@ -252,5 +254,28 @@ export class UserService {
             );
         const mimeType = 'image/' + extname(profileImgTarget).substring(1);
         return { image, mimeType };
+    }
+
+    async updateUserStatus(userId: number, status: userStatus) {
+        try {
+            const user = await this.findUserById(userId);
+            user.status = status;
+            await this.userRepository.save(user);
+        } catch (error) {
+            console.log('error >> userService >> updateUserStatus');
+            throw new InternalServerErrorException(
+                '[ERR] userService >> updateUserStatus',
+            );
+        }
+    }
+
+    async updateUserExp(userId: number, score: number) {
+        const user = await this.findUserById(userId);
+        user.exp += POINT * score;
+        if (user.exp >= (user.level + 1) * LEVELUP) {
+            user.exp -= (user.level + 1) * LEVELUP;
+            user.level += 1;
+        }
+        await this.userRepository.save(user);
     }
 }

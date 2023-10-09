@@ -45,6 +45,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { GameRepository } from './game.repository';
 import { DateTime } from 'luxon';
 import { UserService } from 'src/user/user.service';
+import { userStatus } from 'src/user/user-status.enum';
 
 @Injectable()
 export class GameService {
@@ -65,54 +66,78 @@ export class GameService {
 
     //PlayerList에 등록
     async createPlayer(playerSocket: Socket, userId: string) {
-        const player: Player = {
-            socket: playerSocket,
-            userId: +userId,
-            userName: (await this.userService.findUserById(+userId)).username,
-        };
-        this.playerList.set(playerSocket.id, player);
+        try {
+            const player: Player = {
+                socket: playerSocket,
+                userId: +userId,
+                userName: (await this.userService.findUserById(+userId))
+                    .username,
+            };
+            this.playerList.set(playerSocket.id, player);
+        } catch (error) {
+            console.log('error >> gameService >> createPlayer');
+            throw new InternalServerErrorException(
+                '[ERR] gameService >> createPlayer',
+            );
+        }
     }
 
     //disconnect 시 처리
     async handleDisconnect(playerId: string) {
-        const player = this.playerList.get(playerId);
-        if (player === undefined || player.userId === undefined) return;
-        if (player.roomId === undefined) {
-            // in Queue => queue에서 제거
-            if (player.gameType === GameType.MATCH) {
-                if (this.matchQueue[player.gameMode] === player.socket.id)
-                    this.matchQueue[player.gameMode] = undefined;
-                // else throw new BadRequestException('player not in the queue');
+        try {
+            const player = this.playerList.get(playerId);
+            if (player === undefined || player.userId === undefined) return;
+            if (player.roomId === undefined) {
+                // in Queue => queue에서 제거
+                if (player.gameType === GameType.MATCH) {
+                    if (this.matchQueue[player.gameMode] === player.socket.id)
+                        this.matchQueue[player.gameMode] = undefined;
+                } else {
+                    if (this.friendGameList.get(player.userName))
+                        this.friendGameList.delete(player.userName);
+                }
             } else {
-                if (this.friendGameList.get(player.userName))
-                    this.friendGameList.delete(player.userName);
-                // else throw new BadRequestException('friend: bad request');
+                //in room (waiting or game)
+                const gameRoom = this.gameRoomList.get(player.roomId);
+                if (gameRoom.gameStatus === GameStatus.WAIT) {
+                    //in waiting Room => 상대방에게 대기방 나가기 이벤트 발생!
+                    const rival: Player = this.playerList.get(
+                        gameRoom.socket[(player.side + 1) % 2].id,
+                    );
+                    await this.resetPlayer(rival);
+                    rival.socket.emit('kickout');
+                } else if (gameRoom.gameStatus === GameStatus.GAME) {
+                    //게임중 => 게임 강제종료
+                    await this.finishGame(
+                        gameRoom.id,
+                        (player.side + 1) % 2,
+                        GameEndStatus.DISCONNECT,
+                    );
+                } //else throw new BadRequestException('무슨 에러지..?');
+                //gameroom 없애기
+                this.gameRoomList.delete(player.roomId);
             }
-        } else {
-            //in room (waiting or game)
-            const gameRoom = this.gameRoomList.get(player.roomId);
-            if (gameRoom.gameStatus === GameStatus.WAIT) {
-                //in waiting Room => 상대방에게 대기방 나가기 이벤트 발생!
-                const rival: Player = this.playerList.get(
-                    gameRoom.socket[(player.side + 1) % 2].id,
-                );
-                this.resetPlayer(rival);
-                rival.socket.emit('kickout');
-            } else if (gameRoom.gameStatus === GameStatus.GAME) {
-                //게임중 => 게임 강제종료
-                await this.finishGame(
-                    gameRoom.id,
-                    (player.side + 1) % 2,
-                    GameEndStatus.DISCONNECT,
-                );
-            } //else throw new BadRequestException('무슨 에러지..?');
-            //gameroom 없애기
-            this.gameRoomList.delete(player.roomId);
+        } catch (error) {
+            console.log('error >> gameService >> handleDisconnect');
+            throw new InternalServerErrorException(
+                '[ERR] gameService >> handleDisconnect',
+            );
         }
     }
     //Player 삭제 (handleDisconnect용)
-    deletePlayer(playerId: string) {
-        this.playerList.delete(playerId);
+    async deletePlayer(playerId: string) {
+        try {
+            await this.resetPlayer(
+                this.playerList.get(playerId),
+                userStatus.OFFLINE,
+            );
+            this.playerList.delete(playerId);
+        } catch (error) {
+            console.log('error >> gameService >> deletePlayer');
+            throw new InternalServerErrorException(
+                '[ERR] gameService >> deletePlayer',
+            );
+        }
     }
 
     //* Match Game ======================================
@@ -126,26 +151,43 @@ export class GameService {
         } else this.matchQueue[gameMode] = playerId;
     }
 
-    popQueue(playerId: string): void {
-        if (
-            this.matchQueue[this.playerList.get(playerId).gameMode] === playerId
-        ) {
-            this.matchQueue[this.playerList.get(playerId).gameMode] = undefined;
-            this.resetPlayer(this.playerList.get(playerId));
-        } //else throw new BadRequestException('player was not in Queue');
+    async popQueue(playerId: string): Promise<void> {
+        try {
+            if (
+                this.matchQueue[this.playerList.get(playerId).gameMode] ===
+                playerId
+            ) {
+                this.matchQueue[this.playerList.get(playerId).gameMode] =
+                    undefined;
+                await this.resetPlayer(this.playerList.get(playerId));
+            } //else throw new BadRequestException('player was not in Queue');
+        } catch (error) {
+            console.log('error >> gameService >> popQueue');
+            throw new InternalServerErrorException(
+                '[ERR] gameService >> popQueue',
+            );
+        }
     }
 
     //* Friend Game ======================================
     async inviteGame(playerId: string, gameMode: number, friendName: string) {
-        const hostName = this.playerList.get(playerId).userName;
-        const friendId = (await this.userService.getUserByUsername(friendName))
-            .id;
-        this.updatePlayer(playerId, gameMode, GameType.FRIEND, friendId);
-        this.friendGameList.set(hostName, playerId);
-        console.log('inviteGame:', hostName, 'waiting for', friendName);
+        try {
+            const hostName = this.playerList.get(playerId).userName;
+            const friendId = (
+                await this.userService.getUserByUsername(friendName)
+            ).id;
+            this.updatePlayer(playerId, gameMode, GameType.FRIEND, friendId);
+            this.friendGameList.set(hostName, playerId);
+            console.log('inviteGame:', hostName, 'waiting for', friendName);
+        } catch (error) {
+            console.log('error >> gameService >> inviteGame');
+            throw new InternalServerErrorException(
+                '[ERR] gameService >> inviteGame',
+            );
+        }
     }
 
-    agreeInvite(playerId: string, friendName: string) {
+    async agreeInvite(playerId: string, friendName: string) {
         //queue에 초대한 친구 있는지 확인
         const hostId = this.friendGameList.get(friendName);
         if (
@@ -163,18 +205,19 @@ export class GameService {
                 GameType.FRIEND,
                 this.playerList.get(hostId).userId,
             );
-            console.log(
-                'invite connected:',
-                this.playerList.get(playerId).userName,
-                '&',
-                friendName,
-            );
             //방파줌. 즐겜! << ㅋㅋ
             this.makeGameRoom(hostId, playerId, GameType.FRIEND, gameMode);
         } else {
-            // 초대한 친구 없거나 초대한 사람이 내가 아니야!! => kickout 발동!
-            this.resetPlayer(this.playerList.get(playerId));
-            this.playerList.get(playerId).socket.emit('kickout');
+            try {
+                // 초대한 친구 없거나 초대한 사람이 내가 아니야!! => kickout 발동!
+                await this.resetPlayer(this.playerList.get(playerId));
+                this.playerList.get(playerId).socket.emit('kickout');
+            } catch (error) {
+                console.log('error >> gameService >> agreeInvite');
+                throw new InternalServerErrorException(
+                    '[ERR] gameService >> agreeInvite',
+                );
+            }
         }
     }
 
@@ -232,14 +275,6 @@ export class GameService {
             gameInfo['paddlePosZ'] < PADDLE_POS_Z_MIN ||
             gameInfo['paddlePosZ'] > PADDLE_POS_Z_MAX
         ) {
-            // console.log(
-            //     '<<movePaddle>>\nx:',
-            //     gameInfo['paddlePosX'],
-            //     '\ny:',
-            //     gameInfo['paddlePosY'],
-            //     '\nz:',
-            //     gameInfo['paddlePosZ'],
-            // );
             this.finishGame(roomId, (side + 1) % 2, GameEndStatus.CHEATING);
             return;
         }
@@ -305,90 +340,20 @@ export class GameService {
             PADDLE_SPEED !== gameInfo['rightSpeed']
         ) {
             console.log('validCheck: cheating detacted');
-            console.log(
-                'ballSpeed:',
-                gameInfo['ballSpeed'],
-                '\nballPos',
-                gameInfo['ballPosX'],
-                gameInfo['ballPosY'],
-                gameInfo['ballPosZ'],
-                '\ballScale',
-                gameInfo['ballScaleX'],
-                gameInfo['ballScaleY'],
-                gameInfo['ballScaleZ'],
-                '\nleft: pos',
-                gameInfo['leftPosX'],
-                gameInfo['leftPosY'],
-                gameInfo['leftPosZ'],
-                '\nright: pos',
-                gameInfo['rightPosX'],
-                gameInfo['rightPosY'],
-                gameInfo['rightPosZ'],
-                '\nleft: paddleRorate',
-                gameInfo['leftRotateX'],
-                gameInfo['leftRotateY'],
-                gameInfo['leftRotateZ'],
-                '\nright: paddleRorate',
-                gameInfo['rightRotateX'],
-                gameInfo['rightRotateY'],
-                gameInfo['rightRotateZ'],
-                '\nlef: paddleScale',
-                gameInfo['leftScaleX'],
-                gameInfo['leftScaleY'],
-                gameInfo['leftScaleZ'],
-                '\nrigh: paddleScale',
-                gameInfo['rightScaleX'],
-                gameInfo['rightScaleY'],
-                gameInfo['rightScaleZ'],
-                '\npaddleSpeed',
-                gameInfo['leftSpeed'],
-                gameInfo['rightSpeed'],
-            );
-            console.log(
-                BALL_SPEED[player.gameMode] !== gameInfo['ballSpeed'],
-                BALL_POS_X_MIN - BALL_PADDING > gameInfo['ballPosX'],
-                BALL_POS_X_MAX + BALL_PADDING < gameInfo['ballPosX'],
-                !this.equals(gameInfo['ballPosY'], BALL_POS_Y),
-                BALL_POS_Z_MIN - BALL_PADDING > gameInfo['ballPosZ'],
-                BALL_POS_Z_MAX + BALL_PADDING < gameInfo['ballPosZ'],
-                BALL_SCALE_X !== gameInfo['ballScaleX'],
-                BALL_SCALE_Y !== gameInfo['ballScaleY'],
-                BALL_SCALE_Z !== gameInfo['ballScaleZ'],
-                '\nleft',
-                !this.equals(
-                    gameInfo['leftPosX'],
-                    PADDLE_POS_X[PlayerSide.LEFT],
-                ),
-                !this.equals(gameInfo['leftPosY'], PADDLE_POS_Y),
-                PADDLE_POS_Z_MIN > gameInfo['leftPosZ'],
-                PADDLE_POS_Z_MAX < gameInfo['leftPosZ'],
-                PADDLE_ROTATE_X !== gameInfo['leftRotateX'],
-                PADDLE_ROTATE_Y !== gameInfo['leftRotateY'],
-                PADDLE_ROTATE_Z !== gameInfo['leftRotateZ'],
-                !this.equals(gameInfo['leftScaleX'], PADDLE_SCALE_X),
-                !this.equals(gameInfo['leftScaleY'], PADDLE_SCALE_Y),
-                PADDLE_SCALE_Z !== gameInfo['leftScaleZ'],
-                PADDLE_SPEED !== gameInfo['leftSpeed'],
-                '\nright',
-                !this.equals(
-                    gameInfo['rightPosX'],
-                    PADDLE_POS_X[PlayerSide.RIGHT],
-                ),
-                !this.equals(gameInfo['rightPosY'], PADDLE_POS_Y),
-                PADDLE_POS_Z_MIN > gameInfo['rightPosZ'],
-                PADDLE_POS_Z_MAX < gameInfo['rightPosZ'],
-                PADDLE_ROTATE_X !== gameInfo['rightRotateX'],
-                PADDLE_ROTATE_Y !== gameInfo['rightRotateY'],
-                PADDLE_ROTATE_Z !== gameInfo['rightRotateZ'],
-                !this.equals(gameInfo['rightScaleX'], PADDLE_SCALE_X),
-                !this.equals(gameInfo['rightScaleY'], PADDLE_SCALE_Y),
-                PADDLE_SCALE_Z !== gameInfo['rightScaleZ'],
-                PADDLE_SPEED !== gameInfo['rightSpeed'],
-            );
-
             const roomId = player.roomId;
             const rivalSide = (player.side + 1) % 2;
-            await this.finishGame(roomId, rivalSide, GameEndStatus.CHEATING);
+            try {
+                await this.finishGame(
+                    roomId,
+                    rivalSide,
+                    GameEndStatus.CHEATING,
+                );
+            } catch (error) {
+                console.log('error >> gameService >> validCheck');
+                throw new InternalServerErrorException(
+                    '[ERR] gameService >> validCheck',
+                );
+            }
         }
     }
 
@@ -397,59 +362,57 @@ export class GameService {
         if (roomId === undefined) return;
         const rivalSocket =
             this.gameRoomList.get(roomId).socket[PlayerSide.RIGHT];
-        //validCheck
-        // if (this.isBallOkay(roomId, gameInfo) === false) {
-        //     console.log('ballHit: cheating detacted');
-        //     await this.finishGame(
-        //         roomId,
-        //         PlayerSide.RIGHT,
-        //         GameEndStatus.CHEATING,
-        //     );
-        //     return;
-        // }
         //score check
-        if (
-            gameInfo['ballPosX'] <= BALL_POS_X_MIN + SCORE_PADDING ||
-            gameInfo['ballPosX'] >= BALL_POS_X_MAX - SCORE_PADDING
-        ) {
-            let scoreSide = PlayerSide.RIGHT;
-            if (gameInfo['ballPosX'] >= BALL_POS_X_MAX - SCORE_PADDING)
-                scoreSide = PlayerSide.LEFT;
-            this.gameRoomList.get(roomId).score[scoreSide] += 1;
-            if (this.gameRoomList.get(roomId).score[scoreSide] === MAXSCORE) {
-                //game finish (max score reached)
-                await this.finishGame(roomId, scoreSide, GameEndStatus.NORMAL);
-            } else this.continueGame(roomId);
-        } else {
-            //받아침! => ballInfo update & rival에게 전달
-            this.updateBall(
-                roomId,
-                gameInfo['ballDirX'],
-                gameInfo['ballDirZ'],
-                gameInfo['ballPosX'],
-                gameInfo['ballPosZ'],
+        try {
+            if (
+                gameInfo['ballPosX'] <= BALL_POS_X_MIN + SCORE_PADDING ||
+                gameInfo['ballPosX'] >= BALL_POS_X_MAX - SCORE_PADDING
+            ) {
+                let scoreSide = PlayerSide.RIGHT;
+                if (gameInfo['ballPosX'] >= BALL_POS_X_MAX - SCORE_PADDING)
+                    scoreSide = PlayerSide.LEFT;
+                this.gameRoomList.get(roomId).score[scoreSide] += 1;
+                if (
+                    this.gameRoomList.get(roomId).score[scoreSide] === MAXSCORE
+                ) {
+                    //game finish (max score reached)
+                    await this.finishGame(
+                        roomId,
+                        scoreSide,
+                        GameEndStatus.NORMAL,
+                    );
+                } else this.continueGame(roomId);
+            } else {
+                //받아침! => ballInfo update & rival에게 전달
+                this.updateBall(
+                    roomId,
+                    gameInfo['ballDirX'],
+                    gameInfo['ballDirZ'],
+                    gameInfo['ballPosX'],
+                    gameInfo['ballPosZ'],
+                );
+                rivalSocket.emit('ballHit', gameInfo);
+            }
+        } catch (error) {
+            console.log('error >> gameService >> ballHit');
+            throw new InternalServerErrorException(
+                '[ERR] gameService >> ballHit',
             );
-            // console.log(
-            //     'ballDirX',
-            //     gameInfo['ballPosX'],
-            //     'ballDirY',
-            //     gameInfo['ballPosY'],
-            //     'ballDirZ',
-            //     gameInfo['ballPosZ'],
-            //     '\nballPosX',
-            //     this.gameRoomList.get(roomId).posX,
-            //     'ballPosZ',
-            //     this.gameRoomList.get(roomId).posZ,
-            // );
-            rivalSocket.emit('ballHit', gameInfo);
         }
     }
 
     async outGame(playerId: string) {
-        const roomId = this.playerList.get(playerId).roomId;
-        if (roomId === undefined) return;
-        const rivalSide = (this.playerList.get(playerId).side + 1) % 2;
-        await this.finishGame(roomId, rivalSide, GameEndStatus.OUTGAME);
+        try {
+            const roomId = this.playerList.get(playerId).roomId;
+            if (roomId === undefined) return;
+            const rivalSide = (this.playerList.get(playerId).side + 1) % 2;
+            await this.finishGame(roomId, rivalSide, GameEndStatus.OUTGAME);
+        } catch (error) {
+            console.log('error >> gameService >> outGame');
+            throw new InternalServerErrorException(
+                '[ERR] gameService >> outGame',
+            );
+        }
     }
 
     //* other functions ======================================
@@ -495,20 +458,48 @@ export class GameService {
         player1Socket.emit('gameOver', gameResult);
         player2Socket.emit('gameOver', gameResult);
         console.log('sent gameOver:', gameResult);
-        //DB에 저장
-        await this.createGameData(roomId);
-        //gameRoom 처리
-        if (
-            this.gameRoomList.get(roomId).gameType === GameType.FRIEND &&
-            endGameStatus === GameEndStatus.NORMAL
-        ) {
-            //친선경기 => reset gameRoom for restart
-            this.resetGameRoom(roomId);
-        } else {
-            //그 외 => player reset && delete room
-            this.resetPlayer(this.playerList.get(player1Socket.id));
-            this.resetPlayer(this.playerList.get(player2Socket.id));
-            if (this.gameRoomList.get(roomId)) this.gameRoomList.delete(roomId);
+        try {
+            //DB에 저장
+            await this.createGameData(roomId);
+            //gameRoom 처리
+            if (
+                this.gameRoomList.get(roomId).gameType === GameType.FRIEND &&
+                endGameStatus === GameEndStatus.NORMAL
+            ) {
+                //친선경기 => reset gameRoom for restart
+                this.resetGameRoom(roomId);
+            } else {
+                //그 외 => player reset && delete room
+                if (endGameStatus === GameEndStatus.DISCONNECT) {
+                    await this.resetPlayer(
+                        this.playerList.get(
+                            this.gameRoomList.get(roomId).socket[winnerSide].id,
+                        ),
+                    );
+                    await this.resetPlayer(
+                        this.playerList.get(
+                            this.gameRoomList.get(roomId).socket[
+                                (winnerSide + 1) % 2
+                            ].id,
+                        ),
+                        userStatus.OFFLINE,
+                    );
+                } else {
+                    await this.resetPlayer(
+                        this.playerList.get(player1Socket.id),
+                    );
+                    await this.resetPlayer(
+                        this.playerList.get(player2Socket.id),
+                    );
+                }
+                if (this.gameRoomList.get(roomId))
+                    this.gameRoomList.delete(roomId);
+            }
+        } catch (error) {
+            console.log('error >> gameService >> finishGame');
+            throw new InternalServerErrorException(
+                '[ERR] gameService >> finishGame',
+            );
         }
     }
 
@@ -555,13 +546,23 @@ export class GameService {
                 endTime: room.endTime,
                 endGameStatus: room.endGameStatus,
             } as Game);
-            //! un-comment below
-            //await this.gameRepository.save(newGameData);
+            //! check for the data
+            await this.gameRepository.save(newGameData);
+
+            //user table에 exp, level 업데이트
+            await this.userService.updateUserExp(
+                winnerUserId,
+                newGameData.winnerScore,
+            );
+            if (room.endGameStatus === GameEndStatus.NORMAL)
+                await this.userService.updateUserExp(
+                    loserUserId,
+                    newGameData.loserScore,
+                );
         } catch (error) {
-            //TESTCODE
-            console.log('Error: game =>', error);
+            console.log('error >> gameService >> createGameData');
             throw new InternalServerErrorException(
-                'error while save game data',
+                '[ERR] gameService >> createGameData',
             );
         }
     }
@@ -617,6 +618,16 @@ export class GameService {
         this.playerList.get(playerId).roomId = roomId;
         this.playerList.get(playerId).side = side;
         this.playerList.get(playerId).socket.emit('handShake', { side: side });
+        try {
+            this.userService.updateUserStatus(
+                this.playerList.get(playerId).userId,
+                userStatus.GAME,
+            );
+        } catch (error) {
+            throw new InternalServerErrorException(
+                '[ERR] gameService >> handShake',
+            );
+        }
     }
 
     //game 시작 시 => gameRoom 업데이트
@@ -636,7 +647,8 @@ export class GameService {
         friendId?: number | undefined,
     ) {
         const player: Player = this.playerList.get(playerId);
-        if (player === undefined) throw new BadRequestException('wrong player');
+        if (player === undefined)
+            throw new BadRequestException('player undefined');
         if (player.roomId)
             throw new BadRequestException('player already in gameRoom');
         if (friendId) player.friendId = friendId;
@@ -682,56 +694,21 @@ export class GameService {
         this.gameRoomList.get(roomId).posX = posX !== undefined ? posX : 0;
         this.gameRoomList.get(roomId).posZ = posZ !== undefined ? posZ : 0;
     }
-    //ballHit valid check
-    // isBallOkay(roomId: number, gameInfo: JSON): boolean {
-    //     const diffPosXZ =
-    //         (gameInfo['ballPosX'] - this.gameRoomList.get(roomId).posX) /
-    //         (gameInfo['ballPosZ'] - this.gameRoomList.get(roomId).posZ);
-
-    //     const dirXZ =
-    //         this.gameRoomList.get(roomId).dirX /
-    //         this.gameRoomList.get(roomId).dirZ;
-
-    //     if (
-    //         diffPosXZ - dirXZ < -2 ||
-    //         2 < diffPosXZ - dirXZ ||
-    //         gameInfo['ballPosX'] < BALL_POS_X_MIN ||
-    //         gameInfo['ballPosX'] > BALL_POS_X_MAX ||
-    //         !this.equals(gameInfo['ballPosY'], BALL_POS_Y) ||
-    //         gameInfo['ballPosZ'] < BALL_POS_Z_MIN ||
-    //         gameInfo['ballPosZ'] > BALL_POS_Z_MAX
-    //     ) {
-    //         // console.log(
-    //         //     'ballX:',
-    //         //     gameInfo['ballPosX'],
-    //         //     this.gameRoomList.get(roomId).posX,
-    //         //     gameInfo['ballPosX'] - this.gameRoomList.get(roomId).posX,
-    //         //     '\nballZ:',
-    //         //     gameInfo['ballPosZ'],
-    //         //     this.gameRoomList.get(roomId).posZ,
-    //         //     gameInfo['ballPosZ'] - this.gameRoomList.get(roomId).posZ,
-    //         //     '\ndiffPosXZ:',
-    //         //     diffPosXZ,
-    //         //     '\ndirX, dirZ',
-    //         //     this.gameRoomList.get(roomId).dirX,
-    //         //     this.gameRoomList.get(roomId).dirZ,
-    //         //     '\ndirXZ:',
-    //         //     dirXZ,
-    //         //     '\ndiffPosXZ - dirXZ:',
-    //         //     diffPosXZ - dirXZ,
-    //         // );
-    //         return false;
-    //     }
-    //     return true;
-    // }
 
     //게임 중단/종료 시 플레이어 리셋
-    resetPlayer(player: Player) {
+    async resetPlayer(player: Player, status?: userStatus) {
         player.gameType = undefined;
         player.gameMode = undefined;
         player.side = undefined;
         player.roomId = undefined;
         player.friendId = undefined;
+        if (status)
+            await this.userService.updateUserStatus(player.userId, status);
+        else
+            await this.userService.updateUserStatus(
+                player.userId,
+                userStatus.ONLINE,
+            );
     }
     //숫자 보정
     equals(a: number, b: number, tolerance: number = EPSILON): boolean {

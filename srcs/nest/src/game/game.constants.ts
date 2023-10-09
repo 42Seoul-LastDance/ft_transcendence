@@ -1,3 +1,7 @@
+//* user table: exp, level
+export const POINT: number = 100;
+export const LEVELUP: number = 500;
+
 //scorePoint()
 export const MAXSCORE: number = 5;
 
