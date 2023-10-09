@@ -6,12 +6,12 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
 import { useDispatch, useSelector } from 'react-redux';
-import { useChatSocket } from '../context/chatSocketContext';
-import { ChatRoomDto, RoomInfoDto, RoomStatus } from '../interface';
+import { useChatSocket } from '../../context/chatSocketContext';
+import { ChatRoomDto, RoomInfoDto, RoomStatus } from '../../interface';
 import { useRouter } from 'next/navigation';
-import { setIsJoined } from '../redux/roomSlice';
-import { RootState } from '../redux/store';
-import { setChatRoom } from '../redux/userSlice';
+import { setIsJoined } from '../../redux/roomSlice';
+import { RootState } from '../../redux/store';
+import { setChatRoom } from '../../redux/userSlice';
 
 export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const chatSocket = useChatSocket();
@@ -48,6 +48,10 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   };
 
   const addNewRoom = () => {
+    if (requirePassword && password.trim() === '') {
+      alert('비밀번호를 입력해주세요.');
+      return;
+    }
     const newRoom: RoomInfoDto = {
       roomName: roomname,
       password: password ? password : null,

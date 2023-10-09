@@ -6,7 +6,7 @@ import Divider from '@mui/material/Divider';
 import ChatMenu from './chatMenu';
 import { Menu } from '@mui/material';
 import { useSelector } from 'react-redux';
-import { RootState } from '../redux/store';
+import { RootState } from '../../redux/store';
 import CommonListItem from './CommonListItem';
 
 const ChatSetting: React.FC = () => {

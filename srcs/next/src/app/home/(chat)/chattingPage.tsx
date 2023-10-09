@@ -17,10 +17,10 @@ import {
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings'; // 설정 아이콘 추가
 import ChatSetting from './chatSetting';
-import { RootState } from '../redux/store';
+import { RootState } from '../../redux/store';
 import { useSelector } from 'react-redux';
-import { useChatSocket } from '../context/chatSocketContext';
-import { ChatMessage, receiveMessage, SendMessageDto } from '../interface';
+import { useChatSocket } from '../../context/chatSocketContext';
+import { ChatMessage, receiveMessage, SendMessageDto } from '../../interface';
 
 // ㅅㅐ로고침하면 밖으로 나가게 해해야야함함
 

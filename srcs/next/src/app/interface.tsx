@@ -51,7 +51,7 @@ export interface receiveMessage {
   canReceive: boolean;
 }
 
-export interface JoinRoomDto {
+export interface EmitResult {
   result: boolean;
   reason: string | null;
 }

@@ -1,14 +1,12 @@
 'use client';
 
-import * as React from 'react';
-import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal';
-import Divider from '@mui/material/Divider';
 import Box from '@mui/material/Box';
 import Fab from '@mui/material/Fab';
 import AddIcon from '@mui/icons-material/Add';
 import CreateRoomForm from './createRoomForm';
+import { useState } from 'react';
 
 const style: React.CSSProperties = {
   position: 'absolute',
@@ -23,7 +21,7 @@ const style: React.CSSProperties = {
 };
 
 const CreateRoomButton: React.FC = () => {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 

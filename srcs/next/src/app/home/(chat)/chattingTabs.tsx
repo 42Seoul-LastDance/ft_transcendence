@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Tab, Tabs } from '@mui/material';
 import ChatRoomList from './chatRoomList';
-import FriendList from './(dm)/friendList';
+import FriendList from '../(dm)/friendList';
 
 const ChattingTabs = () => {
   const [value, setValue] = useState<number>(0);

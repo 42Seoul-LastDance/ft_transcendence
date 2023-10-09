@@ -4,8 +4,8 @@ import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import Box from '@mui/material/Box';
 import { useSelector } from 'react-redux';
-import { RootState } from '../redux/store';
-import { UserPermission } from '../interface';
+import { RootState } from '../../redux/store';
+import { UserPermission } from '../../interface';
 
 const ChatMenu = () => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
@@ -15,13 +15,12 @@ const ChatMenu = () => {
     <Button key="game">Game</Button>,
     chatRoom?.userPermission === UserPermission.OPERATOR ? (
       <>
-      <Button key="kick">Kick</Button>,
-      <Button key="ban">Ban</Button>,
+        <Button key="kick">Kick</Button>,<Button key="ban">Ban</Button>,
       </>
     ) : null,
     chatRoom?.userPermission === UserPermission.OWNER ? (
       <>
-      <Button key="makeOperator">MakeOperator</Button>,
+        <Button key="makeOperator">MakeOperator</Button>,
       </>
     ) : null,
   ];
