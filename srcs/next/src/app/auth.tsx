@@ -1,27 +1,24 @@
-// import { TokenType } from './interface';
-// import { useRouter } from 'next/navigation';
-// import { getCookie } from './Cookie';
-// import axios from 'axios';
-// import { setToken } from './redux/userSlice';
-// import { useDispatch } from 'react-redux';
-// import { BACK_URL } from './globals';
+import { getCookie, setCookie } from './Cookie';
+import axios, { AxiosResponse } from 'axios';
+import { BACK_URL } from './globals';
 
-// const tryAuth = async () => {
-//   // refresh 토큰으로 access 토큰 재발급 로직
-//   const refreshToken = getCookie('refresh_token');
-//   if (!refreshToken) router.push('/');
+export const reGenerateToken = async (router: any): Promise<AxiosResponse> => {
+  console.log('try auth');
+  const refreshToken = getCookie('refresh_token');
+  if (!refreshToken) {
+    console.log('refresh token is not exist');
+    router.push('/');
+    return new Promise(() => {});
+  }
+  const response = await axios.get(`${BACK_URL}/auth/regenerateToken`, {
+    headers: { Authorization: `Bearer ${refreshToken}` },
+  });
 
-//   const response = await axios.get(`${BACK_URL}/auth/regenerateToken`, {
-//     headers: {
-//       Authorization: `Bearer ${refreshToken}`,
-//     },
-//   });
+  if (response.status === 200) {
+    const xAccessToken = response.data['token'];
+    setCookie('access_token', xAccessToken);
+  }
+  return response;
+};
 
-//   if (response.status == 200) {
-//     const accessToken = getCookie('access_token');
-//     dispatch(setToken(accessToken));
-//   } else if (response.status == 401) router.push('/');
-//   else console.log('refresh token: ', response.status);
-// };
-
-// export default tryAuth;
+export default reGenerateToken;

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Tab, Tabs } from '@mui/material';
 import ChatRoomList from './chatRoomList';
+import FriendList from './(dm)/friendList';
 
 const ChattingTabs = () => {
   const [value, setValue] = useState<number>(0);
@@ -16,17 +17,12 @@ const ChattingTabs = () => {
       <Tabs value={value} onChange={handleChange}>
         <Tab label="Chatting" />
         <Tab label="DM" />
-        <Tab label="Setting" />
+        <Tab label="Friends" />
       </Tabs>
       <div>
         {value === 0 && <ChatRoomList />}
-        {value === 1 && (
-          <div>
-            {/* 요기에다 DM 구현 고고 */}
-            Tab 2 Content
-          </div>
-        )}
-        {value === 2 && <div>Tab 3 Content</div>}
+        {value === 1 && <FriendList />}
+        {value === 2 && <div>친구요청 목록, ㅊㅏ다ㄴ 목목록록</div>}
       </div>
     </div>
   );

@@ -1,5 +1,8 @@
 import { Socket, io } from 'socket.io-client';
 import { BACK_URL } from '../globals';
+import { reGenerateToken } from '../auth';
+import { getCookie, setCookie } from '../Cookie';
+import { get } from 'http';
 
 // socket io event hook
 export const IoEventOnce = (
@@ -38,4 +41,26 @@ export const createSocket = (
       token: token,
     },
   });
+};
+
+export const handleTryAuth = async (socket: Socket, router: any) => {
+  const response = await reGenerateToken(router);
+
+  switch (response.status) {
+    case 200:
+      const xAccessToken = getCookie('access_token');
+      if (socket?.connected) {
+        socket?.disconnect();
+        socket.auth = {
+          token: xAccessToken,
+        };
+        socket.connect();
+      }
+      break;
+    case 401:
+      router.push('/');
+      break;
+    default:
+      console.log('refresh token: ', response.status);
+  }
 };

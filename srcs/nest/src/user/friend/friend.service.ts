@@ -18,11 +18,13 @@ export class FriendService {
         // { {friendName, friendStatus}, {,}, … } 형식 맞는지 확인
         const friendList: Array<{ username: string; status: UserStatus }> = [];
 
+        console.log('userid', userId);
         let foundFriend: Friend[];
 
         try {
             foundFriend = await this.friendRepository.find({
-                where: [{ requestUserId: userId }, { targetUserId: userId }],
+                where: [{ requestUserId: userId }],
+                // { targetUserId: userId }],
             });
 
             foundFriend.forEach(async (friend) => {

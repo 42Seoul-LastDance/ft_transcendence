@@ -55,15 +55,15 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
       status: isPrivate ? RoomStatus.PRIVATE : RoomStatus.PUBLIC,
     };
 
-    if (!chatSocket.hasListeners('createChatRoom')) {
-      chatSocket.on('createChatRoom', (data: ChatRoomDto) => {
+    if (!chatSocket?.hasListeners('createChatRoom')) {
+      chatSocket?.on('createChatRoom', (data: ChatRoomDto) => {
         console.log('create Chat Room : ', data);
         dispatch(setChatRoom(data));
       });
     }
 
     console.log('만든 방', newRoom);
-    chatSocket.emit('createChatRoom', newRoom);
+    chatSocket?.emit('createChatRoom', newRoom);
     dispatch(setIsJoined(true));
     onClose();
   };

@@ -12,6 +12,7 @@ import { RootState } from '../redux/store';
 import { useDispatch } from 'react-redux';
 import { setIsJoined } from '../redux/roomSlice';
 import { setChatRoom } from '../redux/userSlice';
+import { IoEventListner } from '../context/socket';
 
 const style = {
   width: '100%',
@@ -29,8 +30,8 @@ const ChatRoomList: React.FC = () => {
   );
 
   const joinRoom = (roomName: string) => {
-    if (!chatSocket.hasListeners('joinPublicChatRoom')) {
-      chatSocket.on('joinPublicChatRoom', (data: JoinRoomDto) => {
+    if (!chatSocket?.hasListeners('joinPublicChatRoom')) {
+      chatSocket?.on('joinPublicChatRoom', (data: JoinRoomDto) => {
         if (data.result === true) {
           dispatch(setIsJoined(true));
         } else {
@@ -42,23 +43,39 @@ const ChatRoomList: React.FC = () => {
       });
     }
 
-    if (!chatSocket.hasListeners('getChatRoomInfo')) {
-      chatSocket.on('getChatRoomInfo', (data: ChatRoomDto) => {
-        console.log('getChatRoomInfo data ', data);
-        dispatch(setChatRoom(data));
-        let password: string | null = null;
-        if (data.requirePassword === true)
-          password = prompt('비밀번호를 입력하세요');
+    const handleGetChatRoom = (data: ChatRoomDto) => {
+      console.log('getChatRoomInfo data ', data);
+      dispatch(setChatRoom(data));
+      let password: string | null = null;
+      if (data.requirePassword === true)
+        password = prompt('비밀번호를 입력하세요');
 
-        dispatch(setIsJoined(false));
-        chatSocket.emit('joinPublicChatRoom', {
-          roomName: roomName,
-          password: password,
-        });
+      dispatch(setIsJoined(false));
+      chatSocket?.emit('joinPublicChatRoom', {
+        roomName: roomName,
+        password: password,
       });
-    }
+    };
 
-    chatSocket.emit('getChatRoomInfo', {
+    IoEventListner(chatSocket!, 'getChatRoomInfo', handleGetChatRoom);
+
+    // if (!chatSocket.hasListeners('getChatRoomInfo')) {
+    //   chatSocket.on('getChatRoomInfo', (data: ChatRoomDto) => {
+    //     console.log('getChatRoomInfo data ', data);
+    //     dispatch(setChatRoom(data));
+    //     let password: string | null = null;
+    //     if (data.requirePassword === true)
+    //       password = prompt('비밀번호를 입력하세요');
+
+    //     dispatch(setIsJoined(false));
+    //     chatSocket.emit('joinPublicChatRoom', {
+    //       roomName: roomName,
+    //       password: password,
+    //     });
+    //   });
+    // }
+
+    chatSocket?.emit('getChatRoomInfo', {
       roomName: roomName,
       status: RoomStatus.PUBLIC,
     });

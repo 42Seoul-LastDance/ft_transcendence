@@ -33,6 +33,7 @@ const ChattingContent = () => {
   const isMyName = (userName: string) => userName === chatRoom?.userName;
 
   const blockCheck = (userName: string) => {
+    if (!chatSocket) throw Error('retry');
     return new Promise<boolean>((resolve, reject) => {
       if (!chatSocket.hasListeners('receiveMessage')) {
         chatSocket.once('receiveMessage', (data: receiveMessage) => {
@@ -46,7 +47,7 @@ const ChattingContent = () => {
     });
   };
 
-  chatSocket.once('sendMessage', (data: ChatMessage) => {
+  chatSocket?.once('sendMessage', (data: ChatMessage) => {
     // if (isMyName(data.userName)) setChatMessages([...chatMessages, data]);
     // else if (await blockCheck(data.userName))
     //   setChatMessages([...chatMessages, data]);
