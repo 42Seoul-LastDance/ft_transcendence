@@ -9,9 +9,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  AppBar,
-  Box,
-  Toolbar,
   IconButton,
   Drawer,
 } from '@mui/material';
@@ -21,8 +18,6 @@ import { RootState } from '../../redux/store';
 import { useSelector } from 'react-redux';
 import { useChatSocket } from '../../context/chatSocketContext';
 import { ChatMessage, receiveMessage, SendMessageDto } from '../../interface';
-
-// ㅅㅐ로고침하면 밖으로 나가게 해해야야함함
 
 const ChattingContent = () => {
   const [message, setMessage] = useState('');
@@ -59,12 +54,10 @@ const ChattingContent = () => {
   const handleSendMessage = () => {
     if (!message) return;
     if (!chatRoom) throw new Error('chatRoom is null');
-
     const newMsg: ChatMessage = {
       userName: chatRoom.userName,
       content: message,
     };
-
     setChatMessages([...chatMessages, newMsg]);
     const newSend: SendMessageDto = {
       roomName: chatRoom.roomName,
@@ -72,9 +65,7 @@ const ChattingContent = () => {
       userName: chatRoom.userName,
       content: message,
     };
-    // console.log('client send: ', chatSocket?.auth.token);
-
-    // chatSocket.emit('sendMessage', newSend);
+    chatSocket?.emit('sendMessage', newSend);
     setMessage('');
   };
 

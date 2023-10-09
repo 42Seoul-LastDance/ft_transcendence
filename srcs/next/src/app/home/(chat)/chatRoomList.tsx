@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
@@ -12,7 +11,7 @@ import { RootState } from '../../redux/store';
 import { useDispatch } from 'react-redux';
 import { setIsJoined } from '../../redux/roomSlice';
 import { setChatRoom } from '../../redux/userSlice';
-import { IoEventData, IoEventListner } from '../../context/socket';
+import { IoEventListner } from '../../context/socket';
 
 const style = {
   width: '100%',
@@ -43,12 +42,11 @@ const ChatRoomList: React.FC = () => {
       let password: string | null = null;
       if (data.requirePassword === true) {
         password = prompt('비밀번호를 입력하세요');
+        if (!password) return;
       }
-      if (password) {
-        chatSocket?.emit('joinPublicChatRoom', { roomName, password }, () => {
-          dispatch(setChatRoom(data));
-        });
-      }
+      chatSocket?.emit('joinPublicChatRoom', { roomName, password }, () => {
+        dispatch(setChatRoom(data));
+      });
     };
 
     IoEventListner(chatSocket!, 'getChatRoomInfo', handleGetChatRoom);
