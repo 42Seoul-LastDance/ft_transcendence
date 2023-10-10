@@ -1,6 +1,6 @@
 'use client';
 
-import { Provider, useSelector } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import store, { RootState } from '../redux/store';
 import ChattingTabs from './(chat)/chattingTabs';
 import ChattingPage from './(chat)/chattingPage';
@@ -12,22 +12,29 @@ import SuperSocketProvider, {
 } from '../context/superSocketContext';
 import Link from 'next/link';
 import UserProfile from './(profile)/userProfile';
-import { use, useEffect } from 'react';
-import { ChattingPageProps, JoinStatus } from '../interface';
+import { useEffect } from 'react';
+import { JoinStatus } from '../interface';
+import { setIsMatched } from '../redux/matchSlice';
 
 const HomeContent = () => {
   const joinStatus = useSelector((state: RootState) => state.user.join);
   const myName = useSelector((state: RootState) => state.user.userName);
+  const dispatch = useDispatch();
   const chatSocket = useChatSocket();
   const superSocket = useSuperSocket();
-  const nullMessages: string[] = [];
+
+  useEffect(() => {
+    dispatch(setIsMatched({ isMatched: false }));
+  }, []);
 
   return (
     <>
-      {/* <Link href="../profile">
-        <button>My Profile</button>
-      </Link> */}
       <UserProfile targetName={myName!} />
+      <br />
+
+      <Link href="/game">
+        <button>Play Game!</button>
+      </Link>
       <br />
       <br />
 

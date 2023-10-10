@@ -20,7 +20,7 @@ const roomSlice = createSlice({
     },
 
     setChatMessages: (state, action: PayloadAction<ChatMessage[]>) => {
-      state.chatMessages = action.payload;
+      state.chatMessages.push(action.payload[0]);
     },
   },
 });

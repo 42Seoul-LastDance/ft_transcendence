@@ -76,6 +76,7 @@ export class GameService {
             if (player === undefined || player.userId === undefined) return;
             if (player.roomId === undefined) {
                 // in Queue => queue에서 제거
+                console.log('GAME>>>> discon >>> remove from queue');
                 if (player.gameType === GameType.MATCH) {
                     if (this.matchQueue[player.gameMode] === player.socket.id)
                         this.matchQueue[player.gameMode] = undefined;
@@ -86,11 +87,13 @@ export class GameService {
                 //in room (waiting or game)
                 const gameRoom = this.gameRoomList.get(player.roomId);
                 if (gameRoom.gameStatus === GameStatus.WAIT) {
+                    console.log('GAME>>>> discon >>> kickout');
                     //in waiting Room => 상대방에게 대기방 나가기 이벤트 발생!
                     const rival: Player = this.playerList.get(gameRoom.socket[(player.side + 1) % 2].id);
                     await this.resetPlayer(rival);
                     rival.socket.emit('kickout');
                 } else if (gameRoom.gameStatus === GameStatus.GAME) {
+                    console.log('GAME>>>> discon >>> finishGame');
                     //게임중 => 게임 강제종료
                     await this.finishGame(gameRoom.id, (player.side + 1) % 2, GameEndStatus.DISCONNECT);
                 } //else throw new BadRequestException('무슨 에러지..?');
@@ -117,7 +120,7 @@ export class GameService {
     //큐 등록
     pushQueue(playerId: string, gameMode: number) {
         this.updatePlayer(playerId, gameMode, GameType.MATCH);
-        if (this.matchQueue[gameMode]) {
+        if (this.matchQueue[gameMode] !== undefined) {
             const playerQ = this.matchQueue[gameMode];
             this.matchQueue[gameMode] = undefined;
             this.makeGameRoom(playerQ, playerId, GameType.MATCH, gameMode);
@@ -185,6 +188,7 @@ export class GameService {
     //* Game Room ======================================
     getReady(playerId: string): void {
         const roomId = this.playerList.get(playerId).roomId;
+        if (roomId === undefined) return;
         const side = this.playerList.get(playerId).side;
         const rivalSide = (side + 1) % 2;
         this.gameRoomList.get(roomId).ready[side] = true;

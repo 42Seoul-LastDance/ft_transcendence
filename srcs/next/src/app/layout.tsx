@@ -1,6 +1,5 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { io } from 'socket.io-client';
 
 export const metadata: Metadata = {
   title: 'Transcendence',

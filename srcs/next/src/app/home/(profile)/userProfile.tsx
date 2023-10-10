@@ -138,7 +138,7 @@ const UserProfile = (props: UserProfileProps) => {
             <br />
           </Typography>
           {myName !== props.targetName &&
-            (friendStatus !== FriendStatus.FRIEND ? (
+            (friendStatus === FriendStatus.FRIEND ? (
               <button onClick={removeFriend}> 친구 해제 </button>
             ) : (
               <button

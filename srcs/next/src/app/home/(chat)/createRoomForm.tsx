@@ -13,8 +13,6 @@ import {
   RoomInfoDto,
   RoomStatus,
 } from '../../interface';
-import { useRouter } from 'next/navigation';
-import { RootState } from '../../redux/store';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { IoEventListener } from '@/app/context/socket';
 

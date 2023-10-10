@@ -7,11 +7,9 @@ import FriendList from '../(dm)/friendList';
 import { useDispatch } from 'react-redux';
 
 const ChattingTabs = () => {
-  const dispatch = useDispatch();
-  const value = useSelector((state: RootState) => state.user.chattingTabValue);
-
+  const [value, setValue] = useState<number>(0);
   const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
-    dispatch(setValue(newValue));
+    setValue(newValue);
   };
 
   return (

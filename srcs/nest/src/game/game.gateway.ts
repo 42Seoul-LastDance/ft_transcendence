@@ -71,7 +71,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage('popQueue')
     popQueue(client: Socket) {
         //TESTCODE
-        console.log('popQueue:', client.id);
+        // console.log('popQueue:', client.id);
         this.gameService.popQueue(client.id);
     }
 
@@ -95,7 +95,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage('getReady')
     getReady(client: Socket) {
         //TESTCODE
-        console.log('getReady:', client.id);
+        // console.log('getReady:', client.id);
         this.gameService.getReady(client.id);
     }
 
