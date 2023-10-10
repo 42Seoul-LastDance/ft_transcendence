@@ -14,6 +14,7 @@ import { DirectMessage } from './socket/directMessage/directMessage.entity';
 import { FriendModule } from './user/friend/friend.module';
 import { Friend } from './user/friend/friend.entity';
 import { SocketUsersModule } from './socket/socketUsersService/socketUsers.module';
+import { Game } from './game/game.entity';
 
 @Module({
     imports: [
@@ -24,7 +25,7 @@ import { SocketUsersModule } from './socket/socketUsersService/socketUsers.modul
             username: process.env.POSTGRES_USER_ID,
             password: process.env.POSTGRES_USER_PASSWORD,
             database: process.env.DB_NAME,
-            entities: [User, BlockedUsers, DirectMessage, Friend],
+            entities: [User, BlockedUsers, DirectMessage, Friend, Game],
             synchronize: true,
         }),
         UserModule,

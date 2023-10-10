@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Button from '../single/Button';
+// import React, { useState, useEffect } from 'react';
+// import axios from 'axios';
+// import Button from '../single/Button';
 
-const Login: React.FC = () => {
-  const [token, setToken] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+// const Login: React.FC = () => {
+//   const [token, setToken] = useState<string | null>(null);
+//   const [error, setError] = useState<string | null>(null);
 
-  // 페이지 로드 시 토큰 확인
-  useEffect(() => {
-    const savedToken = localStorage.getItem('jwtToken');
-    if (savedToken) {
-      setToken(savedToken);
-    }
-  }, []);
+//   // 페이지 로드 시 토큰 확인
+//   useEffect(() => {
+//     const savedToken = localStorage.getItem('jwtToken');
+//     if (savedToken) {
+//       setToken(savedToken);
+//     }
+//   }, []);
 
   // JWT 토큰으로 서버 요청 보내기
   const sendRequestWithToken = async () => {
@@ -38,21 +38,21 @@ const Login: React.FC = () => {
         refreshToken: '리프레시 토큰',
       });
 
-      // 새로운 JWT 토큰 저장
-      const newToken = response.data.accessToken;
-      setToken(newToken);
+//       // 새로운 JWT 토큰 저장
+//       const newToken = response.data.accessToken;
+//       setToken(newToken);
 
-      // 로컬 스토리지에 저장 -> 추후 리덕스 스토어로 변경
-      localStorage.setItem('jwtToken', newToken);
+//       // 로컬 스토리지에 저장 -> 추후 리덕스 스토어로 변경
+//       localStorage.setItem('jwtToken', newToken);
 
-      // 이후에 원래 요청을 재시도
-      sendRequestWithToken();
-    } catch (error) {
-      // 리프레시 토큰이 만료되었거나 인증 실패한 경우
-      console.error('토큰 재발급 실패:', error);
-      setError('토큰 재발급 실패');
-    }
-  };
+//       // 이후에 원래 요청을 재시도
+//       sendRequestWithToken();
+//     } catch (error) {
+//       // 리프레시 토큰이 만료되었거나 인증 실패한 경우
+//       console.error('토큰 재발급 실패:', error);
+//       setError('토큰 재발급 실패');
+//     }
+//   };
 
   return (
     <div>
@@ -72,4 +72,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+// export default Login;

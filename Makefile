@@ -16,6 +16,7 @@ $(NAME) :
 		echo "\033[0;96m--- Docker is already running ---"; \
 		docker-compose up --build; \
 	fi
+	docker-compose up --build
 
 down	: 
 	docker-compose down
