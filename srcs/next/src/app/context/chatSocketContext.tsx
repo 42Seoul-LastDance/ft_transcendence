@@ -4,13 +4,14 @@ import { io, Socket } from 'socket.io-client';
 import { setRoomNameList } from '../redux/roomSlice';
 import { RoomStatus } from '../interface';
 import {
-  IoEventListner,
+  IoEventListener,
   IoEventOnce,
   createSocket,
   handleTryAuth,
 } from './socket';
 import { getCookie, removeCookie, setCookie } from '../Cookie';
 import { useRouter } from 'next/navigation';
+import { setName } from '../redux/userSlice';
 
 // SocketContext 생성
 const ChatSocketContext = createContext<Socket | undefined>(undefined);
@@ -33,6 +34,11 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const handleConnectSuccess = () => {
     console.log('[Connect] chatSocket Success');
     chatSocket?.emit('getChatRoomList', { roomStatus: RoomStatus.PUBLIC });
+    chatSocket?.emit('getMyName');
+  };
+
+  const handleGetMyName = (data: string) => {
+    dispatch(setName(data));
   };
 
   useEffect(() => {
@@ -57,8 +63,9 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
       IoEventOnce(chatSocket, 'expireToken', () => {
         handleTryAuth(chatSocket, router);
       });
-      IoEventListner(chatSocket, 'getChatRoomList', handleGetChatRoomList);
-      IoEventListner(chatSocket, 'connectSuccess', handleConnectSuccess);
+      IoEventListener(chatSocket, 'getMyName', handleGetMyName);
+      IoEventListener(chatSocket, 'getChatRoomList', handleGetChatRoomList);
+      IoEventListener(chatSocket, 'connectSuccess', handleConnectSuccess);
       console.log('[Handle] chat socket info', chatSocket);
       chatSocket?.connect();
     }

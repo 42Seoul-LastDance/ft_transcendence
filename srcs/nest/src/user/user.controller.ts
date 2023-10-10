@@ -91,7 +91,7 @@ export class UserController {
 
     @Patch('/update/:userName')
     @UseGuards(JwtAuthGuard)
-    async updateUserName(@Req() req, @Body('userName') userName: string) {
+    async updateUserName(@Req() req, @Param('userName') userName: string) {
         const user = await this.userService.getUserByUserName(userName);
         if (user) throw new BadRequestException('already used ');
         await this.userService.updateUserNameBySlackId(req.user.slackId, userName);
@@ -133,7 +133,7 @@ export class UserController {
         }
     }
 
-    @Get('//:name')
+    @Get('/:name')
     // @UseGuards(JwtAuthGuard) // TODO : enroll 과 accesstoken 분리 필요 -> 중복체크는 가드 없이 그냥 쓰는걸로 하자~
     async checkUniqueName(@Param('name') name: string, @Res() res: Response) {
         let user;

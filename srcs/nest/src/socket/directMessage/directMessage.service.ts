@@ -4,22 +4,25 @@ import { Socket } from 'socket.io';
 import { DirectMessage } from './directMessage.entity';
 import { DateTime } from 'luxon';
 import { BlockedUsersService } from 'src/user/blockedUsers/blockedUsers.service';
+import { SocketUsersService } from '../socketUsersService/socketUsers.service';
+import { DirectMessageInfoDto } from './dto/directMessageInfo.dto';
 const TIMEZONE: string = 'Asia/Seoul';
 
 @Injectable()
 export class DirectMessageService {
-    private userList: Map<number, Socket> = new Map<number, Socket>(); // {user ID, Socket}
-    private socketList: Map<string, number> = new Map<string, number>(); // {Socket.ID, user ID}
-    private blockList: Map<number, number[]> = new Map<number, number[]>(); // {user id, user id[]}
-    private friendList: Map<number, number[]> = new Map<number, number[]>(); // {user id, user id[]}
+    //private userList: Map<number, Socket> = new Map<number, Socket>(); // {user ID, Socket}
+    //private socketList: Map<string, number> = new Map<string, number>(); // {Socket.ID, user ID}
+    //private blockList: Map<number, number[]> = new Map<number, number[]>(); // {user id, user id[]}
+    //private friendList: Map<number, number[]> = new Map<number, number[]>(); // {user id, user id[]}
     constructor(
         private directMessageRepository: DirectMessageRepository,
         private blockedUsersService: BlockedUsersService,
+        private socketUsersService: SocketUsersService,
     ) {}
 
     async addNewUser(socket: Socket, userId: number) {
         console.log('socket id, userId in addNewUser(DM) : ', socket.id, userId);
-        const signedUser = this.userList.get(userId);
+        const signedUser: Socket = this.socketUsersService.getChatSocketById(userId); //OK
         if (signedUser !== undefined) this.socketList.delete(signedUser.id);
         this.socketList.set(socket.id, userId);
         this.userList.set(userId, socket);
@@ -83,8 +86,9 @@ export class DirectMessageService {
         await this.saveMessage(userId, targetId, hasReceived, content);
     }
 
-    async findRecentDMs(target1Id: number, target2Id: number, count: number): Promise<DirectMessage[]> {
-        return await this.directMessageRepository.find({
+    async findRecentDMs(target1Id: number, userName: string, count: number): Promise<DirectMessageInfoDto[]> {
+        //TODO :  userName -> userID
+        const DMList: DirectMessage[] = await this.directMessageRepository.find({
             where: [
                 { senderId: target1Id, receiverId: target2Id },
                 { senderId: target2Id, receiverId: target1Id, hasReceived: true },

@@ -7,23 +7,25 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
 import { useDispatch, useSelector } from 'react-redux';
 import { useChatSocket } from '../../context/chatSocketContext';
-import { ChatRoomDto, RoomInfoDto, RoomStatus } from '../../interface';
+import {
+  ChatRoomDto,
+  JoinStatus,
+  RoomInfoDto,
+  RoomStatus,
+} from '../../interface';
 import { useRouter } from 'next/navigation';
-import { setIsJoined } from '../../redux/roomSlice';
 import { RootState } from '../../redux/store';
-import { setChatRoom } from '../../redux/userSlice';
+import { setChatRoom, setJoin } from '../../redux/userSlice';
+import { IoEventListener } from '@/app/context/socket';
 
 export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const chatSocket = useChatSocket();
-  const router = useRouter();
   const dispatch = useDispatch();
-  const isJoined = useSelector((state: RootState) => state.room.isJoined);
   const [roomname, setRoomname] = useState<string>('');
   const [isPrivate, setIsPrivate] = useState<boolean>(false);
   const [requirePassword, setIsLocked] = useState<boolean>(false);
   const [password, setPassword] = useState<string>('');
   const [showPasswordInput, setShowPasswordInput] = useState<boolean>(false);
-  const name = useSelector((state: RootState) => state.user.chatRoom?.userName);
 
   const handleRoomNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRoomname(event.target.value);
@@ -52,6 +54,14 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
       alert('비밀번호를 입력해주세요.');
       return;
     }
+
+    const handleCreateChatRoom = (data: ChatRoomDto) => {
+      console.log('handleCreateChatRoom', data);
+      dispatch(setChatRoom(data));
+    };
+
+    IoEventListener(chatSocket!, 'createChatRoom', handleCreateChatRoom);
+
     const newRoom: RoomInfoDto = {
       roomName: roomname,
       password: password ? password : null,
@@ -59,16 +69,8 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
       status: isPrivate ? RoomStatus.PRIVATE : RoomStatus.PUBLIC,
     };
 
-    if (!chatSocket?.hasListeners('createChatRoom')) {
-      chatSocket?.on('createChatRoom', (data: ChatRoomDto) => {
-        console.log('create Chat Room : ', data);
-        dispatch(setChatRoom(data));
-      });
-    }
-
-    console.log('만든 방', newRoom);
     chatSocket?.emit('createChatRoom', newRoom);
-    dispatch(setIsJoined(true));
+    dispatch(setJoin(JoinStatus.CHAT));
     onClose();
   };
 

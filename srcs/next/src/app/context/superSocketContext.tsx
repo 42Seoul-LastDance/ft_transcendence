@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Socket } from 'socket.io-client';
-import { IoEventListner, IoEventOnce, createSocket } from './socket';
+import { IoEventListener, IoEventOnce, createSocket } from './socket';
 import { getCookie, setCookie } from '../Cookie';
 import axios from 'axios';
 import { BACK_URL } from '../globals';
@@ -69,8 +69,8 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     IoEventOnce(superSocket, 'expireToken', handleTryAuth);
-    IoEventListner(superSocket, 'connectSuccess', handleConnectSuccess);
-    IoEventListner(superSocket, 'expireToken', handleTryAuth);
+    IoEventListener(superSocket, 'connectSuccess', handleConnectSuccess);
+    IoEventListener(superSocket, 'expireToken', handleTryAuth);
     if (!superSocket.connected) superSocket.connect();
   }, []);
 

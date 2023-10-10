@@ -14,9 +14,9 @@ const axiosInstance = axios.create({
 const sendRequest = async (
   method: string,
   url: string,
+  router: any,
   data = {},
 ): Promise<AxiosResponse> => {
-  const router = useRouter(); // 또는 Vue 2에서는 this.$router를 사용합니다.
   try {
     let token = getCookie('access_token'); // 여기에 쿠키 이름을 설정하세요.
     if (!token) {

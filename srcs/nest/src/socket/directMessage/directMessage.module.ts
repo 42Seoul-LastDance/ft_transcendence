@@ -8,6 +8,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DirectMessageController } from './directMessage.controller';
 import { UserModule } from 'src/user/user.module';
 import { BlockedUsersModule } from 'src/user/blockedUsers/blockedUsers.module';
+import { SocketUsersService } from '../socketUsersService/socketUsers.service';
+import { SocketUsersModule } from '../socketUsersService/socketUsers.module';
 
 @Module({
     imports: [
@@ -15,9 +17,9 @@ import { BlockedUsersModule } from 'src/user/blockedUsers/blockedUsers.module';
         TypeOrmModule.forFeature([DirectMessageRepository]),
         JwtModule,
         UserModule,
-        BlockedUsersModule,
+        SocketUsersModule,
     ],
     controllers: [DirectMessageController],
-    providers: [DirectMessageGateway, DirectMessageService, DirectMessageRepository],
+    providers: [DirectMessageGateway, DirectMessageService, DirectMessageRepository, SocketUsersService],
 })
 export class DirectMessageModule {}

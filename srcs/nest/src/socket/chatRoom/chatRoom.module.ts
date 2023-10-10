@@ -7,6 +7,8 @@ import { BlockedUsers } from 'src/user/blockedUsers/blockedUsers.entity';
 import { BlockedUsersRepository } from 'src/user/blockedUsers/blockedUsers.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BlockedUsersModule } from 'src/user/blockedUsers/blockedUsers.module';
+import { SocketUsersService } from '../socketUsersService/socketUsers.service';
+import { SocketUsersModule } from '../socketUsersService/socketUsers.module';
 
 @Module({
     imports: [
@@ -14,8 +16,8 @@ import { BlockedUsersModule } from 'src/user/blockedUsers/blockedUsers.module';
         TypeOrmModule.forFeature([BlockedUsersRepository]),
         UserModule,
         JwtModule,
-        BlockedUsersModule,
+        SocketUsersModule,
     ],
-    providers: [ChatRoomGateway, ChatRoomService],
+    providers: [ChatRoomGateway, ChatRoomService, SocketUsersService],
 })
 export class ChatRoomModule {}

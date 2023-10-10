@@ -5,13 +5,12 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import CreateRoomButton from './createRoomButton';
 import { useChatSocket } from '../../context/chatSocketContext';
-import { ChatRoomDto, RoomStatus } from '../../interface';
+import { ChatRoomDto, JoinStatus, RoomStatus } from '../../interface';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import { useDispatch } from 'react-redux';
-import { setIsJoined } from '../../redux/roomSlice';
-import { setChatRoom } from '../../redux/userSlice';
-import { IoEventListner } from '../../context/socket';
+import { setChatRoom, setJoin } from '../../redux/userSlice';
+import { IoEventListener } from '../../context/socket';
 
 const style = {
   width: '100%',
@@ -28,15 +27,6 @@ const ChatRoomList: React.FC = () => {
   );
 
   const joinRoom = (roomName: string) => {
-    const handleJoinRoom = (data: any) => {
-      if (data.result === true) {
-        dispatch(setIsJoined(true));
-      } else {
-        dispatch(setIsJoined(false));
-        alert('비밀번호가 틀렸습니다.');
-      }
-    };
-
     const handleGetChatRoom = (data: ChatRoomDto) => {
       console.log('getChatRoomInfo Data', data);
       let password: string | null = null;
@@ -44,13 +34,25 @@ const ChatRoomList: React.FC = () => {
         password = prompt('비밀번호를 입력하세요');
         if (!password) return;
       }
-      chatSocket?.emit('joinPublicChatRoom', { roomName, password }, () => {
-        dispatch(setChatRoom(data));
-      });
+      dispatch(setChatRoom(data));
+      chatSocket?.emit(
+        'joinPublicChatRoom',
+        { roomName, password },
+        checkPassword,
+      );
     };
 
-    IoEventListner(chatSocket!, 'getChatRoomInfo', handleGetChatRoom);
-    IoEventListner(chatSocket!, 'joinPublicChatRoom', handleJoinRoom);
+    const checkPassword = (data: any) => {
+      if (data.result === true) {
+        dispatch(setJoin(JoinStatus.CHAT));
+      } else {
+        dispatch(setJoin(JoinStatus.NONE));
+        alert('비밀번호가 틀렸습니다.');
+      }
+    };
+
+    IoEventListener(chatSocket!, 'getChatRoomInfo', handleGetChatRoom);
+    IoEventListener(chatSocket!, 'joinPublicChatRoom', checkPassword);
 
     chatSocket?.emit('getChatRoomInfo', {
       roomName: roomName,

@@ -11,11 +11,10 @@ export class DirectMessageController {
         private readonly userService: UserService,
     ) {}
 
-    @Get('/with/:id')
+    @Get('/with/:userName')
     @UseGuards(JwtAuthGuard)
-    async getLoggedDMs(@Param('id', ParseIntPipe) id: number, @Req() req, @Res() res) {
-        // TODO : Jwt 토큰 정보에 맞게 수정 필요 id , email
-        const loggedDMs: DirectMessage[] = await this.directMessageService.findRecentDMs(req.user.sub, id, 30);
+    async getLoggedDMs(@Param('userName') userName: string, @Req() req, @Res() res) {
+        const loggedDMs: DirectMessage[] = await this.directMessageService.findRecentDMs(req.user.sub, userName, 30);
         return res.status(200).json(loggedDMs);
     }
 }

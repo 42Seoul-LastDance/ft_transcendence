@@ -12,7 +12,7 @@ export class BlockedUsersController {
     ) {}
 
     @Get('/getBlockList')
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
     async getBlockList(@Req() req, @Res() res: Response) {
         const blockList = await this.blockedUsersService.getBlockUsernameListById(+req.user.id);
         //TODO res에 JSON 잘 가는지 확인 필요
@@ -20,18 +20,25 @@ export class BlockedUsersController {
     }
 
     @Delete('/unblock/:blockName')
-    // @UseGuards(JwtAuthGuard)//친구가 아닐 때만 가능함.
+    @UseGuards(JwtAuthGuard) //친구가 아닐 때만 가능함.
     async unblockUser(@Req() req, @Res() res: Response, @Param('blockName') blockName: string) {
         const targetId = (await this.userService.getUserByUserName(blockName)).id;
         this.blockedUsersService.unblockUserById(req.user.sub, targetId);
         return res.sendStatus(200);
     }
 
-    @Patch('/blockUser/:blockName')
+    @Patch('/block/:blockName')
     @UseGuards(JwtAuthGuard)
     async blockUser(@Req() req, @Res() res: Response, @Param('blockName') blockName: string) {
         const targetId = (await this.userService.getUserByUserName(blockName)).id;
         this.blockedUsersService.blockUserById(req.user.id, targetId);
         return res.sendStatus(200);
+    }
+
+    @Get('/isblocked/:id')
+    @UseGuards(JwtAuthGuard)
+    async isBlocked(@Req() req, @Param('id') userId: number, @Res() res: Response): Promise<boolean> {
+        const isBlocked: boolean = await this.blockedUsersService.isBlocked(req.sub, userId);
+        return isBlocked;
     }
 }

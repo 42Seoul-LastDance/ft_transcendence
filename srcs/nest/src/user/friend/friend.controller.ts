@@ -31,7 +31,7 @@ export class FriendController {
     }
 
     @Get('/isFriend/:friendName')
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
     async getFriendStatus(@Req() req, @Res() res: Response, @Param('friendName') friendName: string) {
         const status = await this.friendService.getFriendStatus(+req.user.sub, friendName);
         //TODO res에 status JSON으로 담아서 보내기
@@ -39,7 +39,7 @@ export class FriendController {
     }
 
     @Put('/request/:friendName')
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
     async requestFriend(@Req() req, @Res() res: Response, @Param('friendName') friendName: string) {
         await this.friendService.requestFriend(+req.user.sub, friendName);
         return res.sendStatus(200);

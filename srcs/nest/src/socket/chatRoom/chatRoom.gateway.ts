@@ -69,10 +69,8 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     async handleDisconnect(socket: Socket) {
+        console.log('DISCONNECT ');
         console.log('disconnection handling :: rooms : ', socket.rooms);
-        const userId = this.chatroomService.getUserId(socket);
-        console.log('DISCONNECT ', userId);
-        // console.log('socket info in DISCONNECT', socket);
         await this.chatroomService.leavePastRoom(socket, this.server);
         this.chatroomService.deleteUser(socket);
         console.log(socket.id, ': lost connection. (Chat)');

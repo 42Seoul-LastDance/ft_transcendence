@@ -15,63 +15,74 @@ import {
 import SettingsIcon from '@mui/icons-material/Settings'; // 설정 아이콘 추가
 import ChatSetting from './chatSetting';
 import { RootState } from '../../redux/store';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useChatSocket } from '../../context/chatSocketContext';
-import { ChatMessage, receiveMessage, SendMessageDto } from '../../interface';
+import {
+  ChatMessage,
+  ChattingPageProps,
+  SendMessageDto,
+} from '../../interface';
+import { setChatMessages } from '@/app/redux/roomSlice';
+import { IoEventOnce } from '@/app/context/socket';
 
-const ChattingContent = () => {
+const ChattingPage = (props: ChattingPageProps) => {
   const [message, setMessage] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); // ChatMessage[] 타입 명시
+  const chatMessages = useSelector(
+    (state: RootState) => state.room.chatMessages,
+  );
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // 설정 아이콘 클릭 시 설정창 표시 여부
-  const chatSocket = useChatSocket();
+  const dispatch = useDispatch();
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
-  const isMyName = (userName: string) => userName === chatRoom?.userName;
+  const myName = useSelector((state: RootState) => state.user.userName);
 
-  const blockCheck = (userName: string) => {
-    if (!chatSocket) throw Error('retry');
-    return new Promise<boolean>((resolve, reject) => {
-      if (!chatSocket.hasListeners('receiveMessage')) {
-        chatSocket.once('receiveMessage', (data: receiveMessage) => {
-          console.log('server receive: ', data);
-          resolve(data.canReceive === true);
-        });
-      }
-      chatSocket.emit('receiveMessage', {
-        userName: userName,
-      });
-    });
+  // const handleBlockCheck = (userName: string) => {
+  // if (isMyName(data.userName)) setChatMessages([...chatMessages, data]);
+  // else if (await blockCheck(data.userName))
+  //   setChatMessages([...chatMessages, data]);
+  // else console.log('Recv Msg from blocked user');
+  //   if (!props.socket) throw Error('retry');
+  //   return new Promise<boolean>((resolve, reject) => {
+  //     if (!props.socket.hasListeners('receiveMessage')) {
+  //       props.socket.once('receiveMessage', (data: receiveMessage) => {
+  //         console.log('server receive: ', data);
+  //         resolve(data.canReceive === true);
+  //       });
+  //     }
+  //     props.socket.emit('receiveMessage', {
+  //       userName: userName,
+  //     });
+  //   });
+  // };
+
+  const recvMessage = (data: ChatMessage[]) => {
+    // handleBlockCheck();
+    dispatch(setChatMessages(data));
   };
 
-  chatSocket?.once('sendMessage', (data: ChatMessage) => {
-    // if (isMyName(data.userName)) setChatMessages([...chatMessages, data]);
-    // else if (await blockCheck(data.userName))
-    //   setChatMessages([...chatMessages, data]);
-    // else console.log('Recv Msg from blocked user');
-    setChatMessages([...chatMessages, data]);
-  });
+  IoEventOnce(props.socket!, 'sendMessage', recvMessage);
 
-  // 메세지 보낼 때 동작
-  const handleSendMessage = () => {
+  // 메세지 보내기
+  const SendMessage = () => {
     if (!message) return;
     if (!chatRoom) throw new Error('chatRoom is null');
     const newMsg: ChatMessage = {
-      userName: chatRoom.userName,
+      userName: myName!,
       content: message,
     };
     setChatMessages([...chatMessages, newMsg]);
     const newSend: SendMessageDto = {
       roomName: chatRoom.roomName,
       status: chatRoom.status,
-      userName: chatRoom.userName,
+      userName: myName!,
       content: message,
     };
-    chatSocket?.emit('sendMessage', newSend);
+    props.socket?.emit('sendMessage', newSend);
     setMessage('');
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
-      handleSendMessage();
+      SendMessage();
     }
   };
 
@@ -83,7 +94,7 @@ const ChattingContent = () => {
     <Container
       maxWidth="sm"
       style={{
-        display: 'flex',
+        display: 'flex', //오 플렉스
         flexDirection: 'column', // 컨테이너 내의 요소를 위에서 아래로 배치하도록 수정
         justifyContent: 'flex-start',
         alignItems: 'center',
@@ -119,7 +130,7 @@ const ChattingContent = () => {
                   primary={msg.userName}
                   secondary={msg.content}
                   style={{
-                    textAlign: isMyName(msg.userName) ? 'right' : 'left',
+                    textAlign: myName === msg.userName ? 'right' : 'left',
                   }}
                 />
               </ListItem>
@@ -144,7 +155,7 @@ const ChattingContent = () => {
             variant="contained"
             color="primary"
             size="large"
-            onClick={handleSendMessage}
+            onClick={SendMessage}
             style={{ marginLeft: '8px' }}
           >
             Send
@@ -161,12 +172,4 @@ const ChattingContent = () => {
   );
 };
 
-const Chatting = () => {
-  return (
-    <>
-      <ChattingContent />
-    </>
-  );
-};
-
-export default Chatting;
+export default ChattingPage;

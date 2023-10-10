@@ -1,3 +1,5 @@
+import { Socket } from 'socket.io-client';
+
 // RoomInfoInnerDto
 export interface ChatRoomDto {
   operatorList: string[];
@@ -10,7 +12,6 @@ export interface ChatRoomDto {
   status: RoomStatus; // 또는 RoomStatus 타입으로 정의
   password: string | null;
   requirePassword: boolean;
-  userName: string;
   userPermission: UserPermission;
 }
 // chatRoom Service.ts 저장 한번만 해주세용 intell
@@ -30,9 +31,9 @@ export enum RoomStatus {
 }
 
 export enum UserPermission {
-  MEMBER = 0,
-  OPERATOR = 1,
-  OWNER = 2,
+  OWNER = 0,
+  ADMIN = 1,
+  MEMBER = 2,
 }
 
 export interface ChatMessage {
@@ -59,4 +60,31 @@ export interface EmitResult {
 export enum TokenType {
   Access = 0,
   Refresh = 1,
+}
+
+export enum UserStatus {
+  ONLINE = 'online',
+  OFFLINE = 'offline',
+  GAME = 'game',
+}
+
+export interface UserProfileProps {
+  targetName: string;
+}
+
+export interface ChattingPageProps {
+  socket: Socket | undefined;
+}
+
+export enum FriendStatus {
+  FRIEND = 0,
+  LAGGING = 1,
+  REQUESTED = 2,
+  UNKNOWN = 3,
+}
+
+export enum JoinStatus {
+  NONE,
+  CHAT,
+  DM,
 }
