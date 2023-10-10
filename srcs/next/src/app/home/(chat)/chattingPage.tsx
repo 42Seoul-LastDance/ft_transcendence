@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, use } from 'react';
+import React, { useState } from 'react';
 import {
   Container,
   Card,
@@ -16,14 +16,15 @@ import SettingsIcon from '@mui/icons-material/Settings'; // 설정 아이콘 추
 import ChatSetting from './chatSetting';
 import { RootState } from '../../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
-import { useChatSocket } from '../../context/chatSocketContext';
 import {
   ChatMessage,
   ChattingPageProps,
   SendMessageDto,
 } from '../../interface';
 import { setChatMessages } from '@/app/redux/roomSlice';
-import { IoEventListener, IoEventOnce } from '@/app/context/socket';
+import { IoEventListener } from '@/app/context/socket';
+import { setAlertMsg, setShowAlert } from '@/app/redux/alertSlice';
+import { isValid } from '../valid';
 
 const ChattingPage = (props: ChattingPageProps) => {
   const [message, setMessage] = useState('');
@@ -34,6 +35,7 @@ const ChattingPage = (props: ChattingPageProps) => {
   const dispatch = useDispatch();
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const myName = useSelector((state: RootState) => state.user.userName);
+  const maxLength = 50;
 
   const handleCheckRendering = (data: any) => {
     console.log('check rendering', data);
@@ -89,6 +91,13 @@ const ChattingPage = (props: ChattingPageProps) => {
     setIsSettingsOpen(!isSettingsOpen);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isValid('메세지가', e.target.value + ' ⏎', 50, dispatch)) {
+      setMessage(e.target.value);
+      dispatch(setShowAlert(false));
+    }
+  };
+
   return (
     <Container
       maxWidth="sm"
@@ -122,6 +131,7 @@ const ChattingPage = (props: ChattingPageProps) => {
         <CardContent
           style={{ overflowY: 'auto', height: 'calc(100% - 105px)' }}
         >
+          {chatRoom?.roomName}
           <List>
             {chatMessages.map((msg, index) => (
               <ListItem key={index}>
@@ -144,9 +154,7 @@ const ChattingPage = (props: ChattingPageProps) => {
             variant="outlined"
             label="Message"
             value={message}
-            onChange={(e: {
-              target: { value: React.SetStateAction<string> };
-            }) => setMessage(e.target.value)}
+            onChange={handleInputChange}
             onKeyPress={handleKeyDown}
           />
           <Button

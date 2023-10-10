@@ -15,6 +15,8 @@ import UserProfile from './(profile)/userProfile';
 import { useEffect } from 'react';
 import { JoinStatus } from '../interface';
 import { setIsMatched } from '../redux/matchSlice';
+import { Alert } from '@mui/material';
+import AutoAlert from './alert';
 
 const HomeContent = () => {
   const joinStatus = useSelector((state: RootState) => state.user.join);
@@ -53,6 +55,7 @@ const MainHome = () => {
       <Provider store={store}>
         <SuperSocketProvider>
           <ChatSocketProvider>
+            <AutoAlert severity={'warning'} />
             <HomeContent />
           </ChatSocketProvider>
         </SuperSocketProvider>

@@ -32,7 +32,7 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
     dispatch(setRoomNameList(data));
 
   const handleConnectSuccess = () => {
-    console.log('[Connect] chatSocket Success');
+    // console.log('[Connect] chatSocket Success');
     chatSocket?.emit('getChatRoomList', { roomStatus: RoomStatus.PUBLIC });
     chatSocket?.emit('getMyName');
   };
@@ -66,7 +66,7 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
       IoEventListener(chatSocket, 'getMyName', handleGetMyName);
       IoEventListener(chatSocket, 'getChatRoomList', handleGetChatRoomList);
       IoEventListener(chatSocket, 'connectSuccess', handleConnectSuccess);
-      console.log('[Handle] chat socket info', chatSocket);
+      console.log('[Connect] chat socket info', chatSocket);
       chatSocket?.connect();
     }
 

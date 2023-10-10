@@ -15,6 +15,8 @@ import {
 } from '../../interface';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { IoEventListener } from '@/app/context/socket';
+import { setAlertMsg, setShowAlert } from '@/app/redux/alertSlice';
+import { isValid } from '../valid';
 
 export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const chatSocket = useChatSocket();
@@ -26,7 +28,8 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const [showPasswordInput, setShowPasswordInput] = useState<boolean>(false);
 
   const handleRoomNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRoomname(event.target.value);
+    const inputValue = event.target.value;
+    setRoomname(inputValue);
   };
 
   const handlePrivacyChange = (
@@ -47,12 +50,18 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
     setPassword(event.target.value);
   };
 
-  const addNewRoom = () => {
-    if (requirePassword && password.trim() === '') {
-      alert('비밀번호를 입력해주세요.');
-      return;
-    }
+  const isBadInput = (): boolean => {
+    if (
+      isValid('방이름이', roomname, 20, dispatch) === false ||
+      (requirePassword &&
+        isValid('패스워드가', password, 20, dispatch) === false)
+    )
+      return true;
+    return false;
+  };
 
+  const addNewRoom = () => {
+    if (isBadInput()) return;
     const handleCreateChatRoom = (data: ChatRoomDto) => {
       console.log('handleCreateChatRoom', data);
       dispatch(setChatRoom(data));
@@ -73,53 +82,55 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <Box>
-      <TextField
-        label="방 이름"
-        variant="outlined"
-        value={roomname}
-        onChange={handleRoomNameChange}
-        fullWidth
-        margin="normal"
-      />
-      <ToggleButtonGroup
-        value={isPrivate ? 'private' : 'public'}
-        exclusive
-        onChange={handlePrivacyChange}
-        fullWidth
-        aria-label="방 프라이버시"
-      >
-        <ToggleButton value="public" aria-label="퍼블릭">
-          퍼블릭
-        </ToggleButton>
-        <ToggleButton value="private" aria-label="프라이빗">
-          프라이빗
-        </ToggleButton>
-      </ToggleButtonGroup>
-      <ToggleButton
-        value="check"
-        selected={requirePassword}
-        onClick={handlePasswordToggle}
-        aria-label="비밀번호 설정"
-        color="primary"
-        size="small"
-      >
-        비밀번호 설정
-      </ToggleButton>
-      {showPasswordInput && (
+    <>
+      <Box>
         <TextField
-          label="비밀번호"
+          label="방 이름"
           variant="outlined"
-          type="password"
-          value={password}
-          onChange={handlePasswordChange}
+          value={roomname}
+          onChange={handleRoomNameChange}
           fullWidth
           margin="normal"
         />
-      )}
-      <Button variant="contained" color="primary" onClick={addNewRoom}>
-        완료
-      </Button>
-    </Box>
+        <ToggleButtonGroup
+          value={isPrivate ? 'private' : 'public'}
+          exclusive
+          onChange={handlePrivacyChange}
+          fullWidth
+          aria-label="방 프라이버시"
+        >
+          <ToggleButton value="public" aria-label="퍼블릭">
+            퍼블릭
+          </ToggleButton>
+          <ToggleButton value="private" aria-label="프라이빗">
+            프라이빗
+          </ToggleButton>
+        </ToggleButtonGroup>
+        <ToggleButton
+          value="check"
+          selected={requirePassword}
+          onClick={handlePasswordToggle}
+          aria-label="비밀번호 설정"
+          color="primary"
+          size="small"
+        >
+          비밀번호 설정
+        </ToggleButton>
+        {showPasswordInput && (
+          <TextField
+            label="비밀번호"
+            variant="outlined"
+            type="password"
+            value={password}
+            onChange={handlePasswordChange}
+            fullWidth
+            margin="normal"
+          />
+        )}
+        <Button variant="contained" color="primary" onClick={addNewRoom}>
+          완료
+        </Button>
+      </Box>
+    </>
   );
 }

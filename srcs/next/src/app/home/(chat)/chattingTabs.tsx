@@ -4,7 +4,9 @@ import React, { useState } from 'react';
 import { Tab, Tabs } from '@mui/material';
 import ChatRoomList from './chatRoomList';
 import FriendList from '../(dm)/friendList';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/app/redux/store';
+import AutoAlert from '../alert';
 
 const ChattingTabs = () => {
   const [value, setValue] = useState<number>(0);
