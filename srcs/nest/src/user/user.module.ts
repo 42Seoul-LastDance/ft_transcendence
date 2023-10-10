@@ -8,7 +8,6 @@ import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { JwtEnrollGuard } from 'src/auth/jwtEnroll.guard';
 
 @Module({
     imports: [
@@ -31,10 +30,7 @@ import { JwtEnrollGuard } from 'src/auth/jwtEnroll.guard';
                         };
                         if (mimeTypeMap[file.mimetype]) {
                             // 확장자 체크
-                            callback(
-                                null,
-                                `${name}${mimeTypeMap[file.mimetype]}`,
-                            );
+                            callback(null, `${name}${mimeTypeMap[file.mimetype]}`);
                         } else {
                             callback(new UnprocessableEntityException(), null);
                         }
@@ -47,7 +43,7 @@ import { JwtEnrollGuard } from 'src/auth/jwtEnroll.guard';
         }),
     ],
     controllers: [UserController],
-    providers: [UserService, JwtAuthGuard, JwtEnrollGuard, UserRepository],
+    providers: [UserService, JwtAuthGuard, UserRepository],
     exports: [UserService, UserRepository],
 })
 export class UserModule {}

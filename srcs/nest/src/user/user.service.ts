@@ -6,7 +6,7 @@ import {
     NotFoundException,
     UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+// import { InjectRepository } from '@nestjs/typeorm';
 import { Like } from 'typeorm';
 import { User } from './user.entity';
 import { UserRepository } from './user.repository';
@@ -15,6 +15,7 @@ import * as bcrypt from 'bcryptjs';
 import { existsSync, readFileSync, unlinkSync } from 'fs';
 import { extname } from 'path';
 import { UserProfileDto } from './dto/userProfile.dto';
+import { InjectRepository } from '@nestjs/typeorm';
 import { userStatus } from './user-status.enum';
 import { POINT, LEVELUP } from 'src/game/game.constants';
 
@@ -56,9 +57,9 @@ export class UserService {
         return user;
     }
 
-    async getUserByUsername(name: string): Promise<User> {
+    async getUserByUserName(name: string): Promise<User> {
         const user = await this.userRepository.findOne({
-            where: { username: name },
+            where: { userName: name },
         });
         if (!user) {
             throw new NotFoundException();
@@ -66,15 +67,11 @@ export class UserService {
         return user;
     }
 
-    async registerUser(
-        authDto: Auth42Dto,
-        username: string,
-        filename: string,
-    ): Promise<User> {
+    async registerUser(authDto: Auth42Dto, filename: string): Promise<User> {
         try {
             const { email, slackId } = authDto;
             const newUser = this.userRepository.create({
-                username: username, //!random name으로 변경필요
+                userName: slackId,
                 email: email,
                 profileurl: filename ? filename : 'default.png',
                 slackId: slackId,
@@ -85,35 +82,27 @@ export class UserService {
                 level: 0,
             } as User);
             const user = await this.userRepository.save(newUser);
-            // console.log('register user in UserService:', newUser);
+            console.log('register user in UserService:', newUser);
             return user;
         } catch (error) {
-            if (error.code == '23505')
-                throw new ConflictException('Existing username');
+            if (error.code == '23505') throw new ConflictException('Existing userName');
             else throw new InternalServerErrorException('from registerUser');
         }
     }
 
-    async updateUsernameBySlackId(
-        slackId: string,
-        username: string,
-    ): Promise<User> {
+    async updateUserNameBySlackId(slackId: string, userName: string): Promise<User> {
         try {
             const user = await this.getUserBySlackId(slackId);
-            user.username = username;
+            user.userName = userName;
             await this.userRepository.save(user);
             return user;
         } catch (error) {
-            if (error.code == '23505')
-                throw new ConflictException('Existing username');
-            else throw new InternalServerErrorException('from updateUsername');
+            if (error.code == '23505') throw new ConflictException('Existing userName');
+            else throw new InternalServerErrorException('from updateuserName');
         }
     }
 
-    async update2faConfBySlackId(
-        slackId: string,
-        is2fa: boolean,
-    ): Promise<User> {
+    async update2faConfBySlackId(slackId: string, is2fa: boolean): Promise<User> {
         try {
             const user = await this.getUserBySlackId(slackId);
             user.require2fa = is2fa;
@@ -124,18 +113,13 @@ export class UserService {
         }
     }
 
-    async updateProfileImageBySlackId(
-        slackId: string,
-        img: string,
-    ): Promise<User> {
+    async updateProfileImageBySlackId(slackId: string, img: string): Promise<User> {
         try {
             const user = await this.getUserBySlackId(slackId);
             //* default 이미지가 아니었을 경우 기존 이미지 삭제
             if (user.profileurl != 'default.png') {
-                const filePath =
-                    __dirname + '/../../profile/' + user.profileurl;
-                if (existsSync(filePath))
-                    unlinkSync(__dirname + '/../../profile/' + user.profileurl);
+                const filePath = __dirname + '/../../profile/' + user.profileurl;
+                if (existsSync(filePath)) unlinkSync(__dirname + '/../../profile/' + user.profileurl);
             }
             user.profileurl = img;
             await this.userRepository.save(user);
@@ -157,14 +141,12 @@ export class UserService {
     async verifyRefreshToken(payload, token: string): Promise<void> {
         //userRepository 에서 payload.id (userid) 에 해당하는 refresh token 꺼내서 같은 지 비교.
         try {
-            const storedToken = (await this.findUserById(payload.id))
-                .refreshToken;
+            const storedToken = (await this.findUserById(payload.id)).refreshToken;
             if (!(storedToken && (await bcrypt.compare(token, storedToken)))) {
                 throw new UnauthorizedException();
             }
         } catch (error) {
-            if (error.getStatus() == 404)
-                throw new NotFoundException('from verifyRefreshToken');
+            if (error.getStatus() == 404) throw new NotFoundException('from verifyRefreshToken');
             throw new UnauthorizedException('from verifyRefreshToken');
         }
     }
@@ -189,7 +171,7 @@ export class UserService {
                 slackId: Like(`${slackId}%`),
             },
             order: {
-                username: 'ASC', // Ascending order (alphabetically)
+                userName: 'ASC', // Ascending order (alphabetically)
             },
         });
 
@@ -224,14 +206,13 @@ export class UserService {
         else return false;
     }
 
-    async getUserProfile(userId: number): Promise<UserProfileDto> {
+    async getUserProfile(username: string): Promise<UserProfileDto> {
         //TODO UserProfileDto 업데이트하고 추가로 진행
-        const user = await this.findUserById(userId);
+        const user = await this.getUserByUserName(username);
 
         const userProfileDto: UserProfileDto = {
             //TODO UserProfileDto 업데이트하고 추가로 진행
-            id: user.id,
-            username: user.username,
+            userName: user.userName,
             slackId: user.slackId,
             // profileurl: user.profileurl,
             exp: user.exp,
@@ -241,17 +222,12 @@ export class UserService {
         return userProfileDto;
     }
 
-    async getUserProfileImage(
-        userId: number,
-    ): Promise<{ image: Buffer; mimeType: string }> {
-        const user = await this.findUserById(userId);
+    async getUserProfileImage(username: string): Promise<{ image: Buffer; mimeType: string }> {
+        const user = await this.getUserByUserName(username);
         const profileImgTarget = user.profileurl || 'default.png';
         const imagePath = __dirname + '/../../profile/' + profileImgTarget;
         const image = readFileSync(imagePath); // 이미지 파일을 읽어옴
-        if (!image)
-            throw new InternalServerErrorException(
-                `could not read ${imagePath}`,
-            );
+        if (!image) throw new InternalServerErrorException(`could not read ${imagePath}`);
         const mimeType = 'image/' + extname(profileImgTarget).substring(1);
         return { image, mimeType };
     }

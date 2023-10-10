@@ -4,12 +4,7 @@
 // @Injectable()
 // export class JwtAuthGuard extends AuthGuard('jwt') {}
 
-import {
-    Injectable,
-    CanActivate,
-    UnauthorizedException,
-    ExecutionContext,
-} from '@nestjs/common';
+import { Injectable, CanActivate, UnauthorizedException, ExecutionContext, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
@@ -21,7 +16,7 @@ export class JwtAuthGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
         const token = this.extractTokenFromHeader(request);
         if (!token) {
-            throw new UnauthorizedException('no token');
+            throw new NotFoundException('no token');
         }
         try {
             const payload = await this.jwtService.verifyAsync(token, {
@@ -29,7 +24,8 @@ export class JwtAuthGuard implements CanActivate {
             });
             request['user'] = payload;
         } catch (error) {
-            throw new UnauthorizedException("can't verify token");
+            if (error.message === 'jwt expired') throw new UnauthorizedException("can't verify token");
+            else throw new NotFoundException('jwt is invalid');
         }
         return true;
     }

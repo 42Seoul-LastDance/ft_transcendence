@@ -4,19 +4,11 @@ import { IsNotEmpty, IsString, IsNumber } from 'class-validator';
 export class UserProfileDto {
     @IsNotEmpty()
     @IsNumber()
-    id: number;
-
-    @IsNotEmpty()
-    @IsNumber()
     slackId: string;
 
     @IsNotEmpty()
     @IsString()
-    username: string;
-
-    // @IsNotEmpty()
-    // @IsString()
-    // profileurl: string;
+    userName: string;
 
     @IsNotEmpty()
     @IsNumber()

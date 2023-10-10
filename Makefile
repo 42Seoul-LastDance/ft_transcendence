@@ -4,7 +4,7 @@ all		: $(NAME)
 
 $(NAME) :
 	mkdir -p ./srcs/postgresql
-	@bash setting_ip.sh
+	@bash utils/setting_ip.sh
 	@if docker info | grep -q "ERROR"; then \
 		echo "\033[0;96m--- Docker will be running soon ---"; \
 		echo "y" | ./utils/init_docker.sh; \
@@ -49,4 +49,7 @@ exec	:
 next	:
 	docker-compose restart next
 
-.PHONY	: all down clean fclean docker cntest stest xtest next
+db	:
+	docker exec -it postgresql psql
+
+.PHONY	: all down clean fclean docker cntest stest xtest next db

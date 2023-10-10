@@ -1,24 +1,20 @@
 import { Module } from '@nestjs/common';
+import { ChatRoomModule } from './chatRoom/chatRoom.module';
+import { DirectMessageModule } from './directMessage/directMessage.module';
+import { BlockedUsersModule } from '../user/blockedUsers/blockedUsers.module';
+import { SocketUsersModule } from './socketUsersService/socketUsers.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ChatRoomGateway } from './chatRoom.gateway';
-import { ChatRoomService } from './chatRoom.service';
 import { GameGateway } from '../game/game.gateway';
 import { GameService } from '../game/game.service';
 import { Game } from 'src/game/game.entity';
 import { UserService } from 'src/user/user.service';
-import { UserModule } from 'src/user/user.module';
-import { UserRepository } from 'src/user/user.repository';
 import { User } from 'src/user/user.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Game, User]), UserModule],
-    providers: [
-        ChatRoomGateway,
-        ChatRoomService,
+    imports: [TypeOrmModule.forFeature([Game, User]), UserModule, ChatRoomModule, DirectMessageModule, BlockedUsersModule, SocketUsersModule],
+    providers: [ // TODO : 게임을 모듈로 분리
         GameGateway,
         GameService,
-        UserService,
-        UserRepository,
     ],
 })
 export class EventsModule {}

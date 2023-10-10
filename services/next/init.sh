@@ -1,23 +1,19 @@
 echo "----- Start installing npm dependencies -----"
 
-npm install --prefix srcs next
-# npm install --prefix srcs --save socket.io-client
-# npm install --prefix srcs --save ws
-# npm install --prefix srcs --save utf-8-validate
-# npm install --prefix srcs --save bufferutil
-# npm install --prefix srcs --save @headlessui/react
-# npm install --prefix srcs --save redux
-# npm install --prefix srcs --save react-redux
-# npm install --prefix srcs --save @reduxjs/toolkit
-# npm install --prefix srcs --save react-unity-webgl
-# npm install --prefix srcs --save nextjs-unity-webgl
-# npm install --prefix srcs --save axios
-# npm install --prefix srcs --save axios-auth-refresh
-# npm install --prefix srcs --save react-router-dom
+npm install --prefix srcs
+npm cache clean --force
+
+# npm install --prefix srcs --save redux react-redux @reduxjs/toolkit react-devtools react-router-dom react-cookie jsonwebtoken
+# npm install --prefix srcs --save react-unity-webgl nextjs-unity-webgl
+# npm install --prefix srcs --save axios axios-auth-refresh
+# npm install --prefix srcs --save ws socket.io utf-8-validate bufferutil
+# npm install --prefix srcs --save @typescript-eslint
 # npm install --prefix srcs --save @mui/material @emotion/react @emotion/styled @fontsource/roboto @mui/icons-material
+# npm install --prefix srcs --save babel-loader @babel/preset-react @babel/preset-env ts-loader
 
-echo "----- Successfully installed -----"
 
-npm --prefix srcs run dev
+echo "----- 😎 Successfully installed -----"
+
 # npm --prefix srcs run build
 # npm --prefix srcs run start
+npm --prefix srcs run dev
