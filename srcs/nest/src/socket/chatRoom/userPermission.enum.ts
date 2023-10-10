@@ -1,5 +1,5 @@
 export enum UserPermission {
     OWNER = 0,
-    MEMBER = 1,
-    ADMIN = 2,
+    ADMIN = 1,
+    MEMBER = 2,
 }

@@ -207,7 +207,6 @@ export class UserService {
 
         const userProfileDto: UserProfileDto = {
             //TODO UserProfileDto 업데이트하고 추가로 진행
-            id: user.id,
             userName: user.userName,
             slackId: user.slackId,
             // profileurl: user.profileurl,

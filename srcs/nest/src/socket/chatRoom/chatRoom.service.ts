@@ -135,6 +135,12 @@ export class ChatRoomService {
         return result;
     }
 
+    async getUserNameBySocket(socket: Socket): Promise<string> {
+        const userId: number = this.getUserId(socket);
+        const userName: string = (await this.userService.findUserById(userId)).userName;
+        return userName;
+    }
+
     async getChatRoomInfo(socket: Socket, roomName: string, roomstatus: RoomStatus) {
         //public/private 중 특정 방 정보를 준다.
         let chatroomDto: ChatRoomDto;
@@ -156,8 +162,7 @@ export class ChatRoomService {
             requirePassword: chatroomDto.requirePassword,
             operatorList: await this.getOperatorList(chatroomDto),
             memberList: await this.getMemberList(chatroomDto),
-            userName: userName ? userName : null,
-            userPermission: userPermission,
+            userPermission: userPermission, //userName 제거
         };
         return roomInfo;
     }
@@ -191,49 +196,51 @@ export class ChatRoomService {
         //.to('' + roomDto.id) => 글쓴 사람을 제외한 다른 사람들한테만 보이는지 확인
     }
 
-    async leavePastRoom(socket: Socket, io: Server) {
+    async leavePastRoom(socket: Socket, io: Server): Promise<void> {
         // 방이 터졌을 경우 true 반환 : 브로드캐스팅을 위해서
-        console.log('LEAVE PAST ROOM');
-        console.log('LPR2 : socket.rooms : ', socket.rooms);
+        const userId = this.socketList.get(socket.id);
+        const userName = (await this.userService.findUserById(userId)).userName;
+        console.log('LEAVE PAST ROOM : ', userName);
+        // console.log('LEAVE PAST ROOM : socket : ', socket);
+
         const pastRoomName = Array.from(socket.rooms).at(-1);
-        console.log('LPR2 : pastRoomName : ', pastRoomName);
-        if (pastRoomName !== undefined) {
-            // 기존에 유저가 있던 채널이 있으면
-            const userId = this.socketList.get(socket.id);
-            const userName = (await this.userService.findUserById(userId)).userName;
-
-            //? 유저가 privateroom에 있었으면 privateRoomList에서 찾아야하지 않을까요? (1) (juhoh) -> 맞는 것 같습니다
-
-            let pastRoom;
-            pastRoom = this.publicRoomList.get(pastRoomName);
-            if (pastRoom === undefined) pastRoom = this.privateRoomList.get(pastRoomName);
-
-            console.log('>>>>>pastRoom : ', pastRoom);
-            socket.to(pastRoomName).emit('sendMessage', userName + '님이 방을 나가셨습니다.');
-            if (userName === pastRoom?.ownerName) {
-                // owner가 나갈 경우 방 폭파
-                socket.to(pastRoomName).emit('explodeChatRoom', '방 소유자가 나갔으므로 채팅방이 사라집니다.');
-                // 방 타입 검사 후 해당 리스트에서 key-value쌍 item 삭제
-                if (pastRoom.status === RoomStatus.PUBLIC) this.publicRoomList.delete(pastRoomName);
-                else this.privateRoomList.delete(pastRoomName);
-                console.log('LPR2 : some room has broken : ', pastRoomName);
-                console.log('LPR2 : publicRoomList : ', this.publicRoomList);
-                io.emit('getChatRoomList', this.getChatRoomList());
-            } else {
-                //한 유저만 chatRoom에서 삭제
-                // const condition = (element) => element === pastRoomName; //d이거도 이상한데요?? 이거 왜 멤버리스트에서 이전 방 이름을 검사하고있지??
-                // let idx = pastRoom.memberList.findIndex(condition); //이거 받아서 삭제할라고 인덱스 받는 거같아요 멤버리스트에서 자기 제거하려구 -> 방에서 자기 이름을 찾아야 하는거 아닌가요?.?
-                // pastRoom.memberList.splice(idx, 1); //memberList
-
-                pastRoom?.memberList.delete(userId);
-                pastRoom?.muteList.delete(userId);
-                // idx = pastRoom.muteList.findIndex(condition); //muteList
-                // if (idx !== -1) pastRoom.muteList.splice(idx, 1);
-                socket.leave(pastRoomName);
-                console.log('LPR2 : after ', socket.id, ' leave : ', socket.rooms);
-            }
-            this.emitSuccess(socket, 'leavePastRoom');
+        // console.log('pastRoomName: ', pastRoomName);
+        if (pastRoomName === undefined) {
+            console.log('no past room. bye');
+            return;
         }
+        // 기존에 유저가 있던 채널이 있으면
+        //? 유저가 privateroom에 있었으면 privateRoomList에서 찾아야하지 않을까요? (1) (juhoh) -> 맞는 것 같습니다
+        let pastRoom: ChatRoomDto;
+        pastRoom = this.publicRoomList.get(pastRoomName);
+        if (pastRoom === undefined) pastRoom = this.privateRoomList.get(pastRoomName);
+        console.log('>>>>>pastRoom : ', pastRoom);
+        socket.to(pastRoomName).emit('sendMessage', userName + '님이 방을 나가셨습니다.');
+        if (userName === pastRoom?.ownerName) {
+            //! test
+            console.log('ROOM EXPLODE : ', pastRoom.roomName);
+            // owner가 나갈 경우 방 폭파
+            socket.to(pastRoomName).emit('explodeChatRoom', '방 소유자가 나갔으므로 채팅방이 사라집니다.');
+            // 방 타입 검사 후 해당 리스트에서 key-value쌍 item 삭제
+            if (pastRoom.status === RoomStatus.PUBLIC) this.publicRoomList.delete(pastRoomName);
+            else this.privateRoomList.delete(pastRoomName);
+            // console.log('LPR2 : some room has broken : ', pastRoomName);
+            // console.log('LPR2 : publicRoomList : ', this.publicRoomList);
+            io.emit('getChatRoomList', this.getChatRoomList());
+        } else {
+            //한 유저만 chatRoom에서 삭제
+            // const condition = (element) => element === pastRoomName; //d이거도 이상한데요?? 이거 왜 멤버리스트에서 이전 방 이름을 검사하고있지??
+            // let idx = pastRoom.memberList.findIndex(condition); //이거 받아서 삭제할라고 인덱스 받는 거같아요 멤버리스트에서 자기 제거하려구 -> 방에서 자기 이름을 찾아야 하는거 아닌가요?.?
+            // pastRoom.memberList.splice(idx, 1); //memberList
+            console.log('DELETE ONLY ONE USER (no room explode)');
+            pastRoom?.memberList.delete(userId);
+            pastRoom?.muteList.delete(userId);
+            // idx = pastRoom.muteList.findIndex(condition); //muteList
+            // if (idx !== -1) pastRoom.muteList.splice(idx, 1);
+            socket.leave(pastRoomName);
+            console.log('LPR2 : after ', socket.id, ' leave : ', socket.rooms);
+        }
+        this.emitSuccess(socket, 'leavePastRoom');
         this.emitFailReason(socket, 'leavePastRoom', 'there was no past room.');
     }
 
@@ -261,18 +268,19 @@ export class ChatRoomService {
             return;
         }
 
-        console.log('test: before leave: ', socket.rooms);
-        this.leavePastRoom(socket, io);
+        console.log('TEST JOIN PUBLIC: before leave: ', socket.rooms);
+        await this.leavePastRoom(socket, io);
+        socket.join(roomName);
+        console.log('TEST JOIN PUBLIC: after leave: ', socket.rooms);
         //!test
-        console.log('test: must be none: ', socket.rooms);
+        // console.log('test: must be none: ', socket.rooms);
         // sockejoinPublict.rooms.clear(); // ? 기존에 있던 방 나간다. docs -> 자기 client id?
 
         //user의 Channel 변경
-        socket.join(roomName);
-        console.log('test: must not be none: ', socket.rooms);
         //ChannelList에서 user 추가
         targetRoom.memberList.add(userId);
         console.log('joinPublicChatRoom :: targetRoom memberList : ', targetRoom.memberList);
+        console.log('JOIN PUBLIC CHAT ROOM, result socket.rooms:', socket.rooms);
         const user = await this.userService.findUserById(userId);
         const userName = user.userName;
         // socket.to(roomName).emit('joinPublicChatRoom', `"${userName}"님이 "${targetRoom.roomName}"방에 접속했습니다`);
@@ -296,7 +304,7 @@ export class ChatRoomService {
         }
 
         // socket.rooms.clear(); // ? 기존에 있던 방 나간다. docs -> 자기 client id?
-        this.leavePastRoom(socket, io);
+        await this.leavePastRoom(socket, io);
 
         //user의 Channel 변경
         socket.join(roomName);
@@ -317,7 +325,7 @@ export class ChatRoomService {
         socket.to(roomName).emit('kickUser', `"${userName}"님이 "${targetName}"님을 강퇴하였습니다.`);
         const targetId = (await this.userService.getUserByUserName(targetName)).id;
         const targetSocket = this.userList.get(targetId);
-        if (targetSocket !== undefined) this.leavePastRoom(socket, io);
+        if (targetSocket !== undefined) await this.leavePastRoom(socket, io);
         this.emitSuccess(socket, 'kickUser');
     }
 

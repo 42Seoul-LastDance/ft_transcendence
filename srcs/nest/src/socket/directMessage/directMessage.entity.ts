@@ -1,4 +1,4 @@
-import { IsNumber, IsString } from 'class-validator';
+import { IsBoolean, IsNumber, IsString } from 'class-validator';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { DateTime } from 'luxon';
 
@@ -14,6 +14,10 @@ export class DirectMessage {
     @Column()
     @IsNumber()
     receiverId: number;
+
+    @Column()
+    @IsBoolean()
+    hasReceived: boolean;
 
     @Column()
     @IsString()

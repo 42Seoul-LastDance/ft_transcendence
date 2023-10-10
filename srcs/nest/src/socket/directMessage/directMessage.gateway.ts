@@ -33,7 +33,7 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
     async handleConnection(socket: Socket) {
         // socket.emit('expireToken', async () => {
         // console.log('token: ', socket.handshake.query.token); // * 테스트용
-        console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
+        // console.log('token: ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
         const tokenString: string = socket.handshake.auth.token as string;
         try {
             if (!tokenString) throw new Error('jwt is invalid.');
