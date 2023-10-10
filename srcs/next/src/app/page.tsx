@@ -1,12 +1,11 @@
 'use client';
 import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
-import { getDmSocket } from './SSock';
 import { useEffect } from 'react';
 import ChatRoomList from './Chat/ChatButton';
 import Link from 'next/link';
 import Button from '@mui/material/Button';
-
+import { useRouter } from 'next/navigation';
 // var socket = getDmSocket();
 
 // socket.on('getMessage', (msg) => {
@@ -27,10 +26,14 @@ const TestButton = () => {
 
 export default function Home() {
     return (
-        <main>
-            <ChatRoomList />
-            <TestButton />
+        <>
+            <h1> Home, Sweet Home ☺️ </h1>
+            {/* <ChatRoomList />
+            <TestButton /> */}
             {/* <button onClick={socketEvent}> 안녕 친구들 </button> */}
-        </main>
+            <Link href="/game">
+                <button> To Game page </button>
+            </Link>
+        </>
     );
 }
