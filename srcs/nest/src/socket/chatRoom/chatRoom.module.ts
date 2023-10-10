@@ -7,8 +7,8 @@ import { BlockedUsers } from 'src/user/blockedUsers/blockedUsers.entity';
 import { BlockedUsersRepository } from 'src/user/blockedUsers/blockedUsers.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BlockedUsersModule } from 'src/user/blockedUsers/blockedUsers.module';
-import { SocketUsersService } from '../socketUsersService/socketUsers.service';
 import { SocketUsersModule } from '../socketUsersService/socketUsers.module';
+import { SocketUsersService } from '../socketUsersService/socketUsers.service';
 
 @Module({
     imports: [
@@ -17,6 +17,7 @@ import { SocketUsersModule } from '../socketUsersService/socketUsers.module';
         UserModule,
         JwtModule,
         SocketUsersModule,
+        BlockedUsersModule,
     ],
     providers: [ChatRoomGateway, ChatRoomService, SocketUsersService],
 })

@@ -42,6 +42,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
             const decodedToken = this.jwtService.verify(tokenString, {
                 secret: process.env.JWT_SECRET_KEY,
             });
+            console.log('NEW CONNECTION WITH', decodedToken.userName);
             await this.chatroomService.addNewUser(socket, decodedToken.sub, this.server);
         } catch (error) {
             console.log('error : ', error.message);
@@ -64,16 +65,26 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         // });
         console.log(socket.id, ': new connection. (Chat)');
         socket.emit('connectSuccess');
+
+        socket.on('disconnecting', async (reason) => {
+            console.log('DISCONNECTING event : ', socket.rooms);
+            const rooms: Set<string> = socket.rooms;
+            console.log('saved rooms:', rooms);
+            await this.chatroomService.leavePastRoom(socket, rooms, this.server);
+            await this.chatroomService.deleteUser(socket);
+            console.log('DISCONNECTING event :: After LeavePastRoom :  ', socket.rooms);
+        });
         //test
         // socket.emit('expireToken');
     }
 
     async handleDisconnect(socket: Socket) {
-        console.log('DISCONNECT ');
-        console.log('disconnection handling :: rooms : ', socket.rooms);
-        await this.chatroomService.leavePastRoom(socket, this.server);
-        this.chatroomService.deleteUser(socket);
-        console.log(socket.id, ': lost connection. (Chat)');
+        //     const userName = this.chatroomService.getUserId(socket);
+        //     console.log('DISCONNECT ', userName);
+        //     console.log('disconnection handling :: rooms : ', socket.rooms);
+        //     // if (await this.chatroomService.leavePastRoom(socket, this.server) === false)
+        //     this.chatroomService.deleteUser(socket);
+        //     console.log(socket.id, ': lost connection. (Chat)');
     }
 
     // * Getter ===========================================================
@@ -126,6 +137,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // * Message ===========================================================
     @SubscribeMessage('sendMessage')
     sendMessage(socket: Socket, payload: JSON): void {
+        console.log('SEND MESSAGE payload', payload);
         this.chatroomService.sendMessage(
             socket,
             payload['roomName'],
@@ -136,8 +148,9 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     @SubscribeMessage('receiveMessage')
-    receiveMessage(socket: Socket, payload: JSON): void {
-        this.chatroomService.receiveMessage(socket, payload['userName']);
+    async receiveMessage(socket: Socket, payload: JSON): Promise<void> {
+        const result = await this.chatroomService.receiveMessage(socket, payload['userName'], payload['content']);
+        socket.emit('receiveMessage', result);
     }
 
     // * ChatRoom Method ===========================================================

@@ -16,33 +16,31 @@ export class DirectMessageService {
     //private friendList: Map<number, number[]> = new Map<number, number[]>(); // {user id, user id[]}
     constructor(
         private directMessageRepository: DirectMessageRepository,
-        private blockedUsersService: BlockedUsersService,
+        // private blockedUsersService: BlockedUsersService,
         private socketUsersService: SocketUsersService,
     ) {}
 
     async addNewUser(socket: Socket, userId: number) {
         console.log('socket id, userId in addNewUser(DM) : ', socket.id, userId);
-        const signedUser: Socket = this.socketUsersService.getChatSocketById(userId); //OK
-        if (signedUser !== undefined) this.socketList.delete(signedUser.id);
-        this.socketList.set(socket.id, userId);
-        this.userList.set(userId, socket);
-        this.blockList.set(userId, await this.blockedUsersService.getBlockUserListById(userId));
-        // ? DM도 blockList를 유저별로 인메모리에 저장해놔야 빠르게 체크할 수 있지 않을까?
+        const signedUser: Socket = this.socketUsersService.getDMSocketById(userId);
+        if (signedUser !== undefined) this.socketUsersService.deleteDMSocket(signedUser.id);
+        this.socketUsersService.addDMSocket(socket.id, userId);
+        this.socketUsersService.addDMUser(userId, socket);
+        this.socketUsersService.setBlockList(userId);
     }
 
     deleteUser(socket: Socket) {
-        this.userList.delete(this.socketList.get(socket.id));
-        this.socketList.delete(socket.id);
+        this.socketUsersService.deleteDMUserAll(socket);
     }
 
     blockUser(socket: Socket, userId: number, targetId: number) {
-        const blockedList = this.blockList.get(userId);
+        const blockedList = this.socketUsersService.getBlockListById(userId);
         if (blockedList.indexOf(targetId) !== -1) return;
         blockedList.push(targetId);
     }
 
     unblockUser(socket: Socket, userId: number, targetId: number) {
-        const blockedList = this.blockList.get(userId);
+        const blockedList = this.socketUsersService.getBlockListById(userId);
         const idx = blockedList.indexOf(targetId);
         if (idx === -1) return;
         blockedList.splice(idx);
@@ -61,12 +59,12 @@ export class DirectMessageService {
     }
 
     getUserId(socket: Socket): number | undefined {
-        return this.socketList.get(socket.id);
+        return this.socketUsersService.getUserIdByDMSocketId(socket.id);
     }
 
     async sendMessage(socket: Socket, content: string, targetId: number) {
         const userId = this.getUserId(socket);
-        const targetSocket: Socket = this.userList.get(targetId);
+        const targetSocket: Socket = this.socketUsersService.getDMSocketById(targetId);
         const payload = {
             senderId: userId,
             receiverId: targetId,
@@ -77,7 +75,7 @@ export class DirectMessageService {
 
         // TODO : 상대방이 나를 차단했는지 확인 -> hasReceived = false
         let hasReceived: boolean = false; //(전제 조건)만약 차단되었으면 false
-        const isBlocked = await this.blockedUsersService.isBlocked(userId, targetId);
+        const isBlocked = await this.socketUsersService.isBlocked(userId, targetId);
         if (isBlocked === false) {
             //차단되지 않았으므로 hasReceived = true, emit
             hasReceived = true;
@@ -87,7 +85,7 @@ export class DirectMessageService {
     }
 
     async findRecentDMs(target1Id: number, userName: string, count: number): Promise<DirectMessageInfoDto[]> {
-        //TODO :  userName -> userID
+        const target2Id = await this.socketUsersService.getUserIdByUserName(userName);
         const DMList: DirectMessage[] = await this.directMessageRepository.find({
             where: [
                 { senderId: target1Id, receiverId: target2Id },
@@ -98,5 +96,8 @@ export class DirectMessageService {
             },
             take: count,
         });
+        //TODO :  DirectMessage[] 에서 DirectMessageInfoDto[] 로 일부 정보만 추출하여 변경 후 리턴해주기
+
+        return;
     }
 }

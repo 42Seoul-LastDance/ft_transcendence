@@ -3,7 +3,6 @@ import { Socket, Server } from 'socket.io';
 import { ChatRoomDto } from './dto/chatRoom.dto';
 import { CreateRoomDto } from './dto/createRoom.dto';
 import { RoomStatus } from './roomStatus.enum';
-
 import { UserPermission } from './userPermission.enum';
 import { SocketUsersService } from '../socketUsersService/socketUsers.service';
 // import { RouterModule } from '@nestjs/core';
@@ -19,24 +18,8 @@ import { SocketUsersService } from '../socketUsersService/socketUsers.service';
 export class ChatRoomService {
     private publicRoomList: Map<string, ChatRoomDto> = new Map<string, ChatRoomDto>();
     private privateRoomList: Map<string, ChatRoomDto> = new Map<string, ChatRoomDto>();
-    //private userList: Map<number, Socket> = new Map<number, Socket>(); //{userName->id, Socket}
-    //private socketList: Map<string, number> = new Map<string, number>(); //{socket id , userName->id}
-    //private blockList: Map<number, Array<number>> = new Map<number, Array<number>>(); //{user id , blockUserList} // ! -> DB에서 한번 가져 들고왔다가 지속 업데이트
 
-    constructor(
-        // private userService: UserService,
-        // private blockedUsersService: BlockedUsersService,
-        private socketUsersService: SocketUsersService,
-    ) {
-        // // rdefulatoom 이제 없애고 테스트??
-        // const chatRoom = {
-        //     roomName: 'default room',
-        //     ownerName: 'ebang',
-        //     status: RoomStatus.PUBLIC,
-        //     password: 'password',
-        //     requirePassword: false,
-        // };
-        // this.publicRoomList.set('default room', Object.assign(new ChatRoomDto(), chatRoom));
+    constructor(private socketUsersService: SocketUsersService) {
         console.log('🌟🌟🌟new connection!!!! 다 초기화 됨!!!!!!!🌟🌟🌟');
     }
 
@@ -86,9 +69,9 @@ export class ChatRoomService {
         console.log('add new user, has rooms : ', socket.rooms);
     }
 
-    deleteUser(socket: Socket) {
-        console.log('DELETE USER');
-        this.socketUsersService.deleteUserAll(socket);
+    async deleteUser(socket: Socket) {
+        console.log('DELETE USER', await this.socketUsersService.getUserNameByUserId(this.getUserId(socket)));
+        this.socketUsersService.deleteChatUserAll(socket);
     }
 
     //result, reason
@@ -191,12 +174,30 @@ export class ChatRoomService {
         //.to('' + roomDto.id) => 글쓴 사람을 제외한 다른 사람들한테만 보이는지 확인
     }
 
-    async leavePastRoom(socket: Socket, io: Server): Promise<void> {
+    explodeRoom(socket: Socket, pastRoom: ChatRoomDto, io: Server) {
+        console.log('ROOM EXPLODE : ', pastRoom.roomName);
+        const pastRoomName = pastRoom.roomName;
+        if (pastRoom.status === RoomStatus.PUBLIC) this.publicRoomList.delete(pastRoomName);
+        else if (pastRoom.status === RoomStatus.PRIVATE) this.privateRoomList.delete(pastRoomName);
+        else return;
+        io.emit('getChatRoomList', this.getChatRoomList());
+        socket.to(pastRoomName).emit('explodeRoom');
+        // socket.leave(pastRoomName);
+        //!test
+        io.in(pastRoomName).disconnectSockets(false);
+    }
+
+    async leavePastRoom(socket: Socket, rooms: Set<string>, io: Server): Promise<boolean> {
         const userId = this.socketUsersService.getUserIdByChatSocketId(socket.id);
         const userName = await this.socketUsersService.getUserNameByUserId(userId);
-        console.log('LEAVE PAST ROOM : ', userName);
+        console.log('LEAVE PAST ROOM');
+        console.log('userName : ', userName);
+        console.log('rooms: ', rooms);
+        const array = Array.from(rooms);
+        console.log('room list: ', array);
+        const pastRoomName = array[0];
+        socket.leave(pastRoomName); //void
 
-        const pastRoomName = Array.from(socket.rooms).at(-1);
         if (pastRoomName === undefined) {
             console.log('no past room. bye');
             this.emitFailReason(socket, 'leavePastRoom', 'there was no pastroom');
@@ -212,13 +213,8 @@ export class ChatRoomService {
         socket.to(pastRoomName).emit('sendMessage', userName + '님이 방을 나가셨습니다.');
         if (userName === pastRoom?.ownerName) {
             // owner가 나갈 경우 방 폭파
-            //! test
-            console.log('ROOM EXPLODE : ', pastRoom.roomName);
             socket.to(pastRoomName).emit('explodeChatRoom', '방 소유자가 나갔으므로 채팅방이 사라집니다.');
-            // 방 타입 검사 후 해당 리스트에서 key-value쌍 item 삭제
-            if (pastRoom.status === RoomStatus.PUBLIC) this.publicRoomList.delete(pastRoomName);
-            else this.privateRoomList.delete(pastRoomName);
-            io.emit('getChatRoomList', this.getChatRoomList());
+            this.explodeRoom(socket, pastRoom, io);
         } else {
             //한 유저만 chatRoom에서 삭제
             console.log('DELETE ONLY ONE USER (no room explode)');
@@ -228,6 +224,7 @@ export class ChatRoomService {
             console.log('LEAVE PAST ROOM: after ', socket.id, ' leave : ', socket.rooms);
         }
         this.emitSuccess(socket, 'leavePastRoom');
+        return true;
     }
 
     async joinPublicChatRoom(socket: Socket, roomName: string, password: string, io: Server): Promise<void> {
@@ -256,7 +253,7 @@ export class ChatRoomService {
         }
 
         console.log('TEST JOIN PUBLIC: before leave: ', socket.rooms);
-        await this.leavePastRoom(socket, io);
+        await this.leavePastRoom(socket, socket.rooms, io);
         socket.join(roomName);
         console.log('TEST JOIN PUBLIC: after leave: ', socket.rooms);
         //!test
@@ -288,7 +285,7 @@ export class ChatRoomService {
         }
 
         // socket.rooms.clear(); // ? 기존에 있던 방 나간다. docs -> 자기 client id?
-        await this.leavePastRoom(socket, io);
+        await this.leavePastRoom(socket, socket.rooms, io);
 
         //user의 Channel 변경
         socket.join(roomName);
@@ -309,7 +306,7 @@ export class ChatRoomService {
         socket.to(roomName).emit('kickUser', `"${userName}"님이 "${targetName}"님을 강퇴하였습니다.`);
         const targetId = await this.socketUsersService.getUserIdByUserName(userName);
         const targetSocket = this.socketUsersService.getChatSocketById(targetId);
-        if (targetSocket !== undefined) await this.leavePastRoom(socket, io);
+        if (targetSocket !== undefined) await this.leavePastRoom(socket, socket.rooms, io);
         this.emitSuccess(socket, 'kickUser');
     }
 
@@ -356,35 +353,23 @@ export class ChatRoomService {
         //! test
         const userId = this.getUserId(socket);
         const targetId = await this.socketUsersService.getUserIdByUserName(targetName);
-        const blockedList = this.blockList.get(userId);
-        if (blockedList === undefined) console.log('test failed: user id에 해당하는 키 값이 존재하지 않습니다.');
-        if (blockedList.indexOf(targetId) === -1) return this.emitFailReason(socket, 'blockUser', 'already blocked.');
-        blockedList.push(targetId);
-        await this.socketUsersService.
-        await this.blockedUsersService.blockUserById(userId, targetId); //DB
+        await this.socketUsersService.blockUser(userId, targetId);
         this.emitSuccess(socket, 'blockUser');
     }
 
     async unBlockUser(socket: Socket, targetName: string): Promise<void> {
-        //1. socket.id를 통해 blockList의 value(Array<string>) 가져오기
-        //2. value에서 targetName 찾기
-        //3. targetName 제거
         const userId = this.getUserId(socket);
-        const targetId = (await this.userService.getUserByUserName(targetName)).id;
-        const blockedList = this.blockList.get(userId);
-        //!test
-        if (blockedList === undefined) console.log('test failed: user id에 해당하는 키 값이 존재하지 않습니다.');
-        if (blockedList.indexOf(targetId) === -1)
-            return this.emitFailReason(socket, 'blockUser', 'was not blocked yet');
-        const condition = (id) => id === targetId;
-        const idx = blockedList.findIndex(condition);
-        blockedList.splice(idx, 1);
-        await this.blockedUsersService.unblockUserById(userId, targetId); //DB
+        const targetId = await this.socketUsersService.getUserIdByUserName(targetName);
+        await this.socketUsersService.unBlockUser(userId, targetId);
         this.emitSuccess(socket, 'unBlockUser');
     }
 
-    sendMessage(socket: Socket, roomName: string, userName: string, content: string, status: RoomStatus) {
+    sendMessage(socket: Socket, roomName: string, userName: string, content: string, status: RoomStatus): boolean {
         let room: ChatRoomDto;
+        if (roomName === undefined || roomName === null) {
+            this.emitFailReason(socket, 'sendMessage', 'roomName undefined');
+            return;
+        }
         if (status == RoomStatus.PRIVATE) {
             room = this.privateRoomList.get(roomName);
         } else {
@@ -392,8 +377,10 @@ export class ChatRoomService {
         }
 
         const userId = this.getUserId(socket);
-        socket.to(room.roomName).emit('sendMessage', { userName: userName, content: content });
-        console.log('successfully sent message.');
+        console.log('message to ', roomName);
+        socket.emit('sendMessage', { userName: userName, content: content }); //sender
+        socket.to(room.roomName).emit('sendMessage', { userName: userName, content: content }); //members
+        console.log('successfully sent message.', userName, ',', content);
     }
 
     /*
@@ -401,18 +388,20 @@ export class ChatRoomService {
     A가 B의 메시지를 받아도 되는가? A->B B->A 둘 다 검사??
     @Brief userName이 보낸 메시지를 socket의 front 에게 렌더링 할지 말지 알려줍니다.
     */
-    receiveMessage(socket: Socket, userName: string): void {
-        socket.emit('receiveMessage', { canReceive: true });
-
-        // const userId = this.getUserId(socket);
-        // const blockedList = this.blockList.get(userId);
-        // if (blockedList === undefined) {
-        //     console.log('error: blockedList undefined');
-        //     this.emitFailReason(socket, 'receiveMessage', 'undefined issue');
-        //     return false;
-        // }
-        // if (blockedList?.indexOf(userId) === -1) return true;
-        // return false;
+    async receiveMessage(
+        socket: Socket,
+        userName: string,
+        content: string,
+    ): Promise<{ canReceive: boolean; userName: string; content: string }> {
+        const userId: number = this.getUserId(socket);
+        const targetId: number = await this.socketUsersService.getUserIdByUserName(userName);
+        const isBlocked: boolean = await this.socketUsersService.isBlocked(userId, targetId);
+        const result = {
+            canReceive: isBlocked,
+            userName: userName,
+            content: content,
+        };
+        return result;
     }
 
     async inviteUser(socket: Socket, roomName: string, userName: string) {
@@ -420,7 +409,6 @@ export class ChatRoomService {
         //2. roomName 에 해당하는 room의 inviteList에 추가.
         const room = this.privateRoomList.get(roomName);
         if (room === undefined) this.emitFailReason(socket, 'inviteUser', 'such private room does not exists.');
-        //저희 다 id로 관리하기로 해서 그런것 같은데용
         const foundId = this.getUserId(socket);
         if (room.inviteList.has(foundId)) {
             this.emitFailReason(socket, 'inviteUser', 'user already invited.');

@@ -18,6 +18,7 @@ import { SocketUsersModule } from '../socketUsersService/socketUsers.module';
         JwtModule,
         UserModule,
         SocketUsersModule,
+        BlockedUsersModule,
     ],
     controllers: [DirectMessageController],
     providers: [DirectMessageGateway, DirectMessageService, DirectMessageRepository, SocketUsersService],

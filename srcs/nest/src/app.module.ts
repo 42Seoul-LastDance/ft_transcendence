@@ -15,6 +15,7 @@ import { FriendModule } from './user/friend/friend.module';
 import { Friend } from './user/friend/friend.entity';
 import { SocketUsersModule } from './socket/socketUsersService/socketUsers.module';
 import { Game } from './game/game.entity';
+import { GameModule } from './game/game.module';
 
 @Module({
     imports: [
@@ -36,6 +37,7 @@ import { Game } from './game/game.entity';
         DirectMessageModule,
         FriendModule,
         SocketUsersModule,
+        GameModule,
     ],
     controllers: [AppController],
     providers: [AppService],

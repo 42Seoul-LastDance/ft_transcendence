@@ -23,7 +23,7 @@ import {
   SendMessageDto,
 } from '../../interface';
 import { setChatMessages } from '@/app/redux/roomSlice';
-import { IoEventOnce } from '@/app/context/socket';
+import { IoEventListener, IoEventOnce } from '@/app/context/socket';
 
 const ChattingPage = (props: ChattingPageProps) => {
   const [message, setMessage] = useState('');
@@ -35,31 +35,29 @@ const ChattingPage = (props: ChattingPageProps) => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const myName = useSelector((state: RootState) => state.user.userName);
 
-  // const handleBlockCheck = (userName: string) => {
-  // if (isMyName(data.userName)) setChatMessages([...chatMessages, data]);
-  // else if (await blockCheck(data.userName))
-  //   setChatMessages([...chatMessages, data]);
-  // else console.log('Recv Msg from blocked user');
-  //   if (!props.socket) throw Error('retry');
-  //   return new Promise<boolean>((resolve, reject) => {
-  //     if (!props.socket.hasListeners('receiveMessage')) {
-  //       props.socket.once('receiveMessage', (data: receiveMessage) => {
-  //         console.log('server receive: ', data);
-  //         resolve(data.canReceive === true);
-  //       });
-  //     }
-  //     props.socket.emit('receiveMessage', {
-  //       userName: userName,
-  //     });
-  //   });
-  // };
-
-  const recvMessage = (data: ChatMessage[]) => {
-    // handleBlockCheck();
-    dispatch(setChatMessages(data));
+  const handleCheckRendering = (data: any) => {
+    console.log('check rendering', data);
+    props.socket?.emit('receiveMessage', {
+      userName: data.userName,
+      content: data.content,
+    });
   };
 
-  IoEventOnce(props.socket!, 'sendMessage', recvMessage);
+  const handleReceiveMessage = (data: any) => {
+    console.log('receive Message', data);
+    if (data) {
+      const receiveMsg: ChatMessage = {
+        userName: data.userName,
+        content: data.content,
+      };
+      // 그리기
+      dispatch(setChatMessages([...chatMessages, receiveMsg]));
+    }
+  };
+
+  // 메세지 받기
+  IoEventListener(props.socket!, 'sendMessage', handleCheckRendering);
+  IoEventListener(props.socket!, 'receiveMessage', handleReceiveMessage);
 
   // 메세지 보내기
   const SendMessage = () => {
@@ -76,6 +74,7 @@ const ChattingPage = (props: ChattingPageProps) => {
       userName: myName!,
       content: message,
     };
+    console.log('newSend', newSend);
     props.socket?.emit('sendMessage', newSend);
     setMessage('');
   };

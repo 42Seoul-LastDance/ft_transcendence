@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import {
     OnGatewayConnection,
     OnGatewayDisconnect,
@@ -8,7 +7,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { GameService } from './game.service';
-// import { JwtService } from '@nestjs/jwt';
+import { JwtService } from '@nestjs/jwt';
 
 @WebSocketGateway({
     port: 3000,
@@ -16,38 +15,47 @@ import { GameService } from './game.service';
         origin: true,
         withCredentials: true,
     },
+    transport: ['websocket'],
     namespace: 'Game',
-}) // 데코레이터 인자로 포트 줄 수 있음
+})
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     constructor(
-        private gameService: GameService, // private jwtService: JwtService,
+        private gameService: GameService,
+        private jwtService: JwtService,
     ) {}
 
     @WebSocketServer()
     server: Server;
 
     async handleConnection(client: Socket) {
-        //TODO jwt check logic
-        // const tokenString: string = client.handshake.query.token as string;
-        // try {
-        //     const decodedToken = this.jwtService.verify(tokenString, {
-        //         secret: process.env.JWT_SECRET_KEY,
-        //     });
-        //     await this.gameService.createPlayer(client, decodedToken.sub);
-        // } catch (error) {
-        //     client.disconnect(true);
-        //     console.log('player JWT not valid');
-        //     return;
-        // }
-        //! TEST CODE below
-        await this.gameService.createPlayer(client, '1111');
-        console.log('new connection, player enrolled:', client.id);
+        const tokenString: string = client.handshake.auth.token as string;
+        try {
+            if (!tokenString) throw new Error('jwt is empty.');
+            const decodedToken = this.jwtService.verify(tokenString, {
+                secret: process.env.JWT_SECRET_KEY,
+            });
+            await this.gameService.createPlayer(client, decodedToken.sub);
+        } catch (error) {
+            console.log('error : ', error.message);
+            if (error.message === 'jwt expired') {
+                // `${BACK_URL}/auth/regenerateToken`
+                // * 토큰 만료 => 근데 왜 404 날라와요?.. ?
+                console.log('expireToken emit called');
+                client.emit('expireToken');
+            }
+            client.disconnect(true);
+            // console.log('player JWT not valid');
+            return;
+        }
+        //console.log('new connection, player enrolled:', client.id);
+        console.log(client.id, ': new connection. (Game)');
     }
 
     async handleDisconnect(client: Socket) {
         await this.gameService.handleDisconnect(client.id);
         this.gameService.deletePlayer(client.id);
-        console.log('lost connection, player deleted:', client.id);
+        //console.log('lost connection, player deleted:', client.id);
+        console.log(client.id, ': lost connection. (Game)');
     }
 
     //* Match Game ======================================
@@ -70,11 +78,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     //* Friend Game ======================================
     @SubscribeMessage('inviteGame')
     async inviteGame(client: Socket, gameInfo: JSON) {
-        await this.gameService.inviteGame(
-            client.id,
-            +gameInfo['gameMode'],
-            gameInfo['friendName'],
-        );
+        await this.gameService.inviteGame(client.id, +gameInfo['gameMode'], gameInfo['friendName']);
     }
 
     @SubscribeMessage('agreeInvite')

@@ -1,17 +1,7 @@
 /* eslint-disable prettier/prettier */
-import {
-    BadRequestException,
-    Injectable,
-    InternalServerErrorException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import {
-    GameType,
-    PlayerSide,
-    GameStatus,
-    GameEndStatus,
-    Emoji,
-} from './game.enum';
+import { GameType, PlayerSide, GameStatus, GameEndStatus, Emoji } from './game.enum';
 import {
     MAXSCORE,
     TIMEZONE,
@@ -45,7 +35,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { GameRepository } from './game.repository';
 import { DateTime } from 'luxon';
 import { UserService } from 'src/user/user.service';
-import { userStatus } from 'src/user/user-status.enum';
+import { UserStatus } from 'src/user/user-status.enum';
 
 @Injectable()
 export class GameService {
@@ -70,15 +60,12 @@ export class GameService {
             const player: Player = {
                 socket: playerSocket,
                 userId: +userId,
-                userName: (await this.userService.findUserById(+userId))
-                    .username,
+                userName: (await this.userService.findUserById(+userId)).userName,
             };
             this.playerList.set(playerSocket.id, player);
         } catch (error) {
             console.log('error >> gameService >> createPlayer');
-            throw new InternalServerErrorException(
-                '[ERR] gameService >> createPlayer',
-            );
+            throw new InternalServerErrorException('[ERR] gameService >> createPlayer');
         }
     }
 
@@ -93,50 +80,36 @@ export class GameService {
                     if (this.matchQueue[player.gameMode] === player.socket.id)
                         this.matchQueue[player.gameMode] = undefined;
                 } else {
-                    if (this.friendGameList.get(player.userName))
-                        this.friendGameList.delete(player.userName);
+                    if (this.friendGameList.get(player.userName)) this.friendGameList.delete(player.userName);
                 }
             } else {
                 //in room (waiting or game)
                 const gameRoom = this.gameRoomList.get(player.roomId);
                 if (gameRoom.gameStatus === GameStatus.WAIT) {
                     //in waiting Room => 상대방에게 대기방 나가기 이벤트 발생!
-                    const rival: Player = this.playerList.get(
-                        gameRoom.socket[(player.side + 1) % 2].id,
-                    );
+                    const rival: Player = this.playerList.get(gameRoom.socket[(player.side + 1) % 2].id);
                     await this.resetPlayer(rival);
                     rival.socket.emit('kickout');
                 } else if (gameRoom.gameStatus === GameStatus.GAME) {
                     //게임중 => 게임 강제종료
-                    await this.finishGame(
-                        gameRoom.id,
-                        (player.side + 1) % 2,
-                        GameEndStatus.DISCONNECT,
-                    );
+                    await this.finishGame(gameRoom.id, (player.side + 1) % 2, GameEndStatus.DISCONNECT);
                 } //else throw new BadRequestException('무슨 에러지..?');
                 //gameroom 없애기
                 this.gameRoomList.delete(player.roomId);
             }
         } catch (error) {
             console.log('error >> gameService >> handleDisconnect');
-            throw new InternalServerErrorException(
-                '[ERR] gameService >> handleDisconnect',
-            );
+            throw new InternalServerErrorException('[ERR] gameService >> handleDisconnect');
         }
     }
     //Player 삭제 (handleDisconnect용)
     async deletePlayer(playerId: string) {
         try {
-            await this.resetPlayer(
-                this.playerList.get(playerId),
-                userStatus.OFFLINE,
-            );
+            await this.resetPlayer(this.playerList.get(playerId), UserStatus.OFFLINE);
             this.playerList.delete(playerId);
         } catch (error) {
             console.log('error >> gameService >> deletePlayer');
-            throw new InternalServerErrorException(
-                '[ERR] gameService >> deletePlayer',
-            );
+            throw new InternalServerErrorException('[ERR] gameService >> deletePlayer');
         }
     }
 
@@ -153,19 +126,13 @@ export class GameService {
 
     async popQueue(playerId: string): Promise<void> {
         try {
-            if (
-                this.matchQueue[this.playerList.get(playerId).gameMode] ===
-                playerId
-            ) {
-                this.matchQueue[this.playerList.get(playerId).gameMode] =
-                    undefined;
+            if (this.matchQueue[this.playerList.get(playerId).gameMode] === playerId) {
+                this.matchQueue[this.playerList.get(playerId).gameMode] = undefined;
                 await this.resetPlayer(this.playerList.get(playerId));
             } //else throw new BadRequestException('player was not in Queue');
         } catch (error) {
             console.log('error >> gameService >> popQueue');
-            throw new InternalServerErrorException(
-                '[ERR] gameService >> popQueue',
-            );
+            throw new InternalServerErrorException('[ERR] gameService >> popQueue');
         }
     }
 
@@ -173,38 +140,25 @@ export class GameService {
     async inviteGame(playerId: string, gameMode: number, friendName: string) {
         try {
             const hostName = this.playerList.get(playerId).userName;
-            const friendId = (
-                await this.userService.getUserByUsername(friendName)
-            ).id;
+            const friendId = (await this.userService.getUserByUserName(friendName)).id;
             this.updatePlayer(playerId, gameMode, GameType.FRIEND, friendId);
             this.friendGameList.set(hostName, playerId);
             console.log('inviteGame:', hostName, 'waiting for', friendName);
         } catch (error) {
             console.log('error >> gameService >> inviteGame');
-            throw new InternalServerErrorException(
-                '[ERR] gameService >> inviteGame',
-            );
+            throw new InternalServerErrorException('[ERR] gameService >> inviteGame');
         }
     }
 
     async agreeInvite(playerId: string, friendName: string) {
         //queue에 초대한 친구 있는지 확인
         const hostId = this.friendGameList.get(friendName);
-        if (
-            hostId &&
-            this.playerList.get(hostId).friendId ===
-                this.playerList.get(playerId).userId
-        ) {
+        if (hostId && this.playerList.get(hostId).friendId === this.playerList.get(playerId).userId) {
             //friendlist에서 해당 큐 제외
             this.friendGameList.delete(friendName);
             //player update
             const gameMode = this.playerList.get(hostId).gameMode;
-            this.updatePlayer(
-                playerId,
-                gameMode,
-                GameType.FRIEND,
-                this.playerList.get(hostId).userId,
-            );
+            this.updatePlayer(playerId, gameMode, GameType.FRIEND, this.playerList.get(hostId).userId);
             //방파줌. 즐겜! << ㅋㅋ
             this.makeGameRoom(hostId, playerId, GameType.FRIEND, gameMode);
         } else {
@@ -214,9 +168,7 @@ export class GameService {
                 this.playerList.get(playerId).socket.emit('kickout');
             } catch (error) {
                 console.log('error >> gameService >> agreeInvite');
-                throw new InternalServerErrorException(
-                    '[ERR] gameService >> agreeInvite',
-                );
+                throw new InternalServerErrorException('[ERR] gameService >> agreeInvite');
             }
         }
     }
@@ -224,11 +176,7 @@ export class GameService {
     denyInvite(playerId: string, friendName: string) {
         //queue에 초대한 친구 있는지 확인
         const hostId = this.friendGameList.get(friendName);
-        if (
-            hostId &&
-            this.playerList.get(hostId).friendId ===
-                this.playerList.get(playerId).userId
-        ) {
+        if (hostId && this.playerList.get(hostId).friendId === this.playerList.get(playerId).userId) {
             this.friendGameList.delete(friendName);
             this.playerList.get(hostId).socket.emit('denyInvite');
         }
@@ -243,18 +191,14 @@ export class GameService {
         if (this.gameRoomList.get(roomId).ready[rivalSide]) {
             //둘 다 게임 준비 완료!
             this.updateGame(roomId);
-            const [leftPlayer, rightPlayer] =
-                this.gameRoomList.get(roomId).socket;
+            const [leftPlayer, rightPlayer] = this.gameRoomList.get(roomId).socket;
             const gameInfo = this.getBallStartDir(roomId);
             gameInfo['isFirst'] = true;
-            gameInfo['leftName'] =
-                this.gameRoomList.get(roomId).name[PlayerSide.LEFT];
-            gameInfo['rightName'] =
-                this.gameRoomList.get(roomId).name[PlayerSide.RIGHT];
+            gameInfo['leftName'] = this.gameRoomList.get(roomId).name[PlayerSide.LEFT];
+            gameInfo['rightName'] = this.gameRoomList.get(roomId).name[PlayerSide.RIGHT];
             gameInfo['leftScore'] = 0;
             gameInfo['rightScore'] = 0;
-            gameInfo['ballSpeed'] =
-                BALL_SPEED[this.gameRoomList.get(roomId).gameMode];
+            gameInfo['ballSpeed'] = BALL_SPEED[this.gameRoomList.get(roomId).gameMode];
             gameInfo['side'] = PlayerSide.LEFT;
             leftPlayer.emit('startGame', gameInfo);
             gameInfo['side'] = PlayerSide.RIGHT;
@@ -290,9 +234,7 @@ export class GameService {
         const player = this.playerList.get(playerId);
         if (player.roomId === undefined) return;
         const side = player.side;
-        const rivalSocket = this.gameRoomList.get(player.roomId).socket[
-            (side + 1) % 2
-        ];
+        const rivalSocket = this.gameRoomList.get(player.roomId).socket[(side + 1) % 2];
         rivalSocket.emit('sendEmoji', { type: emoji });
     }
 
@@ -324,10 +266,7 @@ export class GameService {
             PADDLE_SCALE_Z !== gameInfo['leftScaleZ'] ||
             PADDLE_SPEED !== gameInfo['leftSpeed'] ||
             //right
-            !this.equals(
-                gameInfo['rightPosX'],
-                PADDLE_POS_X[PlayerSide.RIGHT],
-            ) ||
+            !this.equals(gameInfo['rightPosX'], PADDLE_POS_X[PlayerSide.RIGHT]) ||
             !this.equals(gameInfo['rightPosY'], PADDLE_POS_Y) ||
             PADDLE_POS_Z_MIN > gameInfo['rightPosZ'] ||
             PADDLE_POS_Z_MAX < gameInfo['rightPosZ'] ||
@@ -343,16 +282,10 @@ export class GameService {
             const roomId = player.roomId;
             const rivalSide = (player.side + 1) % 2;
             try {
-                await this.finishGame(
-                    roomId,
-                    rivalSide,
-                    GameEndStatus.CHEATING,
-                );
+                await this.finishGame(roomId, rivalSide, GameEndStatus.CHEATING);
             } catch (error) {
                 console.log('error >> gameService >> validCheck');
-                throw new InternalServerErrorException(
-                    '[ERR] gameService >> validCheck',
-                );
+                throw new InternalServerErrorException('[ERR] gameService >> validCheck');
             }
         }
     }
@@ -360,8 +293,7 @@ export class GameService {
     async ballHit(leftId: string, gameInfo: JSON) {
         const roomId = this.playerList.get(leftId).roomId;
         if (roomId === undefined) return;
-        const rivalSocket =
-            this.gameRoomList.get(roomId).socket[PlayerSide.RIGHT];
+        const rivalSocket = this.gameRoomList.get(roomId).socket[PlayerSide.RIGHT];
         //score check
         try {
             if (
@@ -369,18 +301,11 @@ export class GameService {
                 gameInfo['ballPosX'] >= BALL_POS_X_MAX - SCORE_PADDING
             ) {
                 let scoreSide = PlayerSide.RIGHT;
-                if (gameInfo['ballPosX'] >= BALL_POS_X_MAX - SCORE_PADDING)
-                    scoreSide = PlayerSide.LEFT;
+                if (gameInfo['ballPosX'] >= BALL_POS_X_MAX - SCORE_PADDING) scoreSide = PlayerSide.LEFT;
                 this.gameRoomList.get(roomId).score[scoreSide] += 1;
-                if (
-                    this.gameRoomList.get(roomId).score[scoreSide] === MAXSCORE
-                ) {
+                if (this.gameRoomList.get(roomId).score[scoreSide] === MAXSCORE) {
                     //game finish (max score reached)
-                    await this.finishGame(
-                        roomId,
-                        scoreSide,
-                        GameEndStatus.NORMAL,
-                    );
+                    await this.finishGame(roomId, scoreSide, GameEndStatus.NORMAL);
                 } else this.continueGame(roomId);
             } else {
                 //받아침! => ballInfo update & rival에게 전달
@@ -395,9 +320,7 @@ export class GameService {
             }
         } catch (error) {
             console.log('error >> gameService >> ballHit');
-            throw new InternalServerErrorException(
-                '[ERR] gameService >> ballHit',
-            );
+            throw new InternalServerErrorException('[ERR] gameService >> ballHit');
         }
     }
 
@@ -409,9 +332,7 @@ export class GameService {
             await this.finishGame(roomId, rivalSide, GameEndStatus.OUTGAME);
         } catch (error) {
             console.log('error >> gameService >> outGame');
-            throw new InternalServerErrorException(
-                '[ERR] gameService >> outGame',
-            );
+            throw new InternalServerErrorException('[ERR] gameService >> outGame');
         }
     }
 
@@ -423,32 +344,22 @@ export class GameService {
         const gameInfo = this.getBallStartDir(roomId);
         gameInfo['isFirst'] = false;
         gameInfo['side'] = PlayerSide.NONE; //아무값
-        gameInfo['leftName'] =
-            this.gameRoomList.get(roomId).name[PlayerSide.LEFT];
-        gameInfo['rightName'] =
-            this.gameRoomList.get(roomId).name[PlayerSide.RIGHT];
-        gameInfo['leftScore'] =
-            this.gameRoomList.get(roomId).score[PlayerSide.LEFT];
-        gameInfo['rightScore'] =
-            this.gameRoomList.get(roomId).score[PlayerSide.RIGHT];
-        gameInfo['ballSpeed'] =
-            BALL_SPEED[this.gameRoomList.get(roomId).gameMode];
+        gameInfo['leftName'] = this.gameRoomList.get(roomId).name[PlayerSide.LEFT];
+        gameInfo['rightName'] = this.gameRoomList.get(roomId).name[PlayerSide.RIGHT];
+        gameInfo['leftScore'] = this.gameRoomList.get(roomId).score[PlayerSide.LEFT];
+        gameInfo['rightScore'] = this.gameRoomList.get(roomId).score[PlayerSide.RIGHT];
+        gameInfo['ballSpeed'] = BALL_SPEED[this.gameRoomList.get(roomId).gameMode];
         player1.emit('startGame', gameInfo);
         player2.emit('startGame', gameInfo);
     }
 
     //게임 종료 (정상 + 비정상)
-    async finishGame(
-        roomId: number,
-        winnerSide: number,
-        endGameStatus: number,
-    ) {
+    async finishGame(roomId: number, winnerSide: number, endGameStatus: number) {
         //gameRoom 업데이트
         this.updateGameRoom(roomId, winnerSide, endGameStatus);
         // console.log('gameRoom: ', this.gameRoomList.get(roomId));
         //플레이어들에게 결과 전달
-        const [player1Socket, player2Socket] =
-            this.gameRoomList.get(roomId).socket;
+        const [player1Socket, player2Socket] = this.gameRoomList.get(roomId).socket;
         const gameResult = {
             winner: winnerSide,
             leftScore: this.gameRoomList.get(roomId).score[PlayerSide.LEFT],
@@ -462,44 +373,26 @@ export class GameService {
             //DB에 저장
             await this.createGameData(roomId);
             //gameRoom 처리
-            if (
-                this.gameRoomList.get(roomId).gameType === GameType.FRIEND &&
-                endGameStatus === GameEndStatus.NORMAL
-            ) {
+            if (this.gameRoomList.get(roomId).gameType === GameType.FRIEND && endGameStatus === GameEndStatus.NORMAL) {
                 //친선경기 => reset gameRoom for restart
                 this.resetGameRoom(roomId);
             } else {
                 //그 외 => player reset && delete room
                 if (endGameStatus === GameEndStatus.DISCONNECT) {
+                    await this.resetPlayer(this.playerList.get(this.gameRoomList.get(roomId).socket[winnerSide].id));
                     await this.resetPlayer(
-                        this.playerList.get(
-                            this.gameRoomList.get(roomId).socket[winnerSide].id,
-                        ),
-                    );
-                    await this.resetPlayer(
-                        this.playerList.get(
-                            this.gameRoomList.get(roomId).socket[
-                                (winnerSide + 1) % 2
-                            ].id,
-                        ),
-                        userStatus.OFFLINE,
+                        this.playerList.get(this.gameRoomList.get(roomId).socket[(winnerSide + 1) % 2].id),
+                        UserStatus.OFFLINE,
                     );
                 } else {
-                    await this.resetPlayer(
-                        this.playerList.get(player1Socket.id),
-                    );
-                    await this.resetPlayer(
-                        this.playerList.get(player2Socket.id),
-                    );
+                    await this.resetPlayer(this.playerList.get(player1Socket.id));
+                    await this.resetPlayer(this.playerList.get(player2Socket.id));
                 }
-                if (this.gameRoomList.get(roomId))
-                    this.gameRoomList.delete(roomId);
+                if (this.gameRoomList.get(roomId)) this.gameRoomList.delete(roomId);
             }
         } catch (error) {
             console.log('error >> gameService >> finishGame');
-            throw new InternalServerErrorException(
-                '[ERR] gameService >> finishGame',
-            );
+            throw new InternalServerErrorException('[ERR] gameService >> finishGame');
         }
     }
 
@@ -515,8 +408,7 @@ export class GameService {
     }
     //게임 종료시 gameRoom 업데이트
     updateGameRoom(roomId: number, side: number, endGameStatus: number) {
-        this.gameRoomList.get(roomId).endTime =
-            DateTime.now().setZone(TIMEZONE);
+        this.gameRoomList.get(roomId).endTime = DateTime.now().setZone(TIMEZONE);
         this.gameRoomList.get(roomId).winner = side;
         this.gameRoomList.get(roomId).loser = (side + 1) % 2;
         this.gameRoomList.get(roomId).endGameStatus = endGameStatus;
@@ -550,30 +442,17 @@ export class GameService {
             await this.gameRepository.save(newGameData);
 
             //user table에 exp, level 업데이트
-            await this.userService.updateUserExp(
-                winnerUserId,
-                newGameData.winnerScore,
-            );
+            await this.userService.updateUserExp(winnerUserId, newGameData.winnerScore);
             if (room.endGameStatus === GameEndStatus.NORMAL)
-                await this.userService.updateUserExp(
-                    loserUserId,
-                    newGameData.loserScore,
-                );
+                await this.userService.updateUserExp(loserUserId, newGameData.loserScore);
         } catch (error) {
             console.log('error >> gameService >> createGameData');
-            throw new InternalServerErrorException(
-                '[ERR] gameService >> createGameData',
-            );
+            throw new InternalServerErrorException('[ERR] gameService >> createGameData');
         }
     }
 
     //gameRoom 만들기
-    makeGameRoom(
-        player1Id: string,
-        player2Id: string,
-        gameType: number,
-        gameMode: number,
-    ) {
+    makeGameRoom(player1Id: string, player2Id: string, gameType: number, gameMode: number) {
         //waitRoom 만들기
         const gameRoom: GameRoom = {
             id: this.gameRoomIdx,
@@ -599,14 +478,8 @@ export class GameService {
             left = player2Id;
             right = player1Id;
         }
-        gameRoom.socket = [
-            this.playerList.get(left).socket,
-            this.playerList.get(right).socket,
-        ];
-        gameRoom.name = [
-            this.playerList.get(left).userName,
-            this.playerList.get(right).userName,
-        ];
+        gameRoom.socket = [this.playerList.get(left).socket, this.playerList.get(right).socket];
+        gameRoom.name = [this.playerList.get(left).userName, this.playerList.get(right).userName];
 
         //Player 업데이트 && emit('handShake')
         console.log('enterGameRoom:', gameRoom.id);
@@ -619,38 +492,25 @@ export class GameService {
         this.playerList.get(playerId).side = side;
         this.playerList.get(playerId).socket.emit('handShake', { side: side });
         try {
-            this.userService.updateUserStatus(
-                this.playerList.get(playerId).userId,
-                userStatus.GAME,
-            );
+            this.userService.updateUserStatus(this.playerList.get(playerId).userId, UserStatus.GAME);
         } catch (error) {
-            throw new InternalServerErrorException(
-                '[ERR] gameService >> handShake',
-            );
+            throw new InternalServerErrorException('[ERR] gameService >> handShake');
         }
     }
 
     //game 시작 시 => gameRoom 업데이트
     updateGame(gameRoomId: number) {
         this.gameRoomList.get(gameRoomId).gameStatus = GameStatus.GAME;
-        this.gameRoomList.get(gameRoomId).startTime =
-            DateTime.now().setZone(TIMEZONE);
+        this.gameRoomList.get(gameRoomId).startTime = DateTime.now().setZone(TIMEZONE);
         this.gameRoomList.get(gameRoomId).score = [0, 0];
         //TESTCODE: startTime
         // console.log('startTime:', this.gameRoomList.get(gameRoomId).startTime);
     }
 
-    updatePlayer(
-        playerId: string,
-        gameMode: number,
-        gameType: number,
-        friendId?: number | undefined,
-    ) {
+    updatePlayer(playerId: string, gameMode: number, gameType: number, friendId?: number | undefined) {
         const player: Player = this.playerList.get(playerId);
-        if (player === undefined)
-            throw new BadRequestException('player undefined');
-        if (player.roomId)
-            throw new BadRequestException('player already in gameRoom');
+        if (player === undefined) throw new BadRequestException('player undefined');
+        if (player.roomId) throw new BadRequestException('player already in gameRoom');
         if (friendId) player.friendId = friendId;
         player.gameType = gameType;
         player.gameMode = gameMode;
@@ -665,16 +525,7 @@ export class GameService {
         const dirX = a / c;
         const dirZ = b / c;
         this.updateBall(roomId, dirX, dirZ);
-        console.log(
-            'ballDirX',
-            dirX,
-            'ballDirZ',
-            dirZ,
-            '\nballPosX',
-            0,
-            'ballPosZ',
-            0,
-        );
+        // console.log('ballDirX', dirX, 'ballDirZ', dirZ, '\nballPosX', 0, 'ballPosZ', 0);
         return {
             ballDirX: dirX,
             ballDirY: 0,
@@ -682,13 +533,7 @@ export class GameService {
         };
     }
     //ball 정보 업데이트
-    updateBall(
-        roomId: number,
-        dirX: number,
-        dirZ: number,
-        posX?: number,
-        posZ?: number,
-    ) {
+    updateBall(roomId: number, dirX: number, dirZ: number, posX?: number, posZ?: number) {
         this.gameRoomList.get(roomId).dirX = dirX;
         this.gameRoomList.get(roomId).dirZ = dirZ;
         this.gameRoomList.get(roomId).posX = posX !== undefined ? posX : 0;
@@ -696,19 +541,14 @@ export class GameService {
     }
 
     //게임 중단/종료 시 플레이어 리셋
-    async resetPlayer(player: Player, status?: userStatus) {
+    async resetPlayer(player: Player, status?: UserStatus) {
         player.gameType = undefined;
         player.gameMode = undefined;
         player.side = undefined;
         player.roomId = undefined;
         player.friendId = undefined;
-        if (status)
-            await this.userService.updateUserStatus(player.userId, status);
-        else
-            await this.userService.updateUserStatus(
-                player.userId,
-                userStatus.ONLINE,
-            );
+        if (status) await this.userService.updateUserStatus(player.userId, status);
+        else await this.userService.updateUserStatus(player.userId, UserStatus.ONLINE);
     }
     //숫자 보정
     equals(a: number, b: number, tolerance: number = EPSILON): boolean {

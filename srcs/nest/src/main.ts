@@ -16,7 +16,7 @@ async function bootstrap() {
     // app.useWebSocketAdapter(new SocketIoAdapter(app));
 
     //정적파일 미들웨어 추가
-    app.use(express.static('public'));
+    // app.use(express.static('public'));
 
     await app.listen(3000);
 }

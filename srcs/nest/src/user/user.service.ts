@@ -16,7 +16,7 @@ import { existsSync, readFileSync, unlinkSync } from 'fs';
 import { extname } from 'path';
 import { UserProfileDto } from './dto/userProfile.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { userStatus } from './user-status.enum';
+import { UserStatus } from './user-status.enum';
 import { POINT, LEVELUP } from 'src/game/game.constants';
 
 @Injectable()
@@ -232,16 +232,14 @@ export class UserService {
         return { image, mimeType };
     }
 
-    async updateUserStatus(userId: number, status: userStatus) {
+    async updateUserStatus(userId: number, status: UserStatus) {
         try {
             const user = await this.findUserById(userId);
             user.status = status;
             await this.userRepository.save(user);
         } catch (error) {
             console.log('error >> userService >> updateUserStatus');
-            throw new InternalServerErrorException(
-                '[ERR] userService >> updateUserStatus',
-            );
+            throw new InternalServerErrorException('[ERR] userService >> updateUserStatus');
         }
     }
 

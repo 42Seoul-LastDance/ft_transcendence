@@ -45,15 +45,15 @@ export class SocketUsersService {
         return this.chatRoomSocketList.delete(socket.id);
     }
 
-    deleteUserAll(socket: Socket): void {
-        const userId = this.getUserIdBySocketId(socket.id);
+    deleteChatUserAll(socket: Socket): void {
+        const userId = this.getUserIdByChatSocketId(socket.id);
         this.chatRoomUserList.delete(userId);
         this.chatRoomSocketList.delete(socket.id);
         this.blockList.delete(userId);
     }
 
     async setBlockList(userId: number): Promise<void> {
-        this.blockList.set(userId, await this.blockedUsersService.getBlockListById(userId));
+        this.blockList.set(userId, await this.blockedUsersService.getBlockUserListById(userId));
     }
 
     //* DM--
@@ -68,6 +68,13 @@ export class SocketUsersService {
 
     deleteDMUser(userId: number): boolean {
         return this.dmUserList.delete(userId);
+    }
+
+    deleteDMUserAll(socket: Socket): void {
+        const userId = this.getUserIdByDMSocketId(socket.id);
+        this.dmUserList.delete(userId);
+        this.dmSocketList.delete(socket.id);
+        this.blockList.delete(userId);
     }
 
     getUserIdByDMSocketId(socketId: string): number | undefined {
@@ -85,7 +92,7 @@ export class SocketUsersService {
 
     //* getter
     async getUserNameByUserId(userId: number): Promise<string> {
-        return await this.userService.findUserById(userId).userName;
+        return (await this.userService.findUserById(userId)).userName;
     }
 
     async getUserIdByUserName(userName: string): Promise<number> {
@@ -100,12 +107,16 @@ export class SocketUsersService {
         return this.chatRoomSocketList;
     }
 
-    getDMUserList(): Map<string, Socket> {
+    getDMUserList(): Map<number, Socket> {
         return this.dmUserList;
     }
 
     getDMsocketList(): Map<string, number> {
         return this.dmSocketList;
+    }
+
+    getBlockListById(userId: number): Array<number> {
+        return this.blockList.get(userId);
     }
 
     getBlockList(): Map<number, Array<number>> {
@@ -114,5 +125,24 @@ export class SocketUsersService {
 
     getFriendList(): Map<number, Array<number>> {
         return this.friendList;
+    }
+    // * Blocking --
+
+    async blockUser(userId: number, targetId: number) {
+        const blockList = this.blockList.get(userId);
+        if (blockList.indexOf(targetId) !== -1) return;
+        blockList.push(targetId);
+        await this.blockedUsersService.blockUserById(userId, targetId);
+    }
+
+    async unBlockUser(userId: number, targetId: number) {
+        const blockList = this.blockList.get(userId);
+        const idx = blockList.indexOf(targetId);
+        if (idx === -1) return;
+        await this.blockedUsersService.unblockUserById(userId, targetId);
+    }
+
+    async isBlocked(userId: number, targetId: number): Promise<boolean> {
+        return await this.blockedUsersService.isBlocked(userId, targetId);
     }
 }
