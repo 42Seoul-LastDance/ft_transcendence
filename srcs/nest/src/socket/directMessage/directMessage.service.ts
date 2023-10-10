@@ -11,6 +11,7 @@ export class DirectMessageService {
     private userList: Map<number, Socket> = new Map<number, Socket>(); // {user ID, Socket}
     private socketList: Map<string, number> = new Map<string, number>(); // {Socket.ID, user ID}
     private blockList: Map<number, number[]> = new Map<number, number[]>(); // {user id, user id[]}
+    private friendList: Map<number, number[]> = new Map<number, number[]>(); // {user id, user id[]}
     constructor(
         private directMessageRepository: DirectMessageRepository,
         private blockedUsersService: BlockedUsersService,
@@ -44,11 +45,12 @@ export class DirectMessageService {
         blockedList.splice(idx);
     }
 
-    async saveMessage(senderId: number, receiverId: number, content: string) {
+    async saveMessage(senderId: number, receiverId: number, hasReceived: boolean, content: string) {
         const time = DateTime.now().setZone(TIMEZONE);
         const dm = this.directMessageRepository.create({
             senderId: senderId,
             receiverId: receiverId,
+            hasReceived: hasReceived,
             content: content,
             sentTime: time,
         } as DirectMessage);
@@ -69,15 +71,23 @@ export class DirectMessageService {
         };
         // !test
         if (!userId) targetSocket.emit('sendMessage', 'internal server error');
-        await this.saveMessage(userId, targetId, content);
-        targetSocket.emit('sendMessage', payload);
+
+        // TODO : 상대방이 나를 차단했는지 확인 -> hasReceived = false
+        let hasReceived: boolean = false; //(전제 조건)만약 차단되었으면 false
+        const isBlocked = await this.blockedUsersService.isBlocked(userId, targetId);
+        if (isBlocked === false) {
+            //차단되지 않았으므로 hasReceived = true, emit
+            hasReceived = true;
+            targetSocket.emit('sendMessage', payload);
+        }
+        await this.saveMessage(userId, targetId, hasReceived, content);
     }
 
     async findRecentDMs(target1Id: number, target2Id: number, count: number): Promise<DirectMessage[]> {
         return await this.directMessageRepository.find({
             where: [
                 { senderId: target1Id, receiverId: target2Id },
-                { senderId: target2Id, receiverId: target1Id },
+                { senderId: target2Id, receiverId: target1Id, hasReceived: true },
             ],
             order: {
                 sentTime: 'DESC',

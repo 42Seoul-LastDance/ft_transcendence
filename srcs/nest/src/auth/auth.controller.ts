@@ -123,7 +123,7 @@ export class AuthController {
     async regenerateToken(@Req() req, @Res() res: Response) {
         console.log('regenerateToken called');
         const newToken = await this.authService.regenerateJwt(req);
-        console.log('newToken : ', newToken);
+        // console.log('newToken : ', newToken);
         return res.header({ 'x-access-token': newToken }).json({ token: newToken });
         // res.clearCookie('access_token', { domain: process.env.FRONT_URL, path: '/' });
 
