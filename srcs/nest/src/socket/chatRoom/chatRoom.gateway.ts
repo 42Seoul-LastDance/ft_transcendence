@@ -114,8 +114,8 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         // ”roomname”: string,
         // ”isLocked” : boolean,
         // ”status” : roomStatus,
-        console.log('----------------------getChatRoomList');
         const chatRoomList = this.chatroomService.getChatRoomList();
+        console.log('----------------------getChatRoomList', chatRoomList);
         socket.emit('getChatRoomList', chatRoomList);
         // socket.emit('getChatRoomList', {'chatRoomList': {chatRoomList}});
         // Object.fromEntries(chatRoomList)
@@ -151,7 +151,12 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('receiveMessage')
     async receiveMessage(socket: Socket, payload: JSON): Promise<void> {
-        const result = await this.chatroomService.receiveMessage(socket, payload['userName'], payload['content']);
+        const result = await this.chatroomService.receiveMessage(
+            socket,
+            payload['userName'],
+            payload['content'],
+            payload['time'],
+        );
         socket.emit('receiveMessage', result);
     }
 

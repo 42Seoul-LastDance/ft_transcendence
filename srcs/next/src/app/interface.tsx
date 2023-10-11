@@ -39,6 +39,7 @@ export enum UserPermission {
 export interface ChatMessage {
   userName: string;
   content: string;
+  time: string;
 }
 
 export interface SendMessageDto {

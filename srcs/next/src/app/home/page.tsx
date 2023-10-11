@@ -16,9 +16,10 @@ import { useEffect } from 'react';
 import { JoinStatus } from '../interface';
 import { setIsMatched } from '../redux/matchSlice';
 import { IoEventListener } from '../context/socket';
-import { setChatRoom, setJoin } from '../redux/userSlice';
-import AutoAlert, { myAlert } from './alert';
+import HeaderAlert, { myAlert } from './alert';
 import { setChatMessages } from '../redux/roomSlice';
+import { setChatRoom, setJoin } from '../redux/userSlice';
+import { LinearProgress } from '@mui/material';
 
 const HomeContent = () => {
   const joinStatus = useSelector((state: RootState) => state.user.join);
@@ -26,25 +27,23 @@ const HomeContent = () => {
   const dispatch = useDispatch();
   const chatSocket = useChatSocket();
   const superSocket = useSuperSocket();
+  const Loading = true;
 
-  const handleExplodeRoom = () => {
+  IoEventListener(chatSocket!, 'explodeRoom', () => {
     myAlert('info', '방장이 방을 폭파했습니다.', dispatch);
     dispatch(setJoin(JoinStatus.NONE));
     dispatch(setChatRoom(null));
     dispatch(setChatMessages([]));
-  };
-
-  IoEventListener(chatSocket!, 'explodeRoom', handleExplodeRoom);
+  });
 
   useEffect(() => {
     dispatch(setIsMatched({ isMatched: false }));
   }, []);
 
-  return (
-    <>
+  return Loading ? (
+    <div>
       <UserProfile targetName={myName!} />
       <br />
-
       <Link href="/game">
         <button>Play Game!</button>
       </Link>
@@ -54,17 +53,19 @@ const HomeContent = () => {
         {joinStatus === JoinStatus.CHAT && <ChattingPage socket={chatSocket} />}
         {joinStatus === JoinStatus.DM && <ChattingPage socket={superSocket} />}
       </div>
-    </>
+    </div>
+  ) : (
+    <LinearProgress />
   );
 };
 
-const MainHome = () => {
+const MainHome: React.FC = () => {
   return (
     <>
       <Provider store={store}>
         <SuperSocketProvider>
           <ChatSocketProvider>
-            <AutoAlert severity={'warning'} />
+            <HeaderAlert severity={'warning'} />
             <HomeContent />
           </ChatSocketProvider>
         </SuperSocketProvider>

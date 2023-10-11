@@ -5,6 +5,7 @@ import { CreateRoomDto } from './dto/createRoom.dto';
 import { RoomStatus } from './roomStatus.enum';
 import { UserPermission } from './userPermission.enum';
 import { SocketUsersService } from '../socketUsersService/socketUsers.service';
+import { time } from 'console';
 // import { RouterModule } from '@nestjs/core';
 // import * as schedule from 'node-schedule';
 
@@ -193,8 +194,9 @@ export class ChatRoomService {
     explodeRoom(socket: Socket, pastRoom: ChatRoomDto, io: Server) {
         console.log('ROOM EXPLODE : ', pastRoom.roomName);
         const pastRoomName = pastRoom.roomName;
+        socket.to(pastRoomName).emit('explodeRoom', () => {});
+        console.log('이거 보내는 거임 ------ !!!!!!!!!!!!!!!!!!!!! ----------- !!!!!!! ', this.getChatRoomList());
         io.emit('getChatRoomList', this.getChatRoomList());
-        socket.to(pastRoomName).emit('explodeRoom');
         //!test
         io.in(pastRoomName).disconnectSockets(false);
         if (pastRoom.status === RoomStatus.PUBLIC) this.publicRoomList.delete(pastRoomName);
@@ -416,7 +418,8 @@ export class ChatRoomService {
         socket: Socket,
         userName: string,
         content: string,
-    ): Promise<{ canReceive: boolean; userName: string; content: string }> {
+        time: string,
+    ): Promise<{ canReceive: boolean; userName: string; content: string; time: string }> {
         const userId: number = this.getUserId(socket);
         const targetId: number = await this.socketUsersService.getUserIdByUserName(userName);
         const isBlocked: boolean = await this.socketUsersService.isBlocked(userId, targetId);
@@ -424,6 +427,7 @@ export class ChatRoomService {
             canReceive: isBlocked,
             userName: userName,
             content: content,
+            time: time,
         };
         return result;
     }

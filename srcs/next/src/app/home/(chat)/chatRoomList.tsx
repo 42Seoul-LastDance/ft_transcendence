@@ -10,9 +10,10 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import { useDispatch } from 'react-redux';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
-import { IoEventListener, IoEventOnce } from '../../context/socket';
 import { isValid } from '../valid';
 import { myAlert } from '../alert';
+import { IoEventOnce } from '@/app/context/socket';
+import { setRoomNameList } from '@/app/redux/roomSlice';
 
 const style = {
   width: '100%',
@@ -82,6 +83,11 @@ const ChatRoomList: React.FC = () => {
       });
     });
   };
+
+  IoEventOnce(chatSocket!, 'getChatRoomList', (data: string[]) => {
+    console.log('hihi', data);
+    dispatch(setRoomNameList(data));
+  });
 
   return (
     <>

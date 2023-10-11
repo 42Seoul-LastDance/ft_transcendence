@@ -25,6 +25,8 @@ import { setChatMessages } from '@/app/redux/roomSlice';
 import { IoEventListener } from '@/app/context/socket';
 import { setAlertMsg, setShowAlert } from '@/app/redux/alertSlice';
 import { isValid } from '../valid';
+import { getTime } from '@/app/globals';
+import { Manager } from 'socket.io-client';
 
 const ChattingPage = (props: ChattingPageProps) => {
   const [message, setMessage] = useState('');
@@ -48,9 +50,10 @@ const ChattingPage = (props: ChattingPageProps) => {
   const handleReceiveMessage = (data: any) => {
     console.log('receive Message', data);
     if (data) {
-      const receiveMsg: ChatMessage = {
+      const receiveMsg: any = {
         userName: data.userName,
         content: data.content,
+        time: getTime(),
       };
       // 그리기
       dispatch(setChatMessages([...chatMessages, receiveMsg]));
@@ -68,6 +71,7 @@ const ChattingPage = (props: ChattingPageProps) => {
     const newMsg: ChatMessage = {
       userName: myName!,
       content: message,
+      time: getTime(),
     };
     setChatMessages([...chatMessages, newMsg]);
     const newSend: SendMessageDto = {
@@ -140,14 +144,25 @@ const ChattingPage = (props: ChattingPageProps) => {
           {chatRoom?.roomName}
           <List ref={listRef} style={{ maxHeight: '560px', overflowY: 'auto' }}>
             {chatMessages.map((msg, index) => (
-              <ListItem key={index}>
+              <ListItem>
                 <ListItemText
                   primary={msg.userName}
                   secondary={msg.content}
                   style={{
                     textAlign: myName === msg.userName ? 'right' : 'left',
+                    paddingRight: '8px', // 오른쪽 여백
+                    paddingLeft: '8px', // 왼쪽 여백
                   }}
                 />
+                <div
+                  style={{
+                    textAlign: myName === msg.userName ? 'left' : 'right',
+                    fontSize: '12px', // 시간 폰트 크기
+                    color: 'gray', // 시간 글꼴 색상
+                  }}
+                >
+                  {msg.time}
+                </div>
               </ListItem>
             ))}
           </List>

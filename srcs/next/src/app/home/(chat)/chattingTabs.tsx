@@ -1,17 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Tab, Tabs } from '@mui/material';
 import ChatRoomList from './chatRoomList';
 import FriendList from '../(dm)/friendList';
-import { setRoomNameList } from '@/app/redux/roomSlice';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '@/app/redux/store';
-import { UserStatus } from '@/app/interface';
-import { IoEventListener } from '@/app/context/socket';
-import { useChatSocket } from '@/app/context/chatSocketContext';
 
-const ChattingTabs = () => {
+const ChattingTabs: React.FC = () => {
   const [value, setValue] = useState<number>(0);
   const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
     setValue(newValue);

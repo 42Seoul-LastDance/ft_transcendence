@@ -4,7 +4,7 @@ import { setAlertMsg, setSeverity, setShowAlert } from '../redux/alertSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 
-interface AutoAlertProps {
+interface HeaderAlertProps {
   severity: AlertColor; // restrict severity to AlertColor
 }
 
@@ -18,7 +18,7 @@ export const myAlert = (
   dispatch(setShowAlert(true));
 };
 
-const AutoAlert: React.FC<AutoAlertProps> = ({}) => {
+const HeaderAlert: React.FC<HeaderAlertProps> = ({}) => {
   const showAlert = useSelector((state: RootState) => state.alert.showAlert);
   const message = useSelector((state: RootState) => state.alert.alertMsg);
   const severity = useSelector(
@@ -42,4 +42,4 @@ const AutoAlert: React.FC<AutoAlertProps> = ({}) => {
   ) : null;
 };
 
-export default AutoAlert;
+export default HeaderAlert;

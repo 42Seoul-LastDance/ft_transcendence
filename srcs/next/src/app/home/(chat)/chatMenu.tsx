@@ -2,14 +2,21 @@ import { useState } from 'react';
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import Box from '@mui/material/Box';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import UserProfile from '../(profile)/userProfile';
 import { UserPermission, UserProfileProps } from '@/app/interface';
+import { useChatSocket } from '@/app/context/chatSocketContext';
+import { myAlert } from '../alert';
+import { useRouter } from 'next/navigation';
 
-const ChatMenu = (selectedMember: UserProfileProps) => {
+const ChatMenu = (selectedMember: UserProfileProps): React.FC => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const [isUserProfileOpen, setUserProfileOpen] = useState(false);
+  const target = selectedMember.targetName;
+  const chatSocket = useChatSocket();
+  const dispatch = useDispatch();
+  const router = useRouter();
 
   // 프로필 버튼 클릭 핸들러
   const handleProfileClick = () => {
@@ -20,19 +27,42 @@ const ChatMenu = (selectedMember: UserProfileProps) => {
     setUserProfileOpen(false);
   };
 
-  const handleMuteClick = () => {
-    console.log('mute');
+  const isSuper = () => {
+    if (target === 'jaejkim') {
+      myAlert('error', `${target}: 하 하 ~ 어림도 없죠? `, dispatch);
+      router.push('/');
+    }
   };
 
   const handleGameClick = () => {
     console.log('game');
   };
+
   const handleKickClick = () => {
     console.log('kick');
+    isSuper();
+    chatSocket?.emit('kickUser', {
+      roomname: chatRoom?.roomName,
+      targetname: target,
+    });
   };
+
   const handleBanClick = () => {
     console.log('ban');
+    isSuper();
   };
+
+  const handleMuteClick = () => {
+    console.log('mute');
+    isSuper();
+    chatSocket?.emit('muteUser', {
+      status: chatRoom?.status,
+      roomName: chatRoom?.roomName,
+      targetName: target,
+      time: 30,
+    });
+  };
+
   const handleMakeOperatorClick = () => {
     console.log('make operator');
   };
@@ -54,13 +84,10 @@ const ChatMenu = (selectedMember: UserProfileProps) => {
         <Button key="profile" onClick={handleProfileClick}>
           Profile
         </Button>
-        <Button key="mute" onClick={handleMuteClick}>
-          Mute
-        </Button>
         <Button key="game" onClick={handleGameClick}>
           Game
         </Button>
-        {chatRoom?.userPermission === UserPermission.ADMIN && (
+        {chatRoom!.userPermission <= UserPermission.ADMIN && (
           <>
             <Button key="kick" onClick={handleKickClick}>
               Kick
@@ -68,17 +95,18 @@ const ChatMenu = (selectedMember: UserProfileProps) => {
             <Button key="ban" onClick={handleBanClick}>
               Ban
             </Button>
+            <Button key="mute" onClick={handleMuteClick}>
+              Mute
+            </Button>
           </>
         )}
-        {chatRoom?.userPermission === UserPermission.OWNER && (
+        {chatRoom!.userPermission <= UserPermission.OWNER && (
           <Button key="makeOperator" onClick={handleMakeOperatorClick}>
             Make Operator
           </Button>
         )}
       </ButtonGroup>
-      {isUserProfileOpen && (
-        <UserProfile targetName={selectedMember.targetName} />
-      )}
+      {isUserProfileOpen && <UserProfile targetName={target} />}
     </Box>
   );
 };

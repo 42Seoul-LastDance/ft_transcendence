@@ -1,5 +1,4 @@
 import { Dispatch } from 'react';
-import { setAlertMsg, setSeverity, setShowAlert } from '../redux/alertSlice';
 import { Action } from 'redux';
 import { myAlert } from './alert';
 
