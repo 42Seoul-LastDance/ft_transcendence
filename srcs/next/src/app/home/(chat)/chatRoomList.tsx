@@ -13,7 +13,6 @@ import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { IoEventListener, IoEventOnce } from '../../context/socket';
 import { isValid } from '../valid';
 import { myAlert } from '../alert';
-import { setRoomNameList } from '@/app/redux/roomSlice';
 
 const style = {
   width: '100%',
@@ -29,45 +28,59 @@ const ChatRoomList: React.FC = () => {
     (state: RootState) => state.room.roomNameList,
   );
 
-  const joinRoom = (roomName: string) => {
-    const handleGetChatRoom = (data: ChatRoomDto) => {
-      console.log('getChatRoomInfo Data', data);
-      let password: string | null = null;
-      if (data.requirePassword === true) {
-        password = prompt('비밀번호를 입력하세요');
-        console.log('password:', password);
-        if (
-          !password ||
-          isValid('비밀번호가', password, 20, dispatch) === false
-        )
-          return;
-      }
+  const joinRoom = async (roomName: string) => {
+    // 방 정보 받아오기
+    const data: ChatRoomDto = await getChatRoomInfo(roomName);
+    if (!data) return;
+    console.log('getChatRoomInfo Data', data);
 
-      chatSocket?.emit(
-        'joinPublicChatRoom',
-        { roomName, password },
-        checkPassword,
-      );
+    // 비밀번호 문자열 검사
+    let password: string | null = null;
+    if (data.requirePassword) {
+      password = prompt('비밀번호를 입력하세요');
+      if (
+        password === null ||
+        !isValid('비밀번호가', password, 20, dispatch) === false
+      )
+        return;
+    }
+
+    // 방 들어갈 수 있는지 시도 해봄 (비밀번호 인증)
+    const result = await joinChatRoom(roomName, password);
+    console.log(result);
+    if (result) {
       dispatch(setChatRoom(data));
-    };
+      dispatch(setJoin(JoinStatus.CHAT));
+      myAlert('success', '채팅방에 입장하였습니다.', dispatch);
+    } else {
+      dispatch(setChatRoom(null));
+      dispatch(setJoin(JoinStatus.NONE));
+      myAlert('error', '비밀번호가 틀렸습니다.', dispatch);
+    }
+  };
 
-    const checkPassword = (data: any) => {
-      if (data.result === true) {
-        dispatch(setJoin(JoinStatus.CHAT));
-        myAlert('success', '채팅방에 입장하였습니다.', dispatch);
-      } else if (data.result === false) {
-        dispatch(setJoin(JoinStatus.NONE));
-        myAlert('error', '비밀번호가 틀렸습니다.', dispatch);
-      }
-    };
-
-    chatSocket?.emit('getChatRoomInfo', {
-      roomName: roomName,
-      status: RoomStatus.PUBLIC,
+  const getChatRoomInfo = (roomName: string): Promise<ChatRoomDto> => {
+    return new Promise((resolve) => {
+      chatSocket?.emit('getChatRoomInfo', {
+        roomName,
+        status: RoomStatus.PUBLIC,
+      });
+      IoEventOnce(chatSocket!, 'getChatRoomInfo', (data: ChatRoomDto) => {
+        resolve(data);
+      });
     });
+  };
 
-    IoEventOnce(chatSocket!, 'getChatRoomInfo', handleGetChatRoom);
-    IoEventOnce(chatSocket!, 'joinPublicChatRoom', checkPassword);
+  const joinChatRoom = (
+    roomName: string,
+    password: string | null,
+  ): Promise<any> => {
+    return new Promise((resolve) => {
+      chatSocket?.emit('joinPublicChatRoom', { roomName, password });
+      IoEventOnce(chatSocket!, 'joinPublicChatRoom', (data: any) => {
+        resolve(data);
+      });
+    });
   };
 
   return (

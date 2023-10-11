@@ -35,7 +35,6 @@ const ChattingPage = (props: ChattingPageProps) => {
   const dispatch = useDispatch();
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const myName = useSelector((state: RootState) => state.user.userName);
-  const maxLength = 50;
   const listRef = useRef(null);
 
   const handleCheckRendering = (data: any) => {
@@ -62,7 +61,6 @@ const ChattingPage = (props: ChattingPageProps) => {
   IoEventListener(props.socket!, 'sendMessage', handleCheckRendering);
   IoEventListener(props.socket!, 'receiveMessage', handleReceiveMessage);
 
-  // Cleanup 작업을 수행하려면 이 부분에 코드를 추가하십시오.
   // 메세지 보내기
   const SendMessage = () => {
     if (!message) return;

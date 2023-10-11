@@ -17,8 +17,8 @@ import { JoinStatus } from '../interface';
 import { setIsMatched } from '../redux/matchSlice';
 import { IoEventListener } from '../context/socket';
 import { setChatRoom, setJoin } from '../redux/userSlice';
-import { setAlertMsg, setSeverity, setShowAlert } from '../redux/alertSlice';
 import AutoAlert, { myAlert } from './alert';
+import { setChatMessages } from '../redux/roomSlice';
 
 const HomeContent = () => {
   const joinStatus = useSelector((state: RootState) => state.user.join);
@@ -28,9 +28,10 @@ const HomeContent = () => {
   const superSocket = useSuperSocket();
 
   const handleExplodeRoom = () => {
-    dispatch(setJoin(JoinStatus.NONE));
     myAlert('info', '방장이 방을 폭파했습니다.', dispatch);
+    dispatch(setJoin(JoinStatus.NONE));
     dispatch(setChatRoom(null));
+    dispatch(setChatMessages([]));
   };
 
   IoEventListener(chatSocket!, 'explodeRoom', handleExplodeRoom);
