@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { io, Socket } from 'socket.io-client';
 import { setRoomNameList } from '../redux/roomSlice';
 import { RoomStatus } from '../interface';
@@ -12,6 +12,7 @@ import {
 import { getCookie, removeCookie, setCookie } from '../Cookie';
 import { useRouter } from 'next/navigation';
 import { setName } from '../redux/userSlice';
+import { RootState } from '../redux/store';
 
 // SocketContext 생성
 const ChatSocketContext = createContext<Socket | undefined>(undefined);
@@ -28,6 +29,10 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const [chatSocket, setChatSocket] = useState<Socket | undefined>(undefined);
 
+  const handleGetMyName = (data: string) => {
+    dispatch(setName(data));
+  };
+
   const handleGetChatRoomList = (data: string[]) =>
     dispatch(setRoomNameList(data));
 
@@ -35,10 +40,6 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
     // console.log('[Connect] chatSocket Success');
     chatSocket?.emit('getChatRoomList', { roomStatus: RoomStatus.PUBLIC });
     chatSocket?.emit('getMyName');
-  };
-
-  const handleGetMyName = (data: string) => {
-    dispatch(setName(data));
   };
 
   useEffect(() => {

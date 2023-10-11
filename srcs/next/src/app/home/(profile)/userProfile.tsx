@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -34,7 +33,7 @@ const UserProfile = (props: UserProfileProps) => {
   const [open, setOpen] = useState<boolean>(false);
   const [level, setLevel] = useState<number>(0);
   const [exp, setExp] = useState<number>(0);
-  // const [userName, setUserName] = useState<string>('');
+  // const [userName, setUserName] = useState<string>(''); <-- 이거 안 보내주셔도요돼이 /user/profile/<name>의 username
   const [slackId, setSlackId] = useState<string>('');
   const [friendStatus, setFriendStatus] = useState<FriendStatus>(
     FriendStatus.UNKNOWN,
@@ -42,10 +41,9 @@ const UserProfile = (props: UserProfileProps) => {
   const [friendRequestAvailable, setFriendRequestAvailable] =
     useState<boolean>(true);
   const [isBlocked, setIsBlocked] = useState<boolean>(true);
-  // const [slackId, setSlackId] = useState<string>('');
 
   const handleOpen = async () => {
-    chatSocket?.disconnect();
+    if (props.targetName === myName) chatSocket?.disconnect();
     setOpen(true);
 
     if (myName !== props.targetName) {
@@ -54,6 +52,7 @@ const UserProfile = (props: UserProfileProps) => {
         `/friends/isFriend/${props.targetName}`,
         router,
       );
+      console.log('이거 잘 오나요 ', friendResp.data);
       setFriendStatus(friendResp.data['status']);
       if (
         friendResp.data['status'] === FriendStatus.LAGGING ||
@@ -66,6 +65,7 @@ const UserProfile = (props: UserProfileProps) => {
         `/block/isBlocked/${props.targetName}`,
         router,
       );
+      console.log('이것도 잘 오나요', blockedResp);
       setIsBlocked(blockedResp.data['isBlocked']);
     }
 
@@ -80,7 +80,7 @@ const UserProfile = (props: UserProfileProps) => {
   };
 
   const handleClose = () => {
-    chatSocket?.connect();
+    if (props.targetName === myName) chatSocket?.connect();
     setOpen(false);
   };
 

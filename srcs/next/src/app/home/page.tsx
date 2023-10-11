@@ -15,8 +15,10 @@ import UserProfile from './(profile)/userProfile';
 import { useEffect } from 'react';
 import { JoinStatus } from '../interface';
 import { setIsMatched } from '../redux/matchSlice';
-import { Alert } from '@mui/material';
-import AutoAlert from './alert';
+import { IoEventListener } from '../context/socket';
+import { setChatRoom, setJoin } from '../redux/userSlice';
+import { setAlertMsg, setSeverity, setShowAlert } from '../redux/alertSlice';
+import AutoAlert, { myAlert } from './alert';
 
 const HomeContent = () => {
   const joinStatus = useSelector((state: RootState) => state.user.join);
@@ -24,6 +26,14 @@ const HomeContent = () => {
   const dispatch = useDispatch();
   const chatSocket = useChatSocket();
   const superSocket = useSuperSocket();
+
+  const handleExplodeRoom = () => {
+    dispatch(setJoin(JoinStatus.NONE));
+    myAlert('info', '방장이 방을 폭파했습니다.', dispatch);
+    dispatch(setChatRoom(null));
+  };
+
+  IoEventListener(chatSocket!, 'explodeRoom', handleExplodeRoom);
 
   useEffect(() => {
     dispatch(setIsMatched({ isMatched: false }));
@@ -38,8 +48,6 @@ const HomeContent = () => {
         <button>Play Game!</button>
       </Link>
       <br />
-      <br />
-
       <div style={{ display: 'flex' }}>
         <ChattingTabs />
         {joinStatus === JoinStatus.CHAT && <ChattingPage socket={chatSocket} />}

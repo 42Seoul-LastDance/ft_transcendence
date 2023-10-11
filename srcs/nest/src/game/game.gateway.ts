@@ -38,41 +38,35 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         } catch (error) {
             console.log('error : ', error.message);
             if (error.message === 'jwt expired') {
-                // `${BACK_URL}/auth/regenerateToken`
-                // * 토큰 만료 => 근데 왜 404 날라와요?.. ?
-                console.log('expireToken emit called');
                 client.emit('expireToken');
             }
             client.disconnect(true);
-            // console.log('player JWT not valid');
             return;
         }
-        //console.log('new connection, player enrolled:', client.id);
         console.log(client.id, ': new connection. (Game)');
     }
 
     async handleDisconnect(client: Socket) {
         await this.gameService.handleDisconnect(client.id);
         this.gameService.deletePlayer(client.id);
-        //console.log('lost connection, player deleted:', client.id);
         console.log(client.id, ': lost connection. (Game)');
     }
 
     //* Match Game ======================================
     //매칭게임요청 -> 큐 등록 or waitRoom 등록
     @SubscribeMessage('pushQueue')
-    pushQueue(client: Socket, clientInfo: JSON) {
+    async pushQueue(client: Socket, clientInfo: JSON) {
         //TESTCODE
         console.log('pushQueue:', client.id);
-        this.gameService.pushQueue(client.id, +clientInfo['gameMode']);
+        await this.gameService.pushQueue(client.id, +clientInfo['gameMode']);
     }
 
     //큐에 있던 플레이어 나감
     @SubscribeMessage('popQueue')
-    popQueue(client: Socket) {
+    async popQueue(client: Socket) {
         //TESTCODE
         // console.log('popQueue:', client.id);
-        this.gameService.popQueue(client.id);
+        await this.gameService.popQueue(client.id);
     }
 
     //* Friend Game ======================================
@@ -82,8 +76,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     @SubscribeMessage('agreeInvite')
-    agreeInvite(client: Socket, gameInfo: JSON) {
-        this.gameService.agreeInvite(client.id, gameInfo['friendName']);
+    async agreeInvite(client: Socket, gameInfo: JSON) {
+        await this.gameService.agreeInvite(client.id, gameInfo['friendName']);
     }
 
     @SubscribeMessage('denyInvite')

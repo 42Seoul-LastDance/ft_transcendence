@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Put, Req, Res, UseGuards } from '@nestjs/common';
 import { DirectMessageService } from './directMessage.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { UserService } from 'src/user/user.service';
@@ -20,5 +20,13 @@ export class DirectMessageController {
             30,
         );
         return res.status(200).json(loggedDMs);
+    }
+
+    @Put('/send/:userName')
+    @UseGuards(JwtAuthGuard)
+    async sendMessage(@Param('userName') userName: string, @Body('content') content: string, @Req() req, @Res() res) {
+        const receiverId: number = (await this.userService.getUserByUserName(userName)).id;
+        await this.directMessageService.saveMessage(req.user.sub, receiverId, true, content);
+        return res.status(200).send();
     }
 }

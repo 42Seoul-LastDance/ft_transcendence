@@ -1,17 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import Alert from '@mui/material/Alert';
-import { setShowAlert } from '../redux/alertSlice';
+import React, { useState, useEffect, Dispatch } from 'react';
+import Alert, { AlertColor } from '@mui/material/Alert'; // import AlertColor
+import { setAlertMsg, setSeverity, setShowAlert } from '../redux/alertSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 
 interface AutoAlertProps {
-  severity: 'error' | 'warning' | 'info' | 'success'; // severity의 유효한 값으로 수정
+  severity: AlertColor; // restrict severity to AlertColor
 }
 
-const AutoAlert: React.FC<AutoAlertProps> = ({ severity }) => {
+export const myAlert = (
+  severity: string,
+  msg: string,
+  dispatch: Dispatch<any>,
+) => {
+  dispatch(setSeverity(severity));
+  dispatch(setAlertMsg(msg));
+  dispatch(setShowAlert(true));
+};
+
+const AutoAlert: React.FC<AutoAlertProps> = ({}) => {
   const showAlert = useSelector((state: RootState) => state.alert.showAlert);
   const message = useSelector((state: RootState) => state.alert.alertMsg);
-  const timeout = 2000;
+  const severity = useSelector(
+    (state: RootState) => state.alert.severity,
+  ) as AlertColor; // cast severity as AlertColor
+  const timeout = 2500;
   const dispatch = useDispatch();
 
   useEffect(() => {

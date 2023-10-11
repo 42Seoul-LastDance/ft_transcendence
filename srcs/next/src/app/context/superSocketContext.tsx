@@ -5,6 +5,7 @@ import { getCookie, setCookie } from '../Cookie';
 import axios from 'axios';
 import { BACK_URL } from '../globals';
 import { useRouter } from 'next/navigation';
+import sendRequest from '../api';
 
 // SocketContext 생성
 const SuperSocketContext = createContext<Socket | undefined>(undefined);
@@ -67,10 +68,15 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
     console.log('[Connect] superSocket Success');
   };
 
+  const handleFriendList = async () => {
+    const response = await sendRequest('get', '/friends/getFriendList', router);
+  };
+
   useEffect(() => {
     IoEventOnce(superSocket, 'expireToken', handleTryAuth);
     IoEventListener(superSocket, 'connectSuccess', handleConnectSuccess);
     IoEventListener(superSocket, 'expireToken', handleTryAuth);
+    IoEventListener(superSocket, 'updateFriendList', handleFriendList);
     if (!superSocket.connected) superSocket.connect();
   }, []);
 

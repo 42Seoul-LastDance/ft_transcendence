@@ -23,6 +23,7 @@ const ChatMenu = (selectedMember: UserProfileProps) => {
   const handleMuteClick = () => {
     console.log('mute');
   };
+
   const handleGameClick = () => {
     console.log('game');
   };

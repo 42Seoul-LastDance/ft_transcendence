@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DirectMessageRepository } from './directMessage.repository';
 import { Socket } from 'socket.io';
 import { DirectMessage } from './directMessage.entity';
@@ -6,17 +6,14 @@ import { DateTime } from 'luxon';
 import { BlockedUsersService } from 'src/user/blockedUsers/blockedUsers.service';
 import { SocketUsersService } from '../socketUsersService/socketUsers.service';
 import { DirectMessageInfoDto } from './dto/directMessageInfo.dto';
+import { InjectRepository } from '@nestjs/typeorm';
 const TIMEZONE: string = 'Asia/Seoul';
 
 @Injectable()
 export class DirectMessageService {
-    //private userList: Map<number, Socket> = new Map<number, Socket>(); // {user ID, Socket}
-    //private socketList: Map<string, number> = new Map<string, number>(); // {Socket.ID, user ID}
-    //private blockList: Map<number, number[]> = new Map<number, number[]>(); // {user id, user id[]}
-    //private friendList: Map<number, number[]> = new Map<number, number[]>(); // {user id, user id[]}
     constructor(
+        @InjectRepository(DirectMessage)
         private directMessageRepository: DirectMessageRepository,
-        // private blockedUsersService: BlockedUsersService,
         private socketUsersService: SocketUsersService,
     ) {}
 
@@ -48,6 +45,13 @@ export class DirectMessageService {
 
     async saveMessage(senderId: number, receiverId: number, hasReceived: boolean, content: string) {
         const time = DateTime.now().setZone(TIMEZONE);
+        if (content === null || senderId === null || receiverId === null || hasReceived === null) {
+            throw new BadRequestException('null exception');
+        }
+        if (content === undefined || senderId === undefined || receiverId === undefined || hasReceived === undefined) {
+            throw new BadRequestException('undefined exception');
+        }
+
         const dm = this.directMessageRepository.create({
             senderId: senderId,
             receiverId: receiverId,
@@ -73,7 +77,6 @@ export class DirectMessageService {
         // !test
         if (!userId) targetSocket.emit('sendMessage', 'internal server error');
 
-        // TODO : 상대방이 나를 차단했는지 확인 -> hasReceived = false
         let hasReceived: boolean = false; //(전제 조건)만약 차단되었으면 false
         const isBlocked = await this.socketUsersService.isBlocked(userId, targetId);
         if (isBlocked === false) {
@@ -96,8 +99,16 @@ export class DirectMessageService {
             },
             take: count,
         });
-        //TODO :  DirectMessage[] 에서 DirectMessageInfoDto[] 로 일부 정보만 추출하여 변경 후 리턴해주기
 
-        return;
+        // * DirectMessage[] 에서 DirectMessageInfoDto[] 로 일부 정보만 추출하여 변경 후 리턴해주기
+        const returnArray: DirectMessageInfoDto[] = [];
+        // const friendList: Array<{ username: string; status: UserStatus }> = [];
+        for (const dm of DMList) {
+            const userName = await this.socketUsersService.getUserNameByUserId(dm.senderId);
+            const content = dm.content;
+
+            returnArray.push({ userName: userName, content: content });
+        }
+        return returnArray;
     }
 }

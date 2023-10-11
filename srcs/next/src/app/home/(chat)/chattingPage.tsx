@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Container,
   Card,
@@ -36,6 +36,7 @@ const ChattingPage = (props: ChattingPageProps) => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const myName = useSelector((state: RootState) => state.user.userName);
   const maxLength = 50;
+  const listRef = useRef(null);
 
   const handleCheckRendering = (data: any) => {
     console.log('check rendering', data);
@@ -61,6 +62,7 @@ const ChattingPage = (props: ChattingPageProps) => {
   IoEventListener(props.socket!, 'sendMessage', handleCheckRendering);
   IoEventListener(props.socket!, 'receiveMessage', handleReceiveMessage);
 
+  // Cleanup 작업을 수행하려면 이 부분에 코드를 추가하십시오.
   // 메세지 보내기
   const SendMessage = () => {
     if (!message) return;
@@ -72,9 +74,9 @@ const ChattingPage = (props: ChattingPageProps) => {
     setChatMessages([...chatMessages, newMsg]);
     const newSend: SendMessageDto = {
       roomName: chatRoom.roomName,
-      status: chatRoom.status,
       userName: myName!,
       content: message,
+      status: chatRoom.status,
     };
     console.log('newSend', newSend);
     props.socket?.emit('sendMessage', newSend);
@@ -97,6 +99,12 @@ const ChattingPage = (props: ChattingPageProps) => {
       dispatch(setShowAlert(false));
     }
   };
+
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
 
   return (
     <Container
@@ -132,7 +140,7 @@ const ChattingPage = (props: ChattingPageProps) => {
           style={{ overflowY: 'auto', height: 'calc(100% - 105px)' }}
         >
           {chatRoom?.roomName}
-          <List>
+          <List ref={listRef} style={{ maxHeight: '560px', overflowY: 'auto' }}>
             {chatMessages.map((msg, index) => (
               <ListItem key={index}>
                 <ListItemText

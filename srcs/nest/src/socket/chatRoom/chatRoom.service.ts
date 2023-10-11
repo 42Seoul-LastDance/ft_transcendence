@@ -133,7 +133,7 @@ export class ChatRoomService {
         const roomInfo = {
             roomName: chatroomDto.roomName,
             ownerName: chatroomDto.ownerName,
-            roomstatus: chatroomDto.status,
+            status: chatroomDto.status,
             requirePassword: chatroomDto.requirePassword,
             operatorList: await this.getOperatorList(chatroomDto),
             memberList: await this.getMemberList(chatroomDto),
@@ -141,6 +141,18 @@ export class ChatRoomService {
         };
         return roomInfo;
     }
+
+    // operatorList: string[];
+    // memberList: string[];
+    // inviteList: string[];
+    // banList: string[];
+    // muteList: string[];
+    // roomName: string;
+    // ownerName: string;
+    // status: RoomStatus; // 또는 RoomStatus 타입으로 정의
+    // password: string | null;
+    // requirePassword: boolean;
+    // userPermission: UserPermission;
 
     async createChatRoom(socket: Socket, createRoomDto: CreateRoomDto, io: Server): Promise<void> {
         //check duplicate
@@ -164,7 +176,11 @@ export class ChatRoomService {
 
         roomDto.requirePassword = createRoomDto.requirePassword;
         roomDto.status = createRoomDto.status;
-        if (createRoomDto.password) roomDto.password = createRoomDto.password;
+        if (createRoomDto.password) {
+            roomDto.password = createRoomDto.password;
+        }
+
+        console.log('CREATE CHAT ROOM: chat room', roomDto);
         if (createRoomDto.status === RoomStatus.PRIVATE) this.privateRoomList.set(createRoomDto.roomName, roomDto);
         else this.publicRoomList.set(createRoomDto.roomName, roomDto);
 
@@ -177,14 +193,12 @@ export class ChatRoomService {
     explodeRoom(socket: Socket, pastRoom: ChatRoomDto, io: Server) {
         console.log('ROOM EXPLODE : ', pastRoom.roomName);
         const pastRoomName = pastRoom.roomName;
-        if (pastRoom.status === RoomStatus.PUBLIC) this.publicRoomList.delete(pastRoomName);
-        else if (pastRoom.status === RoomStatus.PRIVATE) this.privateRoomList.delete(pastRoomName);
-        else return;
         io.emit('getChatRoomList', this.getChatRoomList());
         socket.to(pastRoomName).emit('explodeRoom');
-        // socket.leave(pastRoomName);
         //!test
         io.in(pastRoomName).disconnectSockets(false);
+        if (pastRoom.status === RoomStatus.PUBLIC) this.publicRoomList.delete(pastRoomName);
+        else if (pastRoom.status === RoomStatus.PRIVATE) this.privateRoomList.delete(pastRoomName);
     }
 
     async leavePastRoom(socket: Socket, rooms: Set<string>, io: Server): Promise<boolean> {
@@ -196,6 +210,7 @@ export class ChatRoomService {
         const array = Array.from(rooms);
         console.log('room list: ', array);
         const pastRoomName = array[0];
+
         socket.leave(pastRoomName); //void
 
         if (pastRoomName === undefined) {
@@ -208,12 +223,15 @@ export class ChatRoomService {
         let pastRoom: ChatRoomDto;
         pastRoom = this.publicRoomList.get(pastRoomName);
         if (pastRoom === undefined) pastRoom = this.privateRoomList.get(pastRoomName);
-
-        console.log('>>>>>pastRoom : ', pastRoom);
+        if (pastRoom === undefined) {
+            console.log('LEAVEPASTROOM : 이');
+            return;
+        }
+        const pastRoomStatus: RoomStatus = pastRoom?.status;
         socket.to(pastRoomName).emit('sendMessage', userName + '님이 방을 나가셨습니다.');
         if (userName === pastRoom?.ownerName) {
             // owner가 나갈 경우 방 폭파
-            socket.to(pastRoomName).emit('explodeChatRoom', '방 소유자가 나갔으므로 채팅방이 사라집니다.');
+            // socket.to(pastRoomName).emit('explodeChatRoom', '방 소유자가 나갔으므로 채팅방이 사라집니다.');
             this.explodeRoom(socket, pastRoom, io);
         } else {
             //한 유저만 chatRoom에서 삭제
@@ -222,6 +240,9 @@ export class ChatRoomService {
             pastRoom?.muteList.delete(userId);
             socket.leave(pastRoomName);
             console.log('LEAVE PAST ROOM: after ', socket.id, ' leave : ', socket.rooms);
+            console.log('😭😭😭어째서...', pastRoom);
+            const roomInfo = await this.getChatRoomInfo(socket, pastRoomName, pastRoomStatus);
+            io.to(pastRoomName).emit('getChatRoomInfo', roomInfo);
         }
         this.emitSuccess(socket, 'leavePastRoom');
         return true;
@@ -232,7 +253,7 @@ export class ChatRoomService {
         const userId = this.socketUsersService.getUserIdByChatSocketId(socket.id);
         const userName = this.socketUsersService.getUserNameByUserId(userId);
 
-        console.log('JOIN PUBLIC CHAT ROOM : ', targetRoom);
+        console.log('JOIN PUBLIC CHAT ROOM targetRoom : ', targetRoom);
         console.log('userId: ', userId);
         if (targetRoom === undefined) {
             //NO SUCH ROOM
@@ -372,12 +393,15 @@ export class ChatRoomService {
         }
         if (status == RoomStatus.PRIVATE) {
             room = this.privateRoomList.get(roomName);
-        } else {
+        } else if (status === RoomStatus.PUBLIC) {
             room = this.publicRoomList.get(roomName);
+        } else {
+            this.emitFailReason(socket, 'sendMessage', 'room has already exploded.');
+            return;
         }
 
         const userId = this.getUserId(socket);
-        console.log('message to ', roomName);
+        console.log('message to ', roomName, 'room:', room);
         socket.emit('sendMessage', { userName: userName, content: content }); //sender
         socket.to(room.roomName).emit('sendMessage', { userName: userName, content: content }); //members
         console.log('successfully sent message.', userName, ',', content);

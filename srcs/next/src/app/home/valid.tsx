@@ -1,6 +1,7 @@
 import { Dispatch } from 'react';
-import { setAlertMsg, setShowAlert } from '../redux/alertSlice';
+import { setAlertMsg, setSeverity, setShowAlert } from '../redux/alertSlice';
 import { Action } from 'redux';
+import { myAlert } from './alert';
 
 export const isValid = (
   comment: string,
@@ -11,8 +12,7 @@ export const isValid = (
   const isEmptyInput = (): boolean => {
     if (!input?.trim()) {
       const alertMessage = `${comment} 비었습니다.`;
-      dispatch(setAlertMsg(alertMessage));
-      dispatch(setShowAlert(true));
+      myAlert('error', alertMessage, dispatch);
       return true;
     }
     return false;
@@ -21,19 +21,17 @@ export const isValid = (
   const isOverInput = (): boolean => {
     if (input.length > length) {
       const alertMessage = `${comment} 너무 깁니다. : ${length}자 제한`;
-      dispatch(setAlertMsg(alertMessage));
-      dispatch(setShowAlert(true));
+      myAlert('error', alertMessage, dispatch);
       return true;
     }
     return false;
   };
 
   const isRegexInput = (): boolean => {
-    const invalidCharacters = /['"\/\*\+=<>]/g;
+    const invalidCharacters = /['"\/\+=<>]/g;
     if (invalidCharacters.test(input)) {
-      const alertMessage = `${comment} 유효하지 않습니다. 특수문자 제한: ${input}`;
-      dispatch(setAlertMsg(alertMessage));
-      dispatch(setShowAlert(true));
+      const alertMessage = `${comment} 유효하지 않은 특수문자입니다. : ${input}`;
+      myAlert('error', alertMessage, dispatch);
       return true;
     }
     return false;

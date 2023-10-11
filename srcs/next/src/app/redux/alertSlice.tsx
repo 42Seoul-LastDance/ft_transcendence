@@ -3,11 +3,13 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 export interface alertState {
   showAlert: boolean;
   alertMsg: string;
+  severity: string;
 }
 
 const initialState: alertState = {
   showAlert: false,
   alertMsg: '',
+  severity: '',
 };
 
 const alertSlice = createSlice({
@@ -20,8 +22,11 @@ const alertSlice = createSlice({
     setShowAlert: (state: alertState, action: PayloadAction<boolean>) => {
       state.showAlert = action.payload;
     },
+    setSeverity: (state: alertState, action: PayloadAction<string>) => {
+      state.severity = action.payload;
+    },
   },
 });
 
 export default alertSlice;
-export const { setAlertMsg, setShowAlert } = alertSlice.actions;
+export const { setSeverity, setAlertMsg, setShowAlert } = alertSlice.actions;

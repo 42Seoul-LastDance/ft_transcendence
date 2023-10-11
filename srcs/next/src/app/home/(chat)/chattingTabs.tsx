@@ -4,9 +4,12 @@ import React, { useState } from 'react';
 import { Tab, Tabs } from '@mui/material';
 import ChatRoomList from './chatRoomList';
 import FriendList from '../(dm)/friendList';
+import { setRoomNameList } from '@/app/redux/roomSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/app/redux/store';
-import AutoAlert from '../alert';
+import { UserStatus } from '@/app/interface';
+import { IoEventListener } from '@/app/context/socket';
+import { useChatSocket } from '@/app/context/chatSocketContext';
 
 const ChattingTabs = () => {
   const [value, setValue] = useState<number>(0);

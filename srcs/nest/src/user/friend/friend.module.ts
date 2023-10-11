@@ -10,7 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 @Module({
     imports: [TypeOrmModule.forFeature([Friend]), TypeOrmModule.forFeature([FriendRepository]), UserModule],
     controllers: [FriendController],
-    providers: [FriendService, FriendRepository, JwtService],
+    providers: [FriendService, FriendRepository, JwtService, FriendRepository],
     exports: [FriendService, FriendRepository],
 })
 export class FriendModule {}

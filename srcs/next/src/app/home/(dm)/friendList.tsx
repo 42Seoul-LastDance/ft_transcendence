@@ -36,14 +36,14 @@ const FriendList: React.FC = () => {
       `/DM/with/${friendName}`,
       router,
     ); // ChatMessages[] 로 올 예정
-    dispatch(setChatMessages(prevMessages.data));
+    dispatch(setChatMessages(prevMessages.data)); // 이거 이렇게 하면 바로 세팅되는지 확인점  시    렁 ~~!~~~~~~~
     dispatch(setJoin(JoinStatus.DM));
   };
 
   useEffect(() => {
     handleResponse();
   }, []);
-
+  // ㅎㅎ ㅈㅅ ㅋㅋ 저메추 해주세요 :: 편육개장 버거킹 냠
   return (
     <>
       {friendList.map((curFriend: string[], rowIdx: number) => (

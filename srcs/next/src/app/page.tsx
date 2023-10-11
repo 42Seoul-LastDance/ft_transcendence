@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { BACK_URL } from './globals';
 
 export default function Home() {
-  // const router = useRouter();
+  const router = useRouter();
 
   return (
     <main>
@@ -17,7 +17,15 @@ export default function Home() {
       <Link href={`${BACK_URL}/auth/42login`}>
         <Button variant="contained">42login</Button>
       </Link>
-      <Divider />
+      {/* <Button
+        variant="contained"
+        onClick={() => {
+          router.push('/test');
+        }}
+      >
+        5억년버튼
+      </Button>
+      <Divider /> */}
     </main>
   );
 }

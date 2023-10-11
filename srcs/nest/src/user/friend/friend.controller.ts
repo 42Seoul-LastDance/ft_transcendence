@@ -25,9 +25,8 @@ export class FriendController {
     async getFriendList(@Req() req, @Res() res: Response) {
         console.log(req.user);
         const friendList = await this.friendService.getFriendList(+req.user.sub);
-        //TODO res에 friendList JSON으로 담아서 보내기
         console.log(friendList);
-        return res.send(friendList);
+        return res.status(200).send(friendList);
     }
 
     @Get('/isFriend/:friendName')
@@ -46,14 +45,14 @@ export class FriendController {
     }
 
     @Delete('/delete/:friendName')
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
     async deleteFriend(@Req() req, @Res() res: Response, @Param('friendName') friendName: string) {
         await this.friendService.deleteFriend(+req.user.sub, friendName);
         return res.sendStatus(200);
     }
 
     @Get('/getInvitation')
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
     async getInvitation(@Req() req, @Res() res: Response) {
         console.log('getinveiteList called');
         const invitations = await this.friendService.getInvitation(+req.user.sub);
@@ -62,14 +61,14 @@ export class FriendController {
     }
 
     @Patch('/saYes/:friendName')
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
     async acceptRequest(@Req() req, @Res() res: Response, @Param('friendName') friendName: string) {
         await this.friendService.acceptRequest(+req.user.sub, friendName);
         return res.sendStatus(200);
     }
 
     @Delete('/decline/:friendName')
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
     async declineRequest(@Req() req, @Res() res: Response, @Param('friendName') friendName: string) {
         await this.friendService.declineRequest(+req.user.sub, friendName);
         return res.sendStatus(200);

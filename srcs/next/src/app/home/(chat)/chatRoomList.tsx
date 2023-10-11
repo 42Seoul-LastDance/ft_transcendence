@@ -10,7 +10,10 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import { useDispatch } from 'react-redux';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
-import { IoEventListener } from '../../context/socket';
+import { IoEventListener, IoEventOnce } from '../../context/socket';
+import { isValid } from '../valid';
+import { myAlert } from '../alert';
+import { setRoomNameList } from '@/app/redux/roomSlice';
 
 const style = {
   width: '100%',
@@ -32,32 +35,39 @@ const ChatRoomList: React.FC = () => {
       let password: string | null = null;
       if (data.requirePassword === true) {
         password = prompt('비밀번호를 입력하세요');
-        if (!password) return;
+        console.log('password:', password);
+        if (
+          !password ||
+          isValid('비밀번호가', password, 20, dispatch) === false
+        )
+          return;
       }
-      dispatch(setChatRoom(data));
+
       chatSocket?.emit(
         'joinPublicChatRoom',
         { roomName, password },
         checkPassword,
       );
+      dispatch(setChatRoom(data));
     };
 
     const checkPassword = (data: any) => {
       if (data.result === true) {
         dispatch(setJoin(JoinStatus.CHAT));
-      } else {
+        myAlert('success', '채팅방에 입장하였습니다.', dispatch);
+      } else if (data.result === false) {
         dispatch(setJoin(JoinStatus.NONE));
-        alert('비밀번호가 틀렸습니다.');
+        myAlert('error', '비밀번호가 틀렸습니다.', dispatch);
       }
     };
-
-    IoEventListener(chatSocket!, 'getChatRoomInfo', handleGetChatRoom);
-    IoEventListener(chatSocket!, 'joinPublicChatRoom', checkPassword);
 
     chatSocket?.emit('getChatRoomInfo', {
       roomName: roomName,
       status: RoomStatus.PUBLIC,
     });
+
+    IoEventOnce(chatSocket!, 'getChatRoomInfo', handleGetChatRoom);
+    IoEventOnce(chatSocket!, 'joinPublicChatRoom', checkPassword);
   };
 
   return (

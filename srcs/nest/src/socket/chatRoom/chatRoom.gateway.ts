@@ -9,6 +9,7 @@ import { Server, Socket } from 'socket.io';
 import { ChatRoomService } from './chatRoom.service';
 import { CreateRoomDto } from './dto/createRoom.dto';
 import { JwtService } from '@nestjs/jwt';
+import { RoomStatus } from './roomStatus.enum';
 
 @WebSocketGateway({
     port: 3000,
@@ -138,6 +139,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     @SubscribeMessage('sendMessage')
     sendMessage(socket: Socket, payload: JSON): void {
         console.log('SEND MESSAGE payload', payload);
+
         this.chatroomService.sendMessage(
             socket,
             payload['roomName'],
@@ -169,13 +171,26 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('joinPublicChatRoom')
     async joinPublicChatRoom(socket: Socket, payload: JSON) {
-        console.log('JOIN PUBLIC CHAT ROOM listen');
+        console.log('JOIN PUBLIC CHAT ROOM password', payload);
         await this.chatroomService.joinPublicChatRoom(socket, payload['roomName'], payload['password'], this.server);
+        const chatRoomInfo = await this.chatroomService.getChatRoomInfo(socket, payload['roomName'], RoomStatus.PUBLIC);
+        console.log('JOIN PUBLIC CHAT ROOM :: broadcasting : ', chatRoomInfo);
+        this.server.to(payload['roomName']).emit('getChatRoomInfo', chatRoomInfo);
+        // const chatRoomList = this.chatroomService.getChatRoomList();
+        // socket.emit('getChatRoomList', chatRoomList);
     }
 
     @SubscribeMessage('joinPrivateChatRoom')
     async joinPrivateChatRoom(socket: Socket, payload: JSON) {
         await this.chatroomService.joinPrivateChatRoom(socket, payload['roomName'], this.server);
+        const chatRoomInfo = await this.chatroomService.getChatRoomInfo(
+            socket,
+            payload['roomName'],
+            RoomStatus.PRIVATE,
+        );
+        this.server.to(payload['roomName']).emit('getChatRoomInfo', chatRoomInfo);
+        // const chatRoomList = this.chatroomService.getChatRoomList();
+        // socket.emit('getChatRoomList', chatRoomList);
     }
 
     // @SubscribeMessage('exitChatRoom')
