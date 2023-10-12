@@ -12,7 +12,7 @@ export class BlockedUsersService {
     ) {}
 
     async blockUserById(userId: number, targetId: number): Promise<void> {
-        if ((await this.isBlocked(userId, targetId)) === true) return;
+        // if ((await this.isBlocked(userId, targetId)) === true) return;
         const blockInfo = this.blockedUsersRepository.create({
             requestUserId: userId,
             targetUserId: targetId,
@@ -49,14 +49,18 @@ export class BlockedUsersService {
     //*REST API
     async getBlockUsernameListById(id: number): Promise<Array<string>> {
         const blockList: Array<string> = [];
+        const blockListId = await this.getBlockUserListById(id);
         const foundBlockUsers: BlockedUsers[] = await this.blockedUsersRepository.find({
-            // TypeError: Cannot read properties of undefined (reading 'find')
             where: { requestUserId: id },
-            select: { targetUserId: true },
         });
-        foundBlockUsers.forEach(async (blockedUser) => {
-            blockList.push((await this.userSerivce.findUserById(blockedUser.targetUserId)).userName);
-        });
+        console.log('found Blocked user:', blockListId);
+        // if (!foundBlockUsers) return [];
+        for (const blockUser of blockListId) {
+            console.log('found Blocked user:', blockListId);
+            const blockUserName = (await this.userSerivce.findUserById(blockUser)).userName;
+            blockList.push(blockUserName);
+        }
+        console.log('block list in GET BLOCK USER NAME LISt', blockList);
         return blockList;
     }
 }

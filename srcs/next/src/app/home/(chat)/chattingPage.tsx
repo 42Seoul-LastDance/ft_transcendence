@@ -19,14 +19,21 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   ChatMessage,
   ChattingPageProps,
-  SendMessageDto,
+  JoinStatus,
+  MemberList,
 } from '../../interface';
-import { setChatMessages } from '@/app/redux/roomSlice';
-import { IoEventListener } from '@/app/context/socket';
-import { setAlertMsg, setShowAlert } from '@/app/redux/alertSlice';
+import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
+
+import {
+  clearChatMessages,
+  setChatMessages,
+  setRoomMemberList,
+} from '@/app/redux/roomSlice';
+import { IoEventListener, IoEventOnce } from '@/app/context/socket';
+import { setShowAlert } from '@/app/redux/alertSlice';
 import { isValid } from '../valid';
-import { getTime } from '@/app/globals';
-import { Manager } from 'socket.io-client';
+import { setChatRoom, setJoin } from '@/app/redux/userSlice';
+import { myAlert } from '../alert';
 
 const ChattingPage = (props: ChattingPageProps) => {
   const [message, setMessage] = useState('');
@@ -38,50 +45,55 @@ const ChattingPage = (props: ChattingPageProps) => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const myName = useSelector((state: RootState) => state.user.userName);
   const listRef = useRef(null);
+  const join = useSelector((state: RootState) => state.user.join);
 
-  const handleCheckRendering = (data: any) => {
-    console.log('check rendering', data);
-    props.socket?.emit('receiveMessage', {
-      userName: data.userName,
-      content: data.content,
-    });
-  };
-
-  const handleReceiveMessage = (data: any) => {
-    console.log('receive Message', data);
-    if (data) {
-      const receiveMsg: any = {
-        userName: data.userName,
-        content: data.content,
-        time: getTime(),
-      };
-      // 그리기
-      dispatch(setChatMessages([...chatMessages, receiveMsg]));
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
     }
-  };
-
-  // 메세지 받기
-  IoEventListener(props.socket!, 'sendMessage', handleCheckRendering);
-  IoEventListener(props.socket!, 'receiveMessage', handleReceiveMessage);
+    if (join === JoinStatus.CHAT) {
+      IoEventListener(props.socket!, 'sendMessage', (data: any) => {
+        props.socket?.emit('receiveMessage', {
+          userName: data.userName,
+          content: data.content,
+        });
+      });
+      IoEventListener(props.socket!, 'receiveMessage', (data: ChatMessage) => {
+        dispatch(setChatMessages([...chatMessages, data]));
+      });
+      IoEventListener(props.socket!, 'explodeRoom', () => {
+        handleExitRoom();
+      });
+      IoEventListener(
+        props.socket!,
+        'getMemberStateList',
+        (data: MemberList[]) => {
+          dispatch(setRoomMemberList(data));
+        },
+      );
+    }
+  }, [join, chatMessages]);
 
   // 메세지 보내기
   const SendMessage = () => {
     if (!message) return;
     if (!chatRoom) throw new Error('chatRoom is null');
-    const newMsg: ChatMessage = {
-      userName: myName!,
-      content: message,
-      time: getTime(),
-    };
-    setChatMessages([...chatMessages, newMsg]);
-    const newSend: SendMessageDto = {
+
+    setChatMessages([
+      ...chatMessages,
+      {
+        userName: myName!,
+        content: message,
+      },
+    ]);
+
+    props.socket?.emit('sendMessage', {
       roomName: chatRoom.roomName,
       userName: myName!,
       content: message,
       status: chatRoom.status,
-    };
-    console.log('newSend', newSend);
-    props.socket?.emit('sendMessage', newSend);
+    });
+
     setMessage('');
   };
 
@@ -92,28 +104,40 @@ const ChattingPage = (props: ChattingPageProps) => {
   };
 
   const toggleSettings = () => {
+    IoEventListener(
+      props.socket!,
+      'getMemberStateList',
+      (data: MemberList[]) => {
+        dispatch(setRoomMemberList(data));
+      },
+    );
+    props.socket?.emit('getMemberStateList', {
+      roomName: chatRoom?.roomName,
+      status: chatRoom?.status,
+    });
     setIsSettingsOpen(!isSettingsOpen);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isValid('메세지가', e.target.value + ' ⏎', 50, dispatch)) {
       setMessage(e.target.value);
-      dispatch(setShowAlert(false));
     }
   };
 
-  useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight;
-    }
-  }, [chatMessages]);
+  const handleExitRoom = () => {
+    props.socket?.emit('exitChatRoom');
+    dispatch(setJoin(JoinStatus.NONE));
+    dispatch(clearChatMessages([]));
+    myAlert('success', '나가졌어요 펑 ~', dispatch);
+    props.socket?.emit('getRoomNameList');
+  };
 
-  return (
+  return join === JoinStatus.CHAT ? (
     <Container
       maxWidth="sm"
       style={{
-        display: 'flex', //오 플렉스
-        flexDirection: 'column', // 컨테이너 내의 요소를 위에서 아래로 배치하도록 수정
+        display: 'flex',
+        flexDirection: 'column',
         justifyContent: 'flex-start',
         alignItems: 'center',
         height: '100vh',
@@ -123,10 +147,18 @@ const ChattingPage = (props: ChattingPageProps) => {
       <IconButton
         color="primary"
         aria-label="settings"
-        sx={{ position: 'absolute', top: '16px', right: '16px' }}
-        onClick={toggleSettings} // 설정 아이콘 버튼 클릭 시 설정창 토글
+        sx={{ position: 'absolute', top: '16px', right: '20px' }}
+        onClick={toggleSettings}
       >
         <SettingsIcon />
+      </IconButton>
+      <IconButton
+        color="primary"
+        aria-label="quit"
+        sx={{ position: 'absolute', top: '16px', right: '60px' }}
+        onClick={handleExitRoom}
+      >
+        <DirectionsRunIcon />
       </IconButton>
 
       <Card
@@ -142,27 +174,25 @@ const ChattingPage = (props: ChattingPageProps) => {
           style={{ overflowY: 'auto', height: 'calc(100% - 105px)' }}
         >
           {chatRoom?.roomName}
-          <List ref={listRef} style={{ maxHeight: '560px', overflowY: 'auto' }}>
-            {chatMessages.map((msg, index) => (
-              <ListItem>
+          <List ref={listRef} style={{ maxHeight: '550px', overflowY: 'auto' }}>
+            {chatMessages?.map((msg, index) => (
+              <ListItem key={index}>
                 <ListItemText
-                  primary={msg.userName}
+                  primary={msg.userName} //undefiend userName
                   secondary={msg.content}
                   style={{
-                    textAlign: myName === msg.userName ? 'right' : 'left',
-                    paddingRight: '8px', // 오른쪽 여백
-                    paddingLeft: '8px', // 왼쪽 여백
+                    textAlign: myName === msg.userName ? 'right' : 'left', // 방 폭파되고 undefined되어있는 이슈
+                    paddingRight: '8px',
+                    paddingLeft: '8px',
                   }}
                 />
                 <div
                   style={{
                     textAlign: myName === msg.userName ? 'left' : 'right',
-                    fontSize: '12px', // 시간 폰트 크기
-                    color: 'gray', // 시간 글꼴 색상
+                    fontSize: '12px',
+                    color: 'gray',
                   }}
-                >
-                  {msg.time}
-                </div>
+                ></div>
               </ListItem>
             ))}
           </List>
@@ -197,7 +227,7 @@ const ChattingPage = (props: ChattingPageProps) => {
         <ChatSetting />
       </Drawer>
     </Container>
-  );
+  ) : null;
 };
 
 export default ChattingPage;

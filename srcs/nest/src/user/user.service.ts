@@ -1,10 +1,12 @@
 /* eslint-disable prettier/prettier */
 import {
     ConflictException,
+    Inject,
     Injectable,
     InternalServerErrorException,
     NotFoundException,
     UnauthorizedException,
+    forwardRef,
 } from '@nestjs/common';
 // import { InjectRepository } from '@nestjs/typeorm';
 import { Like } from 'typeorm';
@@ -207,18 +209,13 @@ export class UserService {
     }
 
     async getUserProfile(username: string): Promise<UserProfileDto> {
-        //TODO UserProfileDto 업데이트하고 추가로 진행
         const user = await this.getUserByUserName(username);
-
         const userProfileDto: UserProfileDto = {
-            //TODO UserProfileDto 업데이트하고 추가로 진행
             userName: user.userName,
             slackId: user.slackId,
-            // profileurl: user.profileurl,
             exp: user.exp,
             level: user.level,
         };
-
         return userProfileDto;
     }
 

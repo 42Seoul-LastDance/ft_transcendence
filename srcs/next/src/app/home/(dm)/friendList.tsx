@@ -11,7 +11,6 @@ import { useRouter } from 'next/navigation';
 import { setChatMessages } from '@/app/redux/roomSlice';
 import { JoinStatus } from '@/app/interface';
 import { setJoin } from '@/app/redux/userSlice';
-// import { IoEventListener } from '../context/socket';
 
 const style = {
   width: '100%',

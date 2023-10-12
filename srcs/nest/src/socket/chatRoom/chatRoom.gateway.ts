@@ -115,7 +115,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         // ”isLocked” : boolean,
         // ”status” : roomStatus,
         const chatRoomList = this.chatroomService.getChatRoomList();
-        console.log('----------------------getChatRoomList', chatRoomList);
+        console.log('----------------------getChatRoomList --------------------------------> ', chatRoomList);
         socket.emit('getChatRoomList', chatRoomList);
         // socket.emit('getChatRoomList', {'chatRoomList': {chatRoomList}});
         // Object.fromEntries(chatRoomList)
@@ -135,6 +135,20 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         // Object.fromEntries(chatRoomList)
     }
 
+    @SubscribeMessage('getMemberStateList')
+    async getMemberStateList(socket: Socket, payload: JSON) {
+        //roomName: string
+        //status: RoomStatus
+        const memberList = await this.chatroomService.getMemberStateList(
+            socket,
+            payload['roomName'],
+            payload['status'],
+        );
+        socket.emit('memberListInfo', memberList);
+        console.log('memberListInfo :: ', memberList);
+        // Object.fromEntries(chatRoomList)
+    }
+
     // * Message ===========================================================
     @SubscribeMessage('sendMessage')
     sendMessage(socket: Socket, payload: JSON): void {
@@ -151,12 +165,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('receiveMessage')
     async receiveMessage(socket: Socket, payload: JSON): Promise<void> {
-        const result = await this.chatroomService.receiveMessage(
-            socket,
-            payload['userName'],
-            payload['content'],
-            payload['time'],
-        );
+        const result = await this.chatroomService.receiveMessage(socket, payload['userName'], payload['content']);
         socket.emit('receiveMessage', result);
     }
 
@@ -198,10 +207,11 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         // socket.emit('getChatRoomList', chatRoomList);
     }
 
-    // @SubscribeMessage('exitChatRoom')
-    // exitChatRoom(socket: Socket, payload: JSON) {
-    //     this.exitChatRoom(socket, payload['roomName']);
-    // }
+    // roomName: string
+    @SubscribeMessage('exitChatRoom')
+    exitChatRoom(socket: Socket) {
+        this.chatroomService.leavePastRoom(socket, socket.rooms, this.server);
+    }
 
     // * 채팅방 패스워드 관련 =================================================
     @SubscribeMessage('setRoomPassword')

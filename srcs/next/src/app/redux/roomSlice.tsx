@@ -1,14 +1,16 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
-import { ChatMessage } from '../interface';
+import { ChatMessage, MemberList } from '../interface';
 
 export interface RoomList {
   roomNameList: string[];
   chatMessages: ChatMessage[];
+  roomMemberList: MemberList[];
 }
 
 const initialState: RoomList = {
   roomNameList: [],
   chatMessages: [],
+  roomMemberList: [],
 };
 
 const roomSlice = createSlice({
@@ -22,8 +24,21 @@ const roomSlice = createSlice({
     setChatMessages: (state, action: PayloadAction<ChatMessage[]>) => {
       state.chatMessages.push(action.payload[0]);
     },
+
+    clearChatMessages: (state, action: PayloadAction<ChatMessage[]>) => {
+      state.chatMessages = action.payload;
+    },
+
+    setRoomMemberList: (state, action: PayloadAction<MemberList[]>) => {
+      state.roomMemberList = action.payload;
+    },
   },
 });
 
 export default roomSlice;
-export const { setRoomNameList, setChatMessages } = roomSlice.actions;
+export const {
+  setRoomNameList,
+  setChatMessages,
+  clearChatMessages,
+  setRoomMemberList,
+} = roomSlice.actions;

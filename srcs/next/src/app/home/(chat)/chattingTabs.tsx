@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import { Tab, Tabs } from '@mui/material';
 import ChatRoomList from './chatRoomList';
 import FriendList from '../(dm)/friendList';
+import BlockList from '../(block)/blockList';
+import RequestList from '../(friendRequest)/requestList';
 
 const ChattingTabs: React.FC = () => {
   const [value, setValue] = useState<number>(0);
@@ -22,8 +24,8 @@ const ChattingTabs: React.FC = () => {
       <div>
         {value === 0 && <ChatRoomList />}
         {value === 1 && <FriendList />}
-        {value === 2 && <div>친구 요청 목록</div>}
-        {value === 3 && <div>차단 목록</div>}
+        {value === 2 && <RequestList />}
+        {value === 3 && <BlockList />}
       </div>
     </div>
   );

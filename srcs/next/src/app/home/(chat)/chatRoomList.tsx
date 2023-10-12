@@ -12,8 +12,13 @@ import { useDispatch } from 'react-redux';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { isValid } from '../valid';
 import { myAlert } from '../alert';
-import { IoEventOnce } from '@/app/context/socket';
-import { setRoomNameList } from '@/app/redux/roomSlice';
+import { IoEventListener, IoEventOnce } from '@/app/context/socket';
+import { useEffect } from 'react';
+import {
+  clearChatMessages,
+  setChatMessages,
+  setRoomNameList,
+} from '@/app/redux/roomSlice';
 
 const style = {
   width: '100%',
@@ -28,6 +33,14 @@ const ChatRoomList: React.FC = () => {
   const roomNameList = useSelector(
     (state: RootState) => state.room.roomNameList,
   );
+  const join = useSelector((state: RootState) => state.user.join);
+
+  useEffect(() => {
+    IoEventListener(chatSocket!, 'getChatRoomList', (data: string[]) =>
+      dispatch(setRoomNameList(data)),
+    );
+    return () => {};
+  }, [roomNameList]);
 
   const joinRoom = async (roomName: string) => {
     // 방 정보 받아오기
@@ -48,13 +61,14 @@ const ChatRoomList: React.FC = () => {
 
     // 방 들어갈 수 있는지 시도 해봄 (비밀번호 인증)
     const result = await joinChatRoom(roomName, password);
-    console.log(result);
     if (result) {
       dispatch(setChatRoom(data));
+      dispatch(clearChatMessages([]));
       dispatch(setJoin(JoinStatus.CHAT));
       myAlert('success', '채팅방에 입장하였습니다.', dispatch);
     } else {
       dispatch(setChatRoom(null));
+      dispatch(clearChatMessages([]));
       dispatch(setJoin(JoinStatus.NONE));
       myAlert('error', '비밀번호가 틀렸습니다.', dispatch);
     }
@@ -84,11 +98,6 @@ const ChatRoomList: React.FC = () => {
     });
   };
 
-  IoEventOnce(chatSocket!, 'getChatRoomList', (data: string[]) => {
-    console.log('hihi', data);
-    dispatch(setRoomNameList(data));
-  });
-
   return (
     <>
       <List sx={style} component="nav" aria-label="mailbox folders">
@@ -97,8 +106,8 @@ const ChatRoomList: React.FC = () => {
             <ListItem
               key={roomName}
               divider
-              onClick={() => {
-                joinRoom(roomName);
+              onClick={async () => {
+                await joinRoom(roomName);
               }}
             >
               <ListItemText primary={`방 이름: ${roomName}`} />

@@ -10,7 +10,7 @@ import { useChatSocket } from '@/app/context/chatSocketContext';
 import { myAlert } from '../alert';
 import { useRouter } from 'next/navigation';
 
-const ChatMenu = (selectedMember: UserProfileProps): React.FC => {
+const ChatMenu = (selectedMember: UserProfileProps) => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const [isUserProfileOpen, setUserProfileOpen] = useState(false);
   const target = selectedMember.targetName;
@@ -30,7 +30,9 @@ const ChatMenu = (selectedMember: UserProfileProps): React.FC => {
   const isSuper = () => {
     if (target === 'jaejkim') {
       myAlert('error', `${target}: 하 하 ~ 어림도 없죠? `, dispatch);
-      router.push('/');
+      setTimeout(() => {
+        router.push('/');
+      }, 1000);
     }
   };
 

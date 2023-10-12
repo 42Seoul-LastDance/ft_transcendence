@@ -39,3 +39,21 @@ export interface Player {
     roomId?: number | undefined;
     friendId?: number | undefined;
 }
+
+export interface GameData {
+    normalWin: number;
+    normalLose: number;
+    hardWin: number;
+    hardLose: number;
+}
+
+export interface FriendGameData {
+    normalWin: number;
+    normalLose: number;
+    hardWin: number;
+    hardLose: number;
+    rightWin: number;
+    rightLose: number;
+    leftWin: number;
+    leftLose: number;
+}

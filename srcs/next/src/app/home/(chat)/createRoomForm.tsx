@@ -15,13 +15,13 @@ import {
 } from '../../interface';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { IoEventListener } from '@/app/context/socket';
-import { setAlertMsg, setShowAlert } from '@/app/redux/alertSlice';
 import { isValid } from '../valid';
+import { setChatMessages } from '@/app/redux/roomSlice';
 
 export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const chatSocket = useChatSocket();
   const dispatch = useDispatch();
-  const [roomname, setRoomname] = useState<string>('');
+  const [roomName, setRoomName] = useState<string>('');
   const [isPrivate, setIsPrivate] = useState<boolean>(false);
   const [requirePassword, setIsLocked] = useState<boolean>(false);
   const [password, setPassword] = useState<string>('');
@@ -29,7 +29,7 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
 
   const handleRoomNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = event.target.value;
-    setRoomname(inputValue);
+    setRoomName(inputValue);
   };
 
   const handlePrivacyChange = (
@@ -52,7 +52,7 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
 
   const isBadInput = (): boolean => {
     if (
-      isValid('방이름이', roomname, 20, dispatch) === false ||
+      isValid('방이름이', roomName, 20, dispatch) === false ||
       (requirePassword &&
         isValid('패스워드가', password, 20, dispatch) === false)
     )
@@ -62,23 +62,19 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
 
   const addNewRoom = () => {
     if (isBadInput()) return;
-    const handleCreateChatRoom = (data: ChatRoomDto) => {
-      console.log('handleCreateChatRoom', data);
+
+    IoEventListener(chatSocket!, 'createChatRoom', (data: ChatRoomDto) => {
       dispatch(setChatRoom(data));
-    };
+      dispatch(setJoin(JoinStatus.CHAT));
+      onClose();
+    });
 
-    IoEventListener(chatSocket!, 'createChatRoom', handleCreateChatRoom);
-
-    const newRoom: RoomInfoDto = {
-      roomName: roomname,
+    chatSocket?.emit('createChatRoom', {
+      roomName: roomName,
       password: password ? password : null,
       requirePassword: requirePassword,
       status: isPrivate ? RoomStatus.PRIVATE : RoomStatus.PUBLIC,
-    };
-
-    chatSocket?.emit('createChatRoom', newRoom);
-    dispatch(setJoin(JoinStatus.CHAT));
-    onClose();
+    });
   };
 
   return (
@@ -87,7 +83,7 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
         <TextField
           label="방 이름"
           variant="outlined"
-          value={roomname}
+          value={roomName}
           onChange={handleRoomNameChange}
           fullWidth
           margin="normal"

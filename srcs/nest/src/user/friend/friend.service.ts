@@ -29,25 +29,7 @@ export class FriendService {
         return query2;
     }
 
-    async getInvitations(userId: number) {
-        try {
-            const requestUserIds = await this.friendRepository
-                .createQueryBuilder('friend')
-                .select('friend.requestUserId')
-                .where('friend.targetUserId = :userId', { userId })
-                .andWhere('friend.status = :status', { status: FriendStatus.REQUESTED })
-                .distinct(true)
-                .getRawMany();
-
-            return requestUserIds.map((result) => result.requestUserId);
-        } catch (error) {
-            console.error('Error retrieving requestUserIds:', error.message);
-            return [];
-        }
-    }
-
     async getFriendList(userId: number): Promise<Array<{ username: string; status: UserStatus }>> {
-        // { {friendName, friendStatus}, {,}, … } 형식 맞는지 확인
         const friendList: Array<{ username: string; status: UserStatus }> = [];
 
         console.log('userid', userId);
@@ -136,7 +118,19 @@ export class FriendService {
 
     async getInvitation(userId: number) {
         try {
-            return await this.getInvitations(userId);
+            const invitations: Array<string> = [];
+            const requestUsers = await this.friendRepository
+                .createQueryBuilder('friend')
+                .where('friend.targetUserId = :userId', { userId })
+                .andWhere('friend.status = :status', { status: FriendStatus.REQUESTED })
+                .distinct(true)
+                .getRawMany();
+            if (!requestUsers) return [];
+            for (const requestUser of requestUsers) {
+                const friendName = (await this.userService.findUserById(requestUser.friend_requestUserId)).userName;
+                invitations.push(friendName);
+            }
+            return invitations;
         } catch (error) {
             console.log(error);
             throw new InternalServerErrorException('friendService >> getInvitation');

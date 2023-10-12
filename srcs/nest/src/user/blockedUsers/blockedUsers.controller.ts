@@ -14,12 +14,12 @@ export class BlockedUsersController {
     @Get('/getBlockList')
     @UseGuards(JwtAuthGuard)
     async getBlockList(@Req() req, @Res() res: Response) {
-        const blockList = await this.blockedUsersService.getBlockUsernameListById(+req.user.id);
+        const blockList = await this.blockedUsersService.getBlockUsernameListById(req.user.sub);
         //TODO res에 JSON 잘 가는지 확인 필요
-        return res.send(blockList);
+        return res.send({ blockList });
     }
 
-    @Delete('/unblock/:blockName')
+    @Delete('/unblockUser/:blockName')
     @UseGuards(JwtAuthGuard) //친구가 아닐 때만 가능함.
     async unblockUser(@Req() req, @Res() res: Response, @Param('blockName') blockName: string) {
         const targetId = (await this.userService.getUserByUserName(blockName)).id;
@@ -27,18 +27,21 @@ export class BlockedUsersController {
         return res.sendStatus(200);
     }
 
-    @Patch('/block/:blockName')
+    @Patch('/blockUser/:blockName')
     @UseGuards(JwtAuthGuard)
     async blockUser(@Req() req, @Res() res: Response, @Param('blockName') blockName: string) {
         const targetId = (await this.userService.getUserByUserName(blockName)).id;
-        this.blockedUsersService.blockUserById(req.user.id, targetId);
+        console.log('request sub in BLOCK USER', req.user.sub);
+        this.blockedUsersService.blockUserById(req.user.sub, targetId);
         return res.sendStatus(200);
     }
 
-    @Get('/isblocked/:id')
+    @Get('/isBlocked/:userName')
     @UseGuards(JwtAuthGuard)
-    async isBlocked(@Req() req, @Param('id') userId: number, @Res() res: Response): Promise<boolean> {
-        const isBlocked: boolean = await this.blockedUsersService.isBlocked(req.sub, userId);
-        return isBlocked;
+    async isBlocked(@Req() req, @Param('userName') userName: string, @Res() res: Response): Promise<void> {
+        const targetId: number = (await this.userService.getUserByUserName(userName)).id;
+        console.log('request sub in isBLOCKEd', req.user.sub);
+        const isBlocked: boolean = await this.blockedUsersService.isBlocked(req.user.sub, targetId);
+        res.send(isBlocked);
     }
 }

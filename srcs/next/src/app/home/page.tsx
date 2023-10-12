@@ -13,13 +13,12 @@ import SuperSocketProvider, {
 import Link from 'next/link';
 import UserProfile from './(profile)/userProfile';
 import { useEffect } from 'react';
-import { JoinStatus } from '../interface';
+import { JoinStatus, RoomStatus } from '../interface';
 import { setIsMatched } from '../redux/matchSlice';
 import { IoEventListener } from '../context/socket';
-import HeaderAlert, { myAlert } from './alert';
-import { setChatMessages } from '../redux/roomSlice';
 import { setChatRoom, setJoin } from '../redux/userSlice';
-import { LinearProgress } from '@mui/material';
+import AutoAlert, { myAlert } from './alert';
+import { setChatMessages, setRoomNameList } from '../redux/roomSlice';
 
 const HomeContent = () => {
   const joinStatus = useSelector((state: RootState) => state.user.join);
@@ -27,23 +26,16 @@ const HomeContent = () => {
   const dispatch = useDispatch();
   const chatSocket = useChatSocket();
   const superSocket = useSuperSocket();
-  const Loading = true;
-
-  IoEventListener(chatSocket!, 'explodeRoom', () => {
-    myAlert('info', '방장이 방을 폭파했습니다.', dispatch);
-    dispatch(setJoin(JoinStatus.NONE));
-    dispatch(setChatRoom(null));
-    dispatch(setChatMessages([]));
-  });
 
   useEffect(() => {
     dispatch(setIsMatched({ isMatched: false }));
   }, []);
 
-  return Loading ? (
-    <div>
+  return (
+    <>
       <UserProfile targetName={myName!} />
       <br />
+
       <Link href="/game">
         <button>Play Game!</button>
       </Link>
@@ -53,19 +45,17 @@ const HomeContent = () => {
         {joinStatus === JoinStatus.CHAT && <ChattingPage socket={chatSocket} />}
         {joinStatus === JoinStatus.DM && <ChattingPage socket={superSocket} />}
       </div>
-    </div>
-  ) : (
-    <LinearProgress />
+    </>
   );
 };
 
-const MainHome: React.FC = () => {
+const MainHome = () => {
   return (
     <>
       <Provider store={store}>
         <SuperSocketProvider>
           <ChatSocketProvider>
-            <HeaderAlert severity={'warning'} />
+            <AutoAlert severity={'warning'} />
             <HomeContent />
           </ChatSocketProvider>
         </SuperSocketProvider>
