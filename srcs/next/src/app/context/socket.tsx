@@ -34,7 +34,10 @@ export const IoEventListener = (
   eventHandler: (data: any) => void,
 ) => {
   if (!chatSocket?.hasListeners(eventName)) {
-    chatSocket?.on(eventName, (data?: any) => eventHandler(data));
+    chatSocket?.on(eventName, (data?: any) => {
+      console.log(`[Socket.IO] ${eventName} data: `, data);
+      eventHandler(data);
+    });
     console.log(`[Socket.IO] listen ${eventName}`);
   }
 };

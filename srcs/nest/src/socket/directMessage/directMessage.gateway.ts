@@ -69,17 +69,19 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
 
     @SubscribeMessage('expireToken')
     expireToken(socket: Socket, payload: string) {
-        console.log('hahaha');
+        console.log('expireToken called - DM');
     }
 
     //* updateBlockUser
     @SubscribeMessage('blockUser')
     blockUser(socket: Socket, payload: JSON) {
+        console.log('blockUser called - DM');
         this.directMessageService.blockUser(socket, payload['userId'], payload['targetId']);
     }
 
     @SubscribeMessage('unBlockUser')
     unblockUser(socket: Socket, payload: JSON) {
+        console.log('unBlockUser called - DM');
         this.directMessageService.unblockUser(socket, payload['userId'], payload['targetId']);
     }
 

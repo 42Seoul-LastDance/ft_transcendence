@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { UserService } from 'src/user/user.service';
 import { BlockedUsersService } from 'src/user/blockedUsers/blockedUsers.service';
+import { Player } from 'src/game/game.interface';
 
 @Injectable()
 export class SocketUsersService {
@@ -15,8 +16,11 @@ export class SocketUsersService {
     private dmUserList: Map<number, Socket> = new Map<number, Socket>(); //{userName->id, Socket}
     private dmSocketList: Map<string, number> = new Map<string, number>(); //{socket id , userName->id}
 
+    //game
+    private gameplayerList: Map<string, Player> = new Map<string, Player>(); //socket.id
+
     private blockList: Map<number, Array<number>> = new Map<number, Array<number>>(); //{user id , blockUserList} // ! -> DB에서 한번 가져 들고왔다가 지속 업데이트
-    private friendList: Map<number, Array<number>> = new Map<number, Array<number>>(); //{user id , blockUserList} // ! -> DB에서 한번 가져 들고왔다가 지속 업데이트
+    private friendList: Map<number, Array<number>> = new Map<number, Array<number>>(); //{user id , friendUserList} // ! -> DB에서 한번 가져 들고왔다가 지속 업데이트
 
     //* socket --
     getChatSocketById(userId: number): Socket | undefined {
@@ -50,6 +54,22 @@ export class SocketUsersService {
         this.chatRoomUserList.delete(userId);
         this.chatRoomSocketList.delete(socket.id);
         this.blockList.delete(userId);
+    }
+    //this.playerList.set(playerSocket.id, player);
+    //const player = this.playerList.get(playerId);
+    // this.playerList.delete(playerId);
+
+    getPlayerBySocketId(socketId: string): Player {
+        const player: Player = this.gameplayerList.get(socketId);
+        return player;
+    }
+
+    addPlayerBySocketId(socketId: string, player: Player): void {
+        this.gameplayerList.set(socketId, player);
+    }
+
+    deletePlayer(socketId: string): boolean {
+        return this.gameplayerList.delete(socketId);
     }
 
     async setBlockList(userId: number): Promise<void> {

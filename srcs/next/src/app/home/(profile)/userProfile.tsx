@@ -1,10 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal';
-import { Avatar } from '@mui/material';
+import { Avatar, Divider } from '@mui/material';
 import { useChatSocket } from '@/app/context/chatSocketContext';
 import { setName } from '@/app/redux/userSlice';
 import { useRouter } from 'next/navigation';
@@ -35,6 +35,18 @@ const UserProfile = (props: UserProfileProps) => {
   const [exp, setExp] = useState<number>(0);
   // const [userName, setUserName] = useState<string>(''); <-- 이거 안 보내주셔도요돼이 /user/profile/<name>의 username
   const [slackId, setSlackId] = useState<string>('');
+  const [normalWin, setNormalWin] = useState<number>(0);
+  const [normalLose, setNormalLose] = useState<number>(0);
+  const [hardWin, setHardWin] = useState<number>(0);
+  const [hardLose, setHardLose] = useState<number>(0);
+  const [fNormalWin, setfNormalWin] = useState<number>(0);
+  const [fNormalLose, setfNormalLose] = useState<number>(0);
+  const [fHardWin, setfHardWin] = useState<number>(0);
+  const [fHardLose, setfHardLose] = useState<number>(0);
+  const [fRightWin, setfRightWin] = useState<number>(0);
+  const [fRightLose, setfRightLose] = useState<number>(0);
+  const [fLeftWin, setfLeftWin] = useState<number>(0);
+  const [fLeftLose, setfLeftLose] = useState<number>(0);
   const [friendStatus, setFriendStatus] = useState<FriendStatus>(
     FriendStatus.UNKNOWN,
   );
@@ -67,6 +79,19 @@ const UserProfile = (props: UserProfileProps) => {
       );
       console.log('이것도 잘 오나요', blockedResp);
       setIsBlocked(blockedResp.data['isBlocked']);
+      const friendGameData = await sendRequest(
+        'get',
+        `games/getFriendGameData/${props.targetName}`,
+        router,
+      );
+      setfNormalWin(friendGameData.data['normalWin']);
+      setfNormalLose(friendGameData.data['normalLose']);
+      setfHardWin(friendGameData.data['hardWin']);
+      setfHardLose(friendGameData.data['hardLose']);
+      setfRightWin(friendGameData.data['rightWin']);
+      setfRightLose(friendGameData.data['rightLose']);
+      setfLeftWin(friendGameData.data['leftWin']);
+      setfLeftLose(friendGameData.data['leftLose']);
     }
 
     const response = await sendRequest(
@@ -77,6 +102,16 @@ const UserProfile = (props: UserProfileProps) => {
     setLevel(response.data['level']);
     setExp(response.data['exp']);
     setSlackId(response.data['slackId']);
+
+    const gameData = await sendRequest(
+      'get',
+      `/games/getGameData/${props.targetName}`,
+      router,
+    );
+    setNormalWin(gameData.data['normalWin']);
+    setNormalLose(gameData.data['normalLose']);
+    setHardWin(gameData.data['hardWin']);
+    setHardLose(gameData.data['hardLose']);
   };
 
   const handleClose = () => {
@@ -130,13 +165,42 @@ const UserProfile = (props: UserProfileProps) => {
             {props.targetName}'s Profile
           </Typography>
           <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-            level : {level}
-            <br />
-            exp : {exp}
-            <br />
             slackId : {slackId}
             <br />
+            Level : {level}
+            <br />
+            Exp : {exp}({(exp / ((level + 1) * 500)) * 100}%)
+            <br />
+            <Divider />
+            Total Ranking Game : {normalWin + normalLose + hardWin + hardLose}
+            <br />
+            Normal Ranking Game Winning Rate:{' '}
+            {(normalWin / (normalWin + normalLose)) * 100}%
+            <br />
+            Hard Ranking Game Winning Rate:{' '}
+            {(hardWin / (hardWin + hardLose)) * 100}%
+            <br />
           </Typography>
+          {myName !== props.targetName ? (
+            <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+              <Divider />
+              Total Friend Game :{' '}
+              {fNormalWin + fNormalLose + fHardWin + fNormalLose}
+              <br />
+              Normal Friend Game Winning Rate:{' '}
+              {(fNormalWin / (fNormalWin + fNormalLose)) * 100}%
+              <br />
+              Hard Friend Game Winning Rate:{' '}
+              {(fHardWin / (fHardWin + fNormalLose)) * 100}%
+              <br />
+              Left Side Winning Rate:{' '}
+              {(fLeftWin / (fLeftWin + fLeftLose)) * 100}%
+              <br />
+              Right Side Winning Rate:{' '}
+              {(fRightWin / (fRightWin + fRightLose)) * 100}%
+              <Divider />
+            </Typography>
+          ) : null}
           {myName !== props.targetName &&
             (friendStatus === FriendStatus.FRIEND ? (
               <button onClick={removeFriend}> 친구 해제 </button>

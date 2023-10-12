@@ -34,6 +34,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             const decodedToken = this.jwtService.verify(tokenString, {
                 secret: process.env.JWT_SECRET_KEY,
             });
+            console.log('GAME SOCKET NEW CONNECTION WITH ', decodedToken.userName);
             await this.gameService.createPlayer(client, decodedToken.sub);
         } catch (error) {
             console.log('error : ', error.message);

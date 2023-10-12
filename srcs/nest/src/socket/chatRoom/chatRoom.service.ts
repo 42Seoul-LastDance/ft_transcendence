@@ -35,11 +35,33 @@ export class ChatRoomService {
         return memberList;
     }
 
-    private async getOperatorList(chatRoom: ChatRoomDto): Promise<Array<string>> {
+    private async getMuteList(chatRoom: ChatRoomDto): Promise<Array<string>> {
         const memberList: Array<string> = [];
 
         let userName;
-        for (const member of chatRoom.operatorList) {
+        for (const member of chatRoom.muteList) {
+            userName = await this.socketUsersService.getUserNameByUserId(member);
+            memberList.push(userName);
+        }
+        return memberList;
+    }
+
+    private async getInviteList(chatRoom: ChatRoomDto): Promise<Array<string>> {
+        const memberList: Array<string> = [];
+
+        let userName;
+        for (const member of chatRoom.inviteList) {
+            userName = await this.socketUsersService.getUserNameByUserId(member);
+            memberList.push(userName);
+        }
+        return memberList;
+    }
+
+    private async getBanList(chatRoom: ChatRoomDto): Promise<Array<string>> {
+        const memberList: Array<string> = [];
+
+        let userName;
+        for (const member of chatRoom.banList) {
             userName = await this.socketUsersService.getUserNameByUserId(member);
             memberList.push(userName);
         }
@@ -102,7 +124,7 @@ export class ChatRoomService {
         let result: UserPermission;
         result = UserPermission.MEMBER;
         if (room?.ownerName === userName) result = UserPermission.OWNER;
-        if (room?.operatorList) {
+        else if (room?.operatorList) {
             for (const memberId of room.operatorList) {
                 if (memberId === userId) result = UserPermission.ADMIN;
             }
@@ -136,24 +158,38 @@ export class ChatRoomService {
             ownerName: chatroomDto.ownerName,
             status: chatroomDto.status,
             requirePassword: chatroomDto.requirePassword,
-            operatorList: await this.getOperatorList(chatroomDto),
-            memberList: await this.getMemberList(chatroomDto),
-            userPermission: userPermission, //userName 제거
+            inviteList: await this.getInviteList(chatroomDto),
+            banList: await this.getBanList(chatroomDto),
+            muteList: await this.getMuteList(chatroomDto),
         };
         return roomInfo;
     }
 
-    // operatorList: string[];
-    // memberList: string[];
-    // inviteList: string[];
-    // banList: string[];
-    // muteList: string[];
-    // roomName: string;
-    // ownerName: string;
-    // status: RoomStatus; // 또는 RoomStatus 타입으로 정의
-    // password: string | null;
-    // requirePassword: boolean;
-    // userPermission: UserPermission;
+    async getMemberStateList(socket: Socket, roomName: string, roomStatus: RoomStatus) {
+        const memberStateList: Array<{ userName: string; permission: UserPermission }> = [];
+        let room: ChatRoomDto;
+        if (roomName === undefined || roomStatus === undefined) {
+            this.emitFailReason(socket, 'memberStateList', 'undefined exception');
+            return;
+        }
+        if (roomName === null || roomStatus === null) {
+            this.emitFailReason(socket, 'memberStateList', 'null exception');
+            return;
+        }
+
+        if (roomStatus === RoomStatus.PUBLIC) room = this.publicRoomList.get(roomName);
+        else if (roomStatus === RoomStatus.PRIVATE) room = this.privateRoomList.get(roomName);
+        else return;
+
+        for (const member of room.memberList) {
+            const name: string = await this.socketUsersService.getUserNameByUserId(member);
+            let permission: UserPermission = UserPermission.MEMBER;
+            if (room.operatorList.has(member)) permission = UserPermission.ADMIN;
+            if (room.ownerName === name) permission = UserPermission.OWNER;
+            memberStateList.push({ userName: name, permission: permission });
+        }
+        return memberStateList;
+    }
 
     async createChatRoom(socket: Socket, createRoomDto: CreateRoomDto, io: Server): Promise<void> {
         //check duplicate
@@ -194,13 +230,15 @@ export class ChatRoomService {
     explodeRoom(socket: Socket, pastRoom: ChatRoomDto, io: Server) {
         console.log('ROOM EXPLODE : ', pastRoom.roomName);
         const pastRoomName = pastRoom.roomName;
-        socket.to(pastRoomName).emit('explodeRoom', () => {});
-        console.log('이거 보내는 거임 ------ !!!!!!!!!!!!!!!!!!!!! ----------- !!!!!!! ', this.getChatRoomList());
-        io.emit('getChatRoomList', this.getChatRoomList());
+        // socket.to(pastRoomName).emit('explodeRoom', () => {});
         //!test
-        io.in(pastRoomName).disconnectSockets(false);
         if (pastRoom.status === RoomStatus.PUBLIC) this.publicRoomList.delete(pastRoomName);
         else if (pastRoom.status === RoomStatus.PRIVATE) this.privateRoomList.delete(pastRoomName);
+        io.in(pastRoomName).emit('leaveRoom');
+        io.emit('getChatRoomList', this.getChatRoomList());
+        io.socketsLeave(pastRoomName);
+
+        console.log('🥇이거 보내는 거임 ------ !!!!!!!!!!!!!!!!!!!!! ----------- !!!!!!!🥇 ', this.getChatRoomList());
     }
 
     async leavePastRoom(socket: Socket, rooms: Set<string>, io: Server): Promise<boolean> {
@@ -226,7 +264,7 @@ export class ChatRoomService {
         pastRoom = this.publicRoomList.get(pastRoomName);
         if (pastRoom === undefined) pastRoom = this.privateRoomList.get(pastRoomName);
         if (pastRoom === undefined) {
-            console.log('LEAVEPASTROOM : 이');
+            console.log('LEAVEPASTROOM : ');
             return;
         }
         const pastRoomStatus: RoomStatus = pastRoom?.status;
@@ -353,18 +391,33 @@ export class ChatRoomService {
     ): Promise<void> {
         //! test  : op가 아니어도 된다면?! (front에서 혹시 잘못 띄우는지 확인)
         const userId = this.getUserId(socket);
-        if (this.checkOperator(roomName, status, userId) === false) console.log('test failed. user is not an oper.');
+        if (this.checkOperator(roomName, status, userId) === false) {
+            console.log('test failed. user is not an oper.');
+            return;
+        }
+
+        if (status === undefined || roomName === undefined || targetName === undefined || time === undefined) {
+            this.emitFailReason(socket, 'muteUser', 'undefined exception');
+            return;
+        }
+        if (status === null || roomName === null || targetName === null || time === null) {
+            this.emitFailReason(socket, 'muteUser', 'null exception');
+            return;
+        }
 
         //TODO : test . mute  가 잘 사라지나.
-        const removeMuteUser = (targetName, roomDto) => {
-            roomDto.muteList.delete(targetName);
-        };
         let room: ChatRoomDto;
+
         if (status === RoomStatus.PRIVATE) room = this.privateRoomList.get(roomName);
         else room = this.publicRoomList.get(roomName);
 
         const targetId = await this.socketUsersService.getUserIdByUserName(targetName);
         room.muteList.add(targetId);
+
+        const removeMuteUser = (targetName, roomDto) => {
+            roomDto.muteList.delete(targetName);
+        };
+
         setTimeout(() => {
             removeMuteUser(targetName, room);
         }, time * 1000);
@@ -389,6 +442,7 @@ export class ChatRoomService {
 
     sendMessage(socket: Socket, roomName: string, userName: string, content: string, status: RoomStatus): boolean {
         let room: ChatRoomDto;
+
         if (roomName === undefined || roomName === null) {
             this.emitFailReason(socket, 'sendMessage', 'roomName undefined');
             return;
@@ -397,12 +451,15 @@ export class ChatRoomService {
             room = this.privateRoomList.get(roomName);
         } else if (status === RoomStatus.PUBLIC) {
             room = this.publicRoomList.get(roomName);
-        } else {
+        }
+        if (room === undefined || room === null) {
             this.emitFailReason(socket, 'sendMessage', 'room has already exploded.');
             return;
         }
 
-        const userId = this.getUserId(socket);
+        console.log('roomName in SEND MESSAGE', roomName);
+        console.log('room in SEND MESSAGE', room);
+
         console.log('message to ', roomName, 'room:', room);
         socket.emit('sendMessage', { userName: userName, content: content }); //sender
         socket.to(room.roomName).emit('sendMessage', { userName: userName, content: content }); //members
@@ -418,8 +475,7 @@ export class ChatRoomService {
         socket: Socket,
         userName: string,
         content: string,
-        time: string,
-    ): Promise<{ canReceive: boolean; userName: string; content: string; time: string }> {
+    ): Promise<{ canReceive: boolean; userName: string; content: string }> {
         const userId: number = this.getUserId(socket);
         const targetId: number = await this.socketUsersService.getUserIdByUserName(userName);
         const isBlocked: boolean = await this.socketUsersService.isBlocked(userId, targetId);
@@ -427,7 +483,6 @@ export class ChatRoomService {
             canReceive: isBlocked,
             userName: userName,
             content: content,
-            time: time,
         };
         return result;
     }
