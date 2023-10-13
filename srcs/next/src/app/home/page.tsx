@@ -16,7 +16,7 @@ import { useEffect } from 'react';
 import { JoinStatus } from '../interface';
 import { setIsMatched } from '../redux/matchSlice';
 import AutoAlert from './alert';
-import { CircularProgress } from '@mui/material';
+import { CircularProgress, LinearProgress } from '@mui/material';
 // import DMPage from './(dm)/dmPage';
 
 const HomeContent = () => {
@@ -53,7 +53,7 @@ const HomeContent = () => {
           </div>
         </>
       ) : (
-        <CircularProgress />
+<LinearProgress />
       )}
     </>
   );

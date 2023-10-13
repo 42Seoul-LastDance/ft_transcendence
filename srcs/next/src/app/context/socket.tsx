@@ -48,10 +48,10 @@ export const createSocket = (
 ): Socket => {
   return io(`${BACK_URL}/${namespace}`, {
     withCredentials: false,
-    autoConnect: false,
+    autoConnect: true, // 첫 연결시 커넥션 
     transports: ['websocket'],
     closeOnBeforeunload: true,
-    reconnection: true,
+    reconnection: true, // 오류시 재연결
     auth: {
       token: token,
     },

@@ -37,6 +37,12 @@ const FriendList: React.FC = () => {
           setFriendList(data);
         },
       },
+      {
+        event: 'updateFriendStateList',
+        callback: () => {
+          superSocket?.emit('getFriendStateList', myName);
+        },
+      },
     ];
 
     // 소켓 이벤트 등록
@@ -48,10 +54,9 @@ const FriendList: React.FC = () => {
     return () => {};
   }, [join]);
 
-  IoEventListener(superSocket!, 'updateFriendList', () => {
-    console.log('mymymym', myName);
-    superSocket?.emit('getFriendStateList', myName);
-  });
+  // IoEventListener(superSocket!, 'updateFriendList', () => {
+  //   superSocket?.emit('getFriendStateList', myName);
+  // });
 
   return (
     <>

@@ -28,6 +28,7 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const [chatSocket, setChatSocket] = useState<Socket | undefined>(undefined);
 
+  // 소켓 수명 관리 
   useEffect(() => {
     const cookie = getCookie('access_token');
     if (cookie == undefined) {
@@ -41,38 +42,9 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       socket.disconnect();
     };
-  }, [router]);
+  }, []);
 
-  useEffect(() => {
-    const cookie = getCookie('access_token');
-    if (cookie == undefined) {
-      console.log('access token is not exist -> cookie is empty');
-      router.push('/');
-      return;
-    }
-    const socket = createSocket('RoomChat', cookie);
-    setChatSocket(socket);
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [router]);
-
-  useEffect(() => {
-    const cookie = getCookie('access_token');
-    if (cookie == undefined) {
-      console.log('access token is not exist -> cookie is empty');
-      router.push('/');
-      return;
-    }
-    const socket = createSocket('RoomChat', cookie);
-    setChatSocket(socket);
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [router]);
-
+  //이벤트 관리 
   useEffect(() => {
     if (chatSocket?.connected === false) {
       chatSocket?.connect();
@@ -85,26 +57,26 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
         callback: () => handleTryAuth(chatSocket!, router),
       },
       {
-        event: 'getChatRoomList',
-        callback: (data: string[]) => dispatch(setRoomNameList(data)),
-      },
-      {
         event: 'getMyName',
         callback: (data: string) => dispatch(setName(data)),
       },
       {
+        event: 'getChatRoomList',
+        callback: (data: string[]) => dispatch(setRoomNameList(data)),
+      },
+      {
         event: 'connectSuccess',
         callback: () => {
+          chatSocket?.emit('getMyName');
           chatSocket?.emit('getChatRoomList', {
             roomStatus: RoomStatus.PUBLIC,
           });
-          chatSocket?.emit('getMyName');
         },
       },
       {
         event: 'disconnect',
         callback: () => {
-          setChatSocket(undefined);
+          chatSocket?.connect;
         },
       },
     ];
@@ -114,8 +86,8 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
       IoEventListener(chatSocket!, event, callback);
     });
 
+    // 이벤트 삭제
     return () => {
-      // 이벤트 삭제
       eventListeners.forEach(({ event, callback }) => {
         chatSocket?.off(event, callback);
       });

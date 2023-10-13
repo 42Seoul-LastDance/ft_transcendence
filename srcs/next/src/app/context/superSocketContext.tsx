@@ -40,14 +40,9 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     switch (response.status) {
       case 200:
-        // console.log(response);
         const xAccessToken = response.data['token'];
-        // console.log('xAccessToken: ', xAccessToken);
         setCookie('access_token', xAccessToken);
-        // const newToken = getCookie('access_token');
-        // console.log('new token: ', newToken);
         if (superSocket?.connected) {
-          // superSocket?.emit('expireToken', xAccessToken);
 
           superSocket?.disconnect();
           superSocket.auth = {
@@ -69,7 +64,7 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    IoEventOnce(superSocket, 'expireToken', handleTryAuth);
+    IoEventListener(superSocket, 'expireToken', handleTryAuth);
     IoEventListener(superSocket, 'connectSuccess', handleConnectSuccess);
     IoEventListener(superSocket, 'expireToken', handleTryAuth);
     if (!superSocket.connected) superSocket.connect();
@@ -83,3 +78,4 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export default SuperSocketProvider;
+ 
