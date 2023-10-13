@@ -44,6 +44,12 @@ export interface SendMessageDto {
 }
 
 export interface receiveMessage {
+  userName: string;
+  content: string;
+  canReceive: boolean;
+}
+
+export interface receiveMessage {
   canReceive: boolean;
 }
 
@@ -86,5 +92,10 @@ export enum JoinStatus {
 
 export interface MemberList {
   userName: string;
-  Permission: UserPermission;
+  permission: UserPermission;
+}
+
+export interface SendMessageJson {
+  userName: string;
+  content: string;
 }

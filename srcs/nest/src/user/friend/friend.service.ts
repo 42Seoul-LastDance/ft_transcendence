@@ -33,13 +33,18 @@ export class FriendService {
         const result: Array<number> = [];
         try {
             const foundFriend: Friend[] = await this.friendRepository.find({
-                where: [{ requestUserId: userId }, { targetUserId: userId }],
+                where: [
+                    { requestUserId: userId, status: FriendStatus.FRIEND },
+                    { targetUserId: userId, status: FriendStatus.FRIEND },
+                ],
             });
             console.log('foundFriend : ', foundFriend);
 
             for (const friend of foundFriend) {
-                const id = friend.id;
-                result.push(id);
+                let friendId: number;
+                if (userId === friend.requestUserId) friendId = friend.targetUserId;
+                else friendId = friend.requestUserId;
+                result.push(friendId);
             }
         } catch (error) {
             console.log(error);
@@ -54,7 +59,10 @@ export class FriendService {
         console.log('userid', userId);
         try {
             const foundFriend: Friend[] = await this.friendRepository.find({
-                where: [{ requestUserId: userId }, { targetUserId: userId }],
+                where: [
+                    { requestUserId: userId, status: FriendStatus.FRIEND },
+                    { targetUserId: userId, status: FriendStatus.FRIEND },
+                ],
             });
 
             console.log('foundFriend : ', foundFriend);

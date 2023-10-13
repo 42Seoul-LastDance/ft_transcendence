@@ -23,6 +23,6 @@ import { FriendModule } from 'src/user/friend/friend.module';
         FriendModule,
     ],
     controllers: [DirectMessageController],
-    providers: [DirectMessageGateway, DirectMessageService, DirectMessageRepository, SocketUsersService],
+    providers: [DirectMessageGateway, DirectMessageService, DirectMessageRepository],
 })
 export class DirectMessageModule {}

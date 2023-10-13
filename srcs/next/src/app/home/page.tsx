@@ -13,12 +13,11 @@ import SuperSocketProvider, {
 import Link from 'next/link';
 import UserProfile from './(profile)/userProfile';
 import { useEffect } from 'react';
-import { JoinStatus, RoomStatus } from '../interface';
+import { JoinStatus } from '../interface';
 import { setIsMatched } from '../redux/matchSlice';
-import { IoEventListener } from '../context/socket';
-import { setChatRoom, setJoin } from '../redux/userSlice';
-import AutoAlert, { myAlert } from './alert';
-import { setChatMessages, setRoomNameList } from '../redux/roomSlice';
+import AutoAlert from './alert';
+import { CircularProgress } from '@mui/material';
+// import DMPage from './(dm)/dmPage';
 
 const HomeContent = () => {
   const joinStatus = useSelector((state: RootState) => state.user.join);
@@ -33,18 +32,29 @@ const HomeContent = () => {
 
   return (
     <>
-      <UserProfile targetName={myName!} />
-      <br />
+      {superSocket?.connected ? (
+        <>
+          <UserProfile targetName={myName!} />
+          <br />
 
-      <Link href="/game">
-        <button>Play Game!</button>
-      </Link>
-      <br />
-      <div style={{ display: 'flex' }}>
-        <ChattingTabs />
-        {joinStatus === JoinStatus.CHAT && <ChattingPage socket={chatSocket} />}
-        {joinStatus === JoinStatus.DM && <ChattingPage socket={superSocket} />}
-      </div>
+          <Link href="/game">
+            <button>Play Game!</button>
+          </Link>
+          <br />
+
+          <div style={{ display: 'flex' }}>
+            <ChattingTabs />
+            {joinStatus === JoinStatus.CHAT && (
+              <ChattingPage socket={chatSocket} />
+            )}
+            {joinStatus === JoinStatus.DM && (
+              <ChattingPage socket={superSocket} />
+            )}
+          </div>
+        </>
+      ) : (
+        <CircularProgress />
+      )}
     </>
   );
 };

@@ -61,7 +61,7 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
     }
 
     // * Sender =============================================================
-    @SubscribeMessage('sendMessasge')
+    @SubscribeMessage('sendMessage')
     async sendMessage(socket: Socket, payload: JSON) {
         // payload['content']: string
         // payload['targetName']: string,

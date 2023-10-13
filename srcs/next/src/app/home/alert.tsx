@@ -24,7 +24,7 @@ const HeaderAlert: React.FC<HeaderAlertProps> = ({}) => {
   const severity = useSelector(
     (state: RootState) => state.alert.severity,
   ) as AlertColor; // cast severity as AlertColor
-  const timeout = 2500;
+  const timeout = 3000;
   const dispatch = useDispatch();
 
   useEffect(() => {

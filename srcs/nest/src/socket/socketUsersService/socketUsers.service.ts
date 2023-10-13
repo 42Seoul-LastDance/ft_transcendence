@@ -8,6 +8,7 @@ import { UserStatus } from 'src/user/user-status.enum';
 
 @Injectable()
 export class SocketUsersService {
+    // private static instance: SocketUsersService | null = null;
     constructor(
         private blockedUsersService: BlockedUsersService,
         private userService: UserService,
@@ -24,6 +25,7 @@ export class SocketUsersService {
     private gameUserList: Map<number, string> = new Map<number, string>(); //{userId, socket.id}
 
     private blockList: Map<number, Array<number>> = new Map<number, Array<number>>(); //{user id , blockUserList} // ! -> DB에서 한번 가져 들고왔다가 지속 업데이트
+    //TODO 친구 추가, 삭제 시 하기 리스트 업데이트되는지 확인 필요 (업데이트 안할거면 DB에서 매번 찾아서 하는 방법도 있어요)
     private friendList: Map<number, Array<number>> = new Map<number, Array<number>>(); //{user id , friendUserList}
 
     //* socket --
@@ -74,14 +76,22 @@ export class SocketUsersService {
         return this.gamePlayerList.delete(socketId);
     }
 
-    addGameUserList(userId: number, socketId: string) {
-        this.gameUserList.set(userId, socketId);
-        this.updateFriendList(userId);
+    async addGameUserList(userId: number, socketId: string) {
+        try {
+            this.gameUserList.set(userId, socketId);
+            await this.updateFriendList(userId);
+        } catch (error) {
+            console.log('[ERRRRRR] addGameUserList');
+        }
     }
 
-    deleteGameUserList(userId: number, socketId: string) {
-        if (socketId === this.gameUserList.get(userId)) this.gameUserList.delete(userId);
-        this.updateFriendList(userId);
+    async deleteGameUserList(userId: number, socketId: string) {
+        try {
+            if (socketId === this.gameUserList.get(userId)) this.gameUserList.delete(userId);
+            await this.updateFriendList(userId);
+        } catch (error) {
+            console.log('[ERRRRRR] deleteGameUserList');
+        }
     }
 
     //* DM--
@@ -192,12 +202,16 @@ export class SocketUsersService {
     }
 
     // * friend --
-    updateFriendList(userId: number) {
-        const friends = this.friendList.get(userId);
-        if (!friends) return;
-        for (const friend of friends) {
-            const socket: Socket = this.dmUserList.get(friend);
-            socket.emit('updateFriendList');
+    async updateFriendList(userId: number) {
+        try {
+            const foundFriendList: Array<number> = await this.friendService.getFriendList(userId);
+            for (const friend of foundFriendList) {
+                const socket: Socket = this.dmUserList.get(friend);
+                if (socket) socket.emit('updateFriendList');
+                else console.log('여기여');
+            }
+        } catch (error) {
+            console.log('[ERRRRR] updateFriendList');
         }
     }
 
@@ -210,8 +224,7 @@ export class SocketUsersService {
         let status: UserStatus = UserStatus.OFFLINE;
         if (this.dmUserList.get(userId) !== undefined && this.dmUserList.get(userId) !== null)
             status = UserStatus.ONLINE;
-        if (this.gameUserList.get(userId) !== undefined && this.gameUserList.get(userId) !== null)
-            status = UserStatus.GAME;
+        if (this.gameUserList.get(userId) !== undefined) status = UserStatus.GAME;
         return status;
     }
 

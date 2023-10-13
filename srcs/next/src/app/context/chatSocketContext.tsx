@@ -44,32 +44,83 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
   }, [router]);
 
   useEffect(() => {
-    if (chatSocket?.connected) chatSocket?.disconnect();
-
-    if (chatSocket) {
-      IoEventOnce(chatSocket, 'expireToken', () =>
-        handleTryAuth(chatSocket, router),
-      );
-
-      IoEventListener(chatSocket, 'getChatRoomList', (data: string[]) =>
-        dispatch(setRoomNameList(data)),
-      );
-
-      IoEventListener(chatSocket, 'getMyName', (data: string) =>
-        dispatch(setName(data)),
-      );
-      IoEventListener(chatSocket, 'connectSuccess', () => {
-        chatSocket?.emit('getChatRoomList', { roomStatus: RoomStatus.PUBLIC });
-        chatSocket?.emit('getMyName');
-      });
-      console.log('[Connect] chatSocket info', chatSocket);
-      chatSocket?.connect();
+    const cookie = getCookie('access_token');
+    if (cookie == undefined) {
+      console.log('access token is not exist -> cookie is empty');
+      router.push('/');
+      return;
     }
+    const socket = createSocket('RoomChat', cookie);
+    setChatSocket(socket);
 
     return () => {
-      chatSocket?.disconnect();
+      socket.disconnect();
     };
-  }, [chatSocket, dispatch]);
+  }, [router]);
+
+  useEffect(() => {
+    const cookie = getCookie('access_token');
+    if (cookie == undefined) {
+      console.log('access token is not exist -> cookie is empty');
+      router.push('/');
+      return;
+    }
+    const socket = createSocket('RoomChat', cookie);
+    setChatSocket(socket);
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [router]);
+
+  useEffect(() => {
+    if (chatSocket?.connected === false) {
+      chatSocket?.connect();
+      console.log('[Connect] chatSocket info', chatSocket);
+    }
+
+    const eventListeners = [
+      {
+        event: 'expireToken',
+        callback: () => handleTryAuth(chatSocket!, router),
+      },
+      {
+        event: 'getChatRoomList',
+        callback: (data: string[]) => dispatch(setRoomNameList(data)),
+      },
+      {
+        event: 'getMyName',
+        callback: (data: string) => dispatch(setName(data)),
+      },
+      {
+        event: 'connectSuccess',
+        callback: () => {
+          chatSocket?.emit('getChatRoomList', {
+            roomStatus: RoomStatus.PUBLIC,
+          });
+          chatSocket?.emit('getMyName');
+        },
+      },
+      {
+        event: 'disconnect',
+        callback: () => {
+          setChatSocket(undefined);
+        },
+      },
+    ];
+
+    // 소켓 이벤트 등록
+    eventListeners.forEach(({ event, callback }) => {
+      IoEventListener(chatSocket!, event, callback);
+    });
+
+    return () => {
+      // 이벤트 삭제
+      eventListeners.forEach(({ event, callback }) => {
+        chatSocket?.off(event, callback);
+      });
+    };
+  }, [chatSocket]);
 
   return (
     <ChatSocketContext.Provider value={chatSocket}>

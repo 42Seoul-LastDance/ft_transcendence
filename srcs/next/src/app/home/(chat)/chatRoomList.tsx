@@ -14,11 +14,7 @@ import { isValid } from '../valid';
 import { myAlert } from '../alert';
 import { IoEventListener, IoEventOnce } from '@/app/context/socket';
 import { useEffect } from 'react';
-import {
-  clearChatMessages,
-  setChatMessages,
-  setRoomNameList,
-} from '@/app/redux/roomSlice';
+import { setRoomNameList } from '@/app/redux/roomSlice';
 
 const style = {
   width: '100%',
@@ -60,15 +56,13 @@ const ChatRoomList: React.FC = () => {
     }
 
     // 방 들어갈 수 있는지 시도 해봄 (비밀번호 인증)
-    const result = await joinChatRoom(roomName, password);
-    if (result) {
+    const canJoin = await joinChatRoom(roomName, password);
+    if (canJoin) {
       dispatch(setChatRoom(data));
-      dispatch(clearChatMessages([]));
       dispatch(setJoin(JoinStatus.CHAT));
       myAlert('success', '채팅방에 입장하였습니다.', dispatch);
     } else {
       dispatch(setChatRoom(null));
-      dispatch(clearChatMessages([]));
       dispatch(setJoin(JoinStatus.NONE));
       myAlert('error', '비밀번호가 틀렸습니다.', dispatch);
     }

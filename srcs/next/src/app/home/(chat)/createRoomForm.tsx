@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
@@ -7,16 +7,10 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
 import { useDispatch, useSelector } from 'react-redux';
 import { useChatSocket } from '../../context/chatSocketContext';
-import {
-  ChatRoomDto,
-  JoinStatus,
-  RoomInfoDto,
-  RoomStatus,
-} from '../../interface';
+import { ChatRoomDto, JoinStatus, RoomStatus } from '../../interface';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { IoEventListener } from '@/app/context/socket';
 import { isValid } from '../valid';
-import { setChatMessages } from '@/app/redux/roomSlice';
 
 export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const chatSocket = useChatSocket();
@@ -26,6 +20,30 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const [requirePassword, setIsLocked] = useState<boolean>(false);
   const [password, setPassword] = useState<string>('');
   const [showPasswordInput, setShowPasswordInput] = useState<boolean>(false);
+
+  useEffect(() => {
+    console.log('--------- createRoomForm component ---------');
+    const eventListeners = [
+      {
+        event: 'createChatRoom',
+        callback: (data: ChatRoomDto) => {
+          dispatch(setChatRoom(data));
+          dispatch(setJoin(JoinStatus.CHAT));
+          onClose();
+        },
+      },
+    ];
+    // 소켓 이벤트 등록
+    eventListeners.forEach((listener) => {
+      IoEventListener(chatSocket!, listener.event, listener.callback);
+    });
+    // 이벤트 삭제
+    return () => {
+      eventListeners.forEach((listener) => {
+        chatSocket!.off(listener.event, listener.callback);
+      });
+    };
+  }, []);
 
   const handleRoomNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = event.target.value;
@@ -63,11 +81,11 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
   const addNewRoom = () => {
     if (isBadInput()) return;
 
-    IoEventListener(chatSocket!, 'createChatRoom', (data: ChatRoomDto) => {
-      dispatch(setChatRoom(data));
-      dispatch(setJoin(JoinStatus.CHAT));
-      onClose();
-    });
+    // IoEventListener(chatSocket!, 'createChatRoom', (data: ChatRoomDto) => {
+    //   dispatch(setChatRoom(data));
+    //   dispatch(setJoin(JoinStatus.CHAT));
+    //   onClose();
+    // });
 
     chatSocket?.emit('createChatRoom', {
       roomName: roomName,

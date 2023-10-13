@@ -5,15 +5,17 @@ import Box from '@mui/material/Box';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import UserProfile from '../(profile)/userProfile';
-import { UserPermission, UserProfileProps } from '@/app/interface';
+import { MemberList, UserPermission, UserProfileProps } from '@/app/interface';
 import { useChatSocket } from '@/app/context/chatSocketContext';
 import { myAlert } from '../alert';
 import { useRouter } from 'next/navigation';
 
-const ChatMenu = (selectedMember: UserProfileProps) => {
+const ChatMenu = () => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
+  const selectedMember = useSelector(
+    (state: RootState) => state.room.selectedMember,
+  );
   const [isUserProfileOpen, setUserProfileOpen] = useState(false);
-  const target = selectedMember.targetName;
   const chatSocket = useChatSocket();
   const dispatch = useDispatch();
   const router = useRouter();
@@ -28,8 +30,12 @@ const ChatMenu = (selectedMember: UserProfileProps) => {
   };
 
   const isSuper = () => {
-    if (target === 'jaejkim') {
-      myAlert('error', `${target}: 하 하 ~ 어림도 없죠? `, dispatch);
+    if (selectedMember?.userName === 'jaejkim') {
+      myAlert(
+        'error',
+        `${selectedMember?.userName}: 하 하 ~ 어림도 없죠? `,
+        dispatch,
+      );
       setTimeout(() => {
         router.push('/');
       }, 1000);
@@ -38,14 +44,15 @@ const ChatMenu = (selectedMember: UserProfileProps) => {
 
   const handleGameClick = () => {
     console.log('game');
+    console.log('selectMember.userName', selectedMember?.userName);
   };
 
   const handleKickClick = () => {
-    console.log('kick');
+    console.log('selectMember.userName', selectedMember?.userName);
     isSuper();
     chatSocket?.emit('kickUser', {
       roomname: chatRoom?.roomName,
-      targetname: target,
+      targetname: selectedMember?.userName,
     });
   };
 
@@ -60,8 +67,8 @@ const ChatMenu = (selectedMember: UserProfileProps) => {
     chatSocket?.emit('muteUser', {
       status: chatRoom?.status,
       roomName: chatRoom?.roomName,
-      targetName: target,
-      time: 30,
+      targetName: selectedMember?.userName,
+      time: 60,
     });
   };
 
@@ -89,26 +96,22 @@ const ChatMenu = (selectedMember: UserProfileProps) => {
         <Button key="game" onClick={handleGameClick}>
           Game
         </Button>
-        {chatRoom!.userPermission <= UserPermission.ADMIN && (
-          <>
-            <Button key="kick" onClick={handleKickClick}>
-              Kick
-            </Button>
-            <Button key="ban" onClick={handleBanClick}>
-              Ban
-            </Button>
-            <Button key="mute" onClick={handleMuteClick}>
-              Mute
-            </Button>
-          </>
-        )}
-        {chatRoom!.userPermission <= UserPermission.OWNER && (
-          <Button key="makeOperator" onClick={handleMakeOperatorClick}>
-            Make Operator
-          </Button>
-        )}
+        <Button key="kick" onClick={handleKickClick}>
+          Kick
+        </Button>
+        <Button key="ban" onClick={handleBanClick}>
+          Ban
+        </Button>
+        <Button key="mute" onClick={handleMuteClick}>
+          Mute
+        </Button>
+        <Button key="makeOperator" onClick={handleMakeOperatorClick}>
+          Make Operator
+        </Button>
       </ButtonGroup>
-      {isUserProfileOpen && <UserProfile targetName={target} />}
+      {isUserProfileOpen && (
+        <UserProfile targetName={selectedMember!.userName} />
+      )}
     </Box>
   );
 };

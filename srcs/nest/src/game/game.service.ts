@@ -46,7 +46,7 @@ export class GameService {
         private gameRepository: GameRepository,
         @Inject(forwardRef(() => UserService))
         private userService: UserService,
-        private socketUsersService: SocketUsersService,
+        private readonly socketUsersService: SocketUsersService,
     ) {}
 
     //Queue
@@ -70,7 +70,7 @@ export class GameService {
                 userName: (await this.userService.findUserById(+userId)).userName,
             };
             this.socketUsersService.addPlayerBySocketId(playerSocket.id, player);
-            this.socketUsersService.addGameUserList(+userId, playerSocket.id);
+            await this.socketUsersService.addGameUserList(+userId, playerSocket.id);
         } catch (error) {
             console.log('error >> gameService >> createPlayer');
             throw new InternalServerErrorException('[ERR] gameService >> createPlayer');
@@ -110,7 +110,7 @@ export class GameService {
                 //gameroom 없애기
                 this.gameRoomList.delete(player.roomId);
             }
-            this.socketUsersService.deleteGameUserList(player.userId, playerId);
+            await this.socketUsersService.deleteGameUserList(player.userId, playerId);
         } catch (error) {
             console.log('error >> gameService >> handleDisconnect');
             throw new InternalServerErrorException('[ERR] gameService >> handleDisconnect');

@@ -21,6 +21,6 @@ import { FriendModule } from 'src/user/friend/friend.module';
         BlockedUsersModule,
         FriendModule,
     ],
-    providers: [ChatRoomGateway, ChatRoomService, SocketUsersService],
+    providers: [ChatRoomGateway, ChatRoomService],
 })
 export class ChatRoomModule {}

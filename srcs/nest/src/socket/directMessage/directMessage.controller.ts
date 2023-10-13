@@ -17,7 +17,7 @@ export class DirectMessageController {
         const loggedDMs: DirectMessageInfoDto[] = await this.directMessageService.findRecentDMs(
             req.user.sub,
             userName,
-            30,
+            3000000, // <-- 이거 그냥 다 보내세요 ㅡ,ㅡ
         );
         return res.status(200).json(loggedDMs);
     }

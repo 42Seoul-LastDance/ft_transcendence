@@ -3,14 +3,16 @@ import { ChatMessage, MemberList } from '../interface';
 
 export interface RoomList {
   roomNameList: string[];
-  chatMessages: ChatMessage[];
+  // chatMessages: ChatMessage[];
   roomMemberList: MemberList[];
+  selectedMember: MemberList | null;
 }
 
 const initialState: RoomList = {
   roomNameList: [],
-  chatMessages: [],
+  // chatMessages: [],
   roomMemberList: [],
+  selectedMember: null,
 };
 
 const roomSlice = createSlice({
@@ -21,16 +23,20 @@ const roomSlice = createSlice({
       state.roomNameList = action.payload;
     },
 
-    setChatMessages: (state, action: PayloadAction<ChatMessage[]>) => {
-      state.chatMessages.push(action.payload[0]);
-    },
+    // setChatMessages: (state, action: PayloadAction<ChatMessage[]>) => {
+    //   state.chatMessages.push(action.payload[0]);
+    // },
 
-    clearChatMessages: (state, action: PayloadAction<ChatMessage[]>) => {
-      state.chatMessages = action.payload;
-    },
+    // clearChatMessages: (state, action: PayloadAction<ChatMessage[]>) => {
+    //   state.chatMessages = action.payload;
+    // },
 
     setRoomMemberList: (state, action: PayloadAction<MemberList[]>) => {
       state.roomMemberList = action.payload;
+    },
+
+    setSelectedMember: (state, action: PayloadAction<MemberList>) => {
+      state.selectedMember = action.payload;
     },
   },
 });
@@ -38,7 +44,8 @@ const roomSlice = createSlice({
 export default roomSlice;
 export const {
   setRoomNameList,
-  setChatMessages,
-  clearChatMessages,
+  // setChatMessages,
+  // clearChatMessages,
   setRoomMemberList,
+  setSelectedMember,
 } = roomSlice.actions;

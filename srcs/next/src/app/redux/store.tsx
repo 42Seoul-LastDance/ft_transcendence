@@ -4,6 +4,7 @@ import { matchSlice } from './matchSlice';
 import userSlice from './userSlice';
 import roomSlice from './roomSlice';
 import alertSlice from './alertSlice';
+import dmSlice from './dmSlice';
 
 const store = configureStore({
   reducer: {
@@ -11,6 +12,7 @@ const store = configureStore({
     room: roomSlice.reducer,
     match: matchSlice.reducer,
     alert: alertSlice.reducer,
+    dm: dmSlice.reducer,
   },
 });
 

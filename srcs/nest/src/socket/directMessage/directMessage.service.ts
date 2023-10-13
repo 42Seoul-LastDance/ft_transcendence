@@ -94,7 +94,7 @@ export class DirectMessageService {
         if (isBlocked === false) {
             //차단되지 않았으므로 hasReceived = true, emit
             hasReceived = true;
-            targetSocket.emit('sendMessage', { userName: userName, content: content });
+            if (targetSocket) targetSocket.emit('sendMessage', { userName: userName, content: content });
         }
         await this.saveMessage(userId, targetId, hasReceived, content);
         socket.emit('sendMessage', { userName: userName, content: content }); //sender
@@ -108,7 +108,7 @@ export class DirectMessageService {
                 { senderId: target2Id, receiverId: target1Id, hasReceived: true },
             ],
             order: {
-                sentTime: 'DESC',
+                sentTime: 'ASC',
             },
             take: count,
         });

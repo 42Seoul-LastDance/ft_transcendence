@@ -68,15 +68,10 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
     console.log('[Connect] superSocket Success');
   };
 
-  const handleFriendList = async () => {
-    const response = await sendRequest('get', '/friends/getFriendList', router);
-  };
-
   useEffect(() => {
     IoEventOnce(superSocket, 'expireToken', handleTryAuth);
     IoEventListener(superSocket, 'connectSuccess', handleConnectSuccess);
     IoEventListener(superSocket, 'expireToken', handleTryAuth);
-    IoEventListener(superSocket, 'updateFriendList', handleFriendList);
     if (!superSocket.connected) superSocket.connect();
   }, []);
 

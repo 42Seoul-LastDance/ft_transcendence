@@ -57,7 +57,6 @@ const UserProfile = (props: UserProfileProps) => {
   const handleOpen = async () => {
     if (props.targetName === myName) chatSocket?.disconnect();
     setOpen(true);
-
     if (myName !== props.targetName) {
       const friendResp = await sendRequest(
         'get',
@@ -71,7 +70,6 @@ const UserProfile = (props: UserProfileProps) => {
         friendResp.data['status'] === FriendStatus.REQUESTED
       )
         setFriendRequestAvailable(false);
-
       const blockedResp = await sendRequest(
         'get',
         `/block/isBlocked/${props.targetName}`,
@@ -93,7 +91,6 @@ const UserProfile = (props: UserProfileProps) => {
       setfLeftWin(friendGameData.data['leftWin']);
       setfLeftLose(friendGameData.data['leftLose']);
     }
-
     const response = await sendRequest(
       'get',
       `/users/profile/${props.targetName}`,
@@ -102,7 +99,6 @@ const UserProfile = (props: UserProfileProps) => {
     setLevel(response.data['level']);
     setExp(response.data['exp']);
     setSlackId(response.data['slackId']);
-
     const gameData = await sendRequest(
       'get',
       `/games/getGameData/${props.targetName}`,
@@ -152,7 +148,7 @@ const UserProfile = (props: UserProfileProps) => {
   };
 
   return (
-    <div>
+    <>
       <Button onClick={handleOpen}>See Profile</Button>
       <Modal
         open={open}
@@ -171,7 +167,7 @@ const UserProfile = (props: UserProfileProps) => {
             <br />
             Exp : {exp}({(exp / ((level + 1) * 500)) * 100}%)
             <br />
-            <Divider />
+            {/* <Divider /> */}
             Total Ranking Game : {normalWin + normalLose + hardWin + hardLose}
             <br />
             Normal Ranking Game Winning Rate:{' '}
@@ -183,7 +179,7 @@ const UserProfile = (props: UserProfileProps) => {
           </Typography>
           {myName !== props.targetName ? (
             <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-              <Divider />
+              {/* <Divider /> */}
               Total Friend Game :{' '}
               {fNormalWin + fNormalLose + fHardWin + fNormalLose}
               <br />
@@ -197,8 +193,7 @@ const UserProfile = (props: UserProfileProps) => {
               {(fLeftWin / (fLeftWin + fLeftLose)) * 100}%
               <br />
               Right Side Winning Rate:{' '}
-              {(fRightWin / (fRightWin + fRightLose)) * 100}%
-              <Divider />
+              {(fRightWin / (fRightWin + fRightLose)) * 100}%{/* <Divider /> */}
             </Typography>
           ) : null}
           {myName !== props.targetName &&
@@ -219,7 +214,7 @@ const UserProfile = (props: UserProfileProps) => {
             ))}
         </Box>
       </Modal>
-    </div>
+    </>
   );
 };
 
