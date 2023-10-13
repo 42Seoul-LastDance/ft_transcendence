@@ -29,14 +29,31 @@ export class FriendService {
         return query2;
     }
 
-    async getFriendList(userId: number): Promise<Array<{ username: string; status: UserStatus }>> {
-        const friendList: Array<{ username: string; status: UserStatus }> = [];
+    async getFriendList(userId: number): Promise<Array<number>> {
+        const result: Array<number> = [];
+        try {
+            const foundFriend: Friend[] = await this.friendRepository.find({
+                where: [{ requestUserId: userId }, { targetUserId: userId }],
+            });
+            console.log('foundFriend : ', foundFriend);
+
+            for (const friend of foundFriend) {
+                const id = friend.id;
+                result.push(id);
+            }
+        } catch (error) {
+            console.log(error);
+            throw new InternalServerErrorException('friendService >> getFriendList');
+        }
+        return result;
+    }
+
+    async getFriendNameList(userId: number): Promise<Array<string>> {
+        const friendList: Array<string> = [];
 
         console.log('userid', userId);
-        let foundFriend: Friend[];
-
         try {
-            foundFriend = await this.friendRepository.find({
+            const foundFriend: Friend[] = await this.friendRepository.find({
                 where: [{ requestUserId: userId }, { targetUserId: userId }],
             });
 
@@ -48,12 +65,12 @@ export class FriendService {
                     friendData = await this.userService.findUserById(friend.targetUserId);
                 else friendData = await this.userService.findUserById(friend.requestUserId);
                 console.log('{username, status:}', friendData);
-                friendList.push({ username: friendData.userName, status: friendData.status });
+                friendList.push(friendData.userName);
                 console.log('ppushed~~~~~~~~~');
             }
         } catch (error) {
             console.log(error);
-            throw new InternalServerErrorException('friendService >> getFriendList');
+            throw new InternalServerErrorException('friendService >> getFriendNameList');
         }
         console.log('friend list: ', friendList);
         return friendList;

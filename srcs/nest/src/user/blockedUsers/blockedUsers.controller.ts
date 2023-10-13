@@ -16,7 +16,7 @@ export class BlockedUsersController {
     async getBlockList(@Req() req, @Res() res: Response) {
         const blockList = await this.blockedUsersService.getBlockUsernameListById(req.user.sub);
         //TODO res에 JSON 잘 가는지 확인 필요
-        return res.send({ blockList });
+        return res.send(blockList);
     }
 
     @Delete('/unblockUser/:blockName')

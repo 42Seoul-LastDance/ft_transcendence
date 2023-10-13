@@ -9,6 +9,7 @@ import { Server, Socket } from 'socket.io';
 import { DirectMessageService } from './directMessage.service';
 import { DateTime } from 'luxon';
 import { JwtService } from '@nestjs/jwt';
+import { UserStatus } from 'src/user/user-status.enum';
 export const TIMEZONE: string = 'Asia/Seoul';
 
 @WebSocketGateway({
@@ -62,9 +63,16 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
     // * Sender =============================================================
     @SubscribeMessage('sendMessasge')
     async sendMessage(socket: Socket, payload: JSON) {
+        // payload['content']: string
         // payload['targetName']: string,
-        // payload['message]: string
-        await this.directMessageService.sendMessage(socket, payload['content'], payload['targetId']);
+        await this.directMessageService.sendMessage(socket, payload['content'], payload['roomName']);
+    }
+
+    @SubscribeMessage('receiveMessage')
+    async receiveMessage(socket: Socket, payload: JSON) {
+        //userName: string,
+        //content: string,
+        console.log('DM : RECEIVE MESSAGE <---- 이거 왜 보냄??');
     }
 
     @SubscribeMessage('expireToken')
@@ -85,7 +93,14 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
         this.directMessageService.unblockUser(socket, payload['userId'], payload['targetId']);
     }
 
+    // * friendList
+    @SubscribeMessage('getFriendStateList')
+    async getFriendStateList(socket: Socket, userName: string): Promise<void> {
+        await this.directMessageService.getFriendStateList(socket, userName);
+    }
+
     // * invite Chat Room
+    // @SubscribeMessage('invite')
 
     // * invite Game
 

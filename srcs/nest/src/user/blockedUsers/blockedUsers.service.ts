@@ -18,6 +18,11 @@ export class BlockedUsersService {
             targetUserId: targetId,
         });
         await this.blockedUsersRepository.save(blockInfo);
+        console.log(
+            'BLOCK USER Saved.',
+            (await this.userSerivce.findUserById(userId)).userName,
+            (await this.userSerivce.findUserById(targetId)).userName,
+        );
     }
 
     async unblockUserById(userId: number, targetId: number): Promise<void> {
@@ -25,11 +30,12 @@ export class BlockedUsersService {
     }
 
     async isBlocked(userId: number, targetId: number): Promise<boolean> {
-        if (
-            (await this.blockedUsersRepository.find({ where: { requestUserId: userId, targetUserId: targetId } })) ===
-            undefined
-        )
-            return false;
+        const check = await this.blockedUsersRepository.find({
+            where: { requestUserId: userId, targetUserId: targetId },
+        });
+        console.log(`@@@@@ Checking User ${userId} blocks User ${targetId} : ${check}`);
+        console.log('check :::', check);
+        if (check === undefined || check === null || check.length === 0) return false;
         return true;
     }
 

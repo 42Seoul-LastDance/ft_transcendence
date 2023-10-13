@@ -34,7 +34,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             const decodedToken = this.jwtService.verify(tokenString, {
                 secret: process.env.JWT_SECRET_KEY,
             });
-            console.log('GAME SOCKET NEW CONNECTION WITH ', decodedToken.userName);
+            // console.log('GAME SOCKET NEW CONNECTION WITH ', decodedToken.userName);
             await this.gameService.createPlayer(client, decodedToken.sub);
         } catch (error) {
             console.log('error : ', error.message);
@@ -58,16 +58,16 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage('pushQueue')
     async pushQueue(client: Socket, clientInfo: JSON) {
         //TESTCODE
-        console.log('pushQueue:', client.id);
+        // console.log('pushQueue:', client.id);
         await this.gameService.pushQueue(client.id, +clientInfo['gameMode']);
     }
 
     //큐에 있던 플레이어 나감
     @SubscribeMessage('popQueue')
-    async popQueue(client: Socket) {
+    popQueue(client: Socket) {
         //TESTCODE
         // console.log('popQueue:', client.id);
-        await this.gameService.popQueue(client.id);
+        this.gameService.popQueue(client.id);
     }
 
     //* Friend Game ======================================

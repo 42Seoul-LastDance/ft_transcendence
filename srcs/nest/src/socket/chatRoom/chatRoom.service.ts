@@ -15,6 +15,12 @@ import { time } from 'console';
 3. 채팅방 리스트 주기
 4. 채팅방 안에 있는 사람들끼리 채팅
 */
+
+interface MemberList {
+    userName: string;
+    permission: UserPermission;
+}
+
 @Injectable()
 export class ChatRoomService {
     private publicRoomList: Map<string, ChatRoomDto> = new Map<string, ChatRoomDto>();
@@ -84,9 +90,10 @@ export class ChatRoomService {
         console.log('socket id, userId in ADD NEW USER : ', socket.id, userId);
         socket.rooms.clear();
 
+        await this.socketUsersService.disconnectIfConnected(userId);
         this.socketUsersService.addChatRoomUser(userId, socket);
         this.socketUsersService.addChatRoomSocket(socket.id, userId);
-        this.socketUsersService.setBlockList(userId);
+        await this.socketUsersService.setBlockList(userId);
 
         //!test
         console.log('add new user, has rooms : ', socket.rooms);
@@ -165,8 +172,8 @@ export class ChatRoomService {
         return roomInfo;
     }
 
-    async getMemberStateList(socket: Socket, roomName: string, roomStatus: RoomStatus) {
-        const memberStateList: Array<{ userName: string; permission: UserPermission }> = [];
+    async getMemberStateList(socket: Socket, roomName: string, roomStatus: RoomStatus): Promise<Array<MemberList>> {
+        const memberStateList: Array<MemberList> = [];
         let room: ChatRoomDto;
         if (roomName === undefined || roomStatus === undefined) {
             this.emitFailReason(socket, 'memberStateList', 'undefined exception');
@@ -188,11 +195,13 @@ export class ChatRoomService {
             if (room.ownerName === name) permission = UserPermission.OWNER;
             memberStateList.push({ userName: name, permission: permission });
         }
+        console.log(typeof memberStateList, ':: ', memberStateList);
         return memberStateList;
     }
 
     async createChatRoom(socket: Socket, createRoomDto: CreateRoomDto, io: Server): Promise<void> {
         //check duplicate
+
         let checkDuplicate: ChatRoomDto;
         if (createRoomDto.status === RoomStatus.PUBLIC)
             checkDuplicate = this.publicRoomList.get(createRoomDto.roomName);
@@ -230,14 +239,11 @@ export class ChatRoomService {
     explodeRoom(socket: Socket, pastRoom: ChatRoomDto, io: Server) {
         console.log('ROOM EXPLODE : ', pastRoom.roomName);
         const pastRoomName = pastRoom.roomName;
-        // socket.to(pastRoomName).emit('explodeRoom', () => {});
-        //!test
+        socket.to(pastRoomName).emit('explodeRoom', () => {});
         if (pastRoom.status === RoomStatus.PUBLIC) this.publicRoomList.delete(pastRoomName);
         else if (pastRoom.status === RoomStatus.PRIVATE) this.privateRoomList.delete(pastRoomName);
-        io.in(pastRoomName).emit('leaveRoom');
         io.emit('getChatRoomList', this.getChatRoomList());
         io.socketsLeave(pastRoomName);
-
         console.log('🥇이거 보내는 거임 ------ !!!!!!!!!!!!!!!!!!!!! ----------- !!!!!!!🥇 ', this.getChatRoomList());
     }
 
@@ -264,7 +270,7 @@ export class ChatRoomService {
         pastRoom = this.publicRoomList.get(pastRoomName);
         if (pastRoom === undefined) pastRoom = this.privateRoomList.get(pastRoomName);
         if (pastRoom === undefined) {
-            console.log('LEAVEPASTROOM : ');
+            console.log('LEAVEPASTROOM  ');
             return;
         }
         const pastRoomStatus: RoomStatus = pastRoom?.status;
@@ -314,6 +320,7 @@ export class ChatRoomService {
         }
 
         console.log('TEST JOIN PUBLIC: before leave: ', socket.rooms);
+        console.log('targetRoom', targetRoom);
         await this.leavePastRoom(socket, socket.rooms, io);
         socket.join(roomName);
         console.log('TEST JOIN PUBLIC: after leave: ', socket.rooms);
@@ -447,6 +454,12 @@ export class ChatRoomService {
             this.emitFailReason(socket, 'sendMessage', 'roomName undefined');
             return;
         }
+
+        if (userName === undefined || userName === null) {
+            this.emitFailReason(socket, 'sendMessage', 'userName is invalid');
+            return;
+        }
+
         if (status == RoomStatus.PRIVATE) {
             room = this.privateRoomList.get(roomName);
         } else if (status === RoomStatus.PUBLIC) {
@@ -456,7 +469,16 @@ export class ChatRoomService {
             this.emitFailReason(socket, 'sendMessage', 'room has already exploded.');
             return;
         }
-
+        // console.log('socket id:', socket.id, 'user id:', this.getUserId(socket));
+        // console.log(
+        //     'our holded socket:',
+        //     this.socketUsersService.getChatRoomUserList().get(this.getUserId(socket))?.id,
+        // );
+        // if (socket.id !== this.socketUsersService.getChatRoomUserList().get(this.getUserId(socket)).id) {
+        //     console.log('saved socket different🤹🏿🤹🏿. DISCONNECT!');
+        //     socket.disconnect(false);
+        //     return;
+        // }
         console.log('roomName in SEND MESSAGE', roomName);
         console.log('room in SEND MESSAGE', room);
 
@@ -480,7 +502,7 @@ export class ChatRoomService {
         const targetId: number = await this.socketUsersService.getUserIdByUserName(userName);
         const isBlocked: boolean = await this.socketUsersService.isBlocked(userId, targetId);
         const result = {
-            canReceive: isBlocked,
+            canReceive: !isBlocked,
             userName: userName,
             content: content,
         };
@@ -547,6 +569,9 @@ export class ChatRoomService {
         //operatorList append
         room.operatorList.add(targetId);
         this.emitSuccess(socket, 'grantUser');
+
+        const memberList = await this.getMemberStateList(socket, roomName, roomStatus);
+        socket.emit('getMemberStateList', memberList);
     }
 
     async ungrantUser(socket: Socket, roomName: string, roomStatus: RoomStatus, targetName: string) {
@@ -563,6 +588,9 @@ export class ChatRoomService {
         const targetId = await this.socketUsersService.getUserIdByUserName(targetName);
         room.operatorList.delete(targetId);
         this.emitSuccess(socket, 'ungrantUser');
+
+        const memberList = await this.getMemberStateList(socket, roomName, roomStatus);
+        socket.emit('getMemberStateList', memberList);
     }
 
     setRoomPassword(socket: Socket, roomName: string, password: string) {
@@ -578,6 +606,7 @@ export class ChatRoomService {
         if (room === undefined) this.emitFailReason(socket, 'unsetRoomPassword', 'such room does not exist.');
         room.requirePassword = false;
         room.password = null;
+        console.log('UNSET ROOM PASSWORD');
         this.emitSuccess(socket, 'unsetRoomPassword');
     }
 }

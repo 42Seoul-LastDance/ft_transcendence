@@ -229,17 +229,6 @@ export class UserService {
         return { image, mimeType };
     }
 
-    async updateUserStatus(userId: number, status: UserStatus) {
-        try {
-            const user = await this.findUserById(userId);
-            user.status = status;
-            await this.userRepository.save(user);
-        } catch (error) {
-            console.log('error >> userService >> updateUserStatus');
-            throw new InternalServerErrorException('[ERR] userService >> updateUserStatus');
-        }
-    }
-
     async updateUserExp(userId: number, score: number) {
         const user = await this.findUserById(userId);
         user.exp += POINT * score;

@@ -9,6 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BlockedUsersModule } from 'src/user/blockedUsers/blockedUsers.module';
 import { SocketUsersModule } from '../socketUsersService/socketUsers.module';
 import { SocketUsersService } from '../socketUsersService/socketUsers.service';
+import { FriendModule } from 'src/user/friend/friend.module';
 
 @Module({
     imports: [
@@ -18,6 +19,7 @@ import { SocketUsersService } from '../socketUsersService/socketUsers.service';
         JwtModule,
         SocketUsersModule,
         BlockedUsersModule,
+        FriendModule,
     ],
     providers: [ChatRoomGateway, ChatRoomService, SocketUsersService],
 })

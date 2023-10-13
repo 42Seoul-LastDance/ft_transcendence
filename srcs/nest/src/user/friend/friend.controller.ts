@@ -24,7 +24,7 @@ export class FriendController {
     @UseGuards(JwtAuthGuard)
     async getFriendList(@Req() req, @Res() res: Response) {
         console.log(req.user);
-        const friendList = await this.friendService.getFriendList(+req.user.sub);
+        const friendList = await this.friendService.getFriendNameList(+req.user.sub);
         console.log(friendList);
         return res.status(200).send(friendList);
     }
@@ -56,7 +56,6 @@ export class FriendController {
     async getInvitation(@Req() req, @Res() res: Response) {
         console.log('getinveiteList called');
         const invitations = await this.friendService.getInvitation(+req.user.sub);
-        //TODO res에 invitations JSON으로 담아서 보내기
         return res.send(invitations);
     }
 

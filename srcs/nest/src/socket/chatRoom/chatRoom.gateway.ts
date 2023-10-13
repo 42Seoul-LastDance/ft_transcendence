@@ -84,8 +84,9 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         //     console.log('DISCONNECT ', userName);
         //     console.log('disconnection handling :: rooms : ', socket.rooms);
         //     // if (await this.chatroomService.leavePastRoom(socket, this.server) === false)
-        //     this.chatroomService.deleteUser(socket);
-        //     console.log(socket.id, ': lost connection. (Chat)');
+        // await this.chatroomService.leavePastRoom(socket, socket.rooms, this.server);
+        // this.chatroomService.deleteUser(socket);
+        console.log(socket.id, ': lost connection. (Chat)');
     }
 
     // * Getter ===========================================================
@@ -144,7 +145,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
             payload['roomName'],
             payload['status'],
         );
-        socket.emit('memberListInfo', memberList);
+        socket.emit('getMemberStateList', memberList);
         console.log('memberListInfo :: ', memberList);
         // Object.fromEntries(chatRoomList)
     }
@@ -152,7 +153,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // * Message ===========================================================
     @SubscribeMessage('sendMessage')
     sendMessage(socket: Socket, payload: JSON): void {
-        console.log('SEND MESSAGE payload', payload);
+        console.log('SEND MESSAGE payload', payload, 'socket id:', socket.id);
 
         this.chatroomService.sendMessage(
             socket,
