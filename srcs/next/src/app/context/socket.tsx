@@ -2,6 +2,7 @@ import { Socket, io } from 'socket.io-client';
 import { BACK_URL } from '../globals';
 import { reGenerateToken } from '../auth';
 import { getCookie } from '../Cookie';
+import { EventListeners } from '../interface';
 
 // socket io event hook
 export const IoEventOnce = (
@@ -48,7 +49,7 @@ export const createSocket = (
 ): Socket => {
   return io(`${BACK_URL}/${namespace}`, {
     withCredentials: false,
-    autoConnect: true, // 첫 연결시 커넥션 
+    autoConnect: false, // 첫 연결시 커넥션
     transports: ['websocket'],
     closeOnBeforeunload: true,
     reconnection: true, // 오류시 재연결
@@ -78,4 +79,26 @@ export const handleTryAuth = async (socket: Socket, router: any) => {
     default:
       console.log('refresh token: ', response.status);
   }
+};
+
+export const registerSocketEvent = (
+  socket: Socket,
+  eventListeners: EventListeners[],
+): void => {
+  eventListeners.forEach(({ event, callback, once }) => {
+    if (once) {
+      IoEventOnce(socket, event, callback);
+    } else {
+      IoEventListener(socket, event, callback);
+    }
+  });
+};
+
+export const removeSocketEvent = (
+  socket: Socket,
+  eventListeners: EventListeners[],
+): void => {
+  eventListeners.forEach(({ event, callback }) => {
+    socket?.off(event, callback);
+  });
 };

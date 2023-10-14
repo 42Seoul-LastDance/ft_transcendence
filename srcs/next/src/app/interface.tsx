@@ -99,3 +99,9 @@ export interface SendMessageJson {
   userName: string;
   content: string;
 }
+
+export interface EventListeners {
+  event: string;
+  callback: (data: any) => void;
+  once?: boolean;
+}

@@ -198,19 +198,19 @@ const UserProfile = (props: UserProfileProps) => {
           ) : null}
           {myName !== props.targetName &&
             (friendStatus === FriendStatus.FRIEND ? (
-              <button onClick={removeFriend}> 친구 해제 </button>
+              <Button onClick={removeFriend}> 친구 해제 </Button>
             ) : (
-              <button
+              <Button
                 onClick={requestBeFriend}
                 disabled={friendRequestAvailable}
               >
                 친구 추가
-              </button>
+              </Button>
             )) &&
             (isBlocked === true ? (
-              <button onClick={unBlock}> 차단 해제 </button>
+              <Button onClick={unBlock}> 차단 해제 </Button>
             ) : (
-              <button onClick={block}>차단 하기</button>
+              <Button onClick={block}>차단 하기</Button>
             ))}
         </Box>
       </Modal>
