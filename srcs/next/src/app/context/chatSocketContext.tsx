@@ -2,12 +2,12 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { io, Socket } from 'socket.io-client';
 import { setRoomNameList } from '../redux/roomSlice';
-import { RoomStatus } from '../interface';
+import { EventListeners, RoomStatus } from '../interface';
 import {
-  IoEventListener,
-  IoEventOnce,
+  clearSocketEvent,
   createSocket,
   handleTryAuth,
+  registerSocketEvent,
 } from './socket';
 import { getCookie, removeCookie, setCookie } from '../Cookie';
 import { useRouter } from 'next/navigation';
@@ -28,7 +28,7 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const [chatSocket, setChatSocket] = useState<Socket | undefined>(undefined);
 
-  // 소켓 수명 관리 
+  // 소켓 수명 관리
   useEffect(() => {
     const cookie = getCookie('access_token');
     if (cookie == undefined) {
@@ -44,17 +44,19 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  //이벤트 관리 
+  //이벤트 관리
   useEffect(() => {
     if (chatSocket?.connected === false) {
-      chatSocket?.connect();
+      chatSocket.connect();
       console.log('[Connect] chatSocket info', chatSocket);
     }
 
-    const eventListeners = [
+    const eventListeners: EventListeners[] = [
       {
         event: 'expireToken',
-        callback: () => handleTryAuth(chatSocket!, router),
+        callback: async () => {
+          await handleTryAuth(chatSocket!, router);
+        },
       },
       {
         event: 'getMyName',
@@ -73,24 +75,11 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
           });
         },
       },
-      {
-        event: 'disconnect',
-        callback: () => {
-          chatSocket?.connect;
-        },
-      },
     ];
 
-    // 소켓 이벤트 등록
-    eventListeners.forEach(({ event, callback }) => {
-      IoEventListener(chatSocket!, event, callback);
-    });
-
-    // 이벤트 삭제
+    registerSocketEvent(chatSocket!, eventListeners);
     return () => {
-      eventListeners.forEach(({ event, callback }) => {
-        chatSocket?.off(event, callback);
-      });
+      clearSocketEvent(chatSocket!, eventListeners);
     };
   }, [chatSocket]);
 

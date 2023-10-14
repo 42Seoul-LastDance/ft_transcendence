@@ -94,7 +94,7 @@ export const registerSocketEvent = (
   });
 };
 
-export const removeSocketEvent = (
+export const clearSocketEvent = (
   socket: Socket,
   eventListeners: EventListeners[],
 ): void => {
