@@ -102,6 +102,6 @@ export interface SendMessageJson {
 
 export interface EventListeners {
   event: string;
-  callback: (data: any) => void;
   once?: boolean;
+  callback: (data: any) => void;
 }

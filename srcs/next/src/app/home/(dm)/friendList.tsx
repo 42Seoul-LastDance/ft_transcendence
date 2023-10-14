@@ -6,20 +6,12 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { useSuperSocket } from '../../context/superSocketContext';
 import { useDispatch, useSelector } from 'react-redux';
-import sendRequest from '../../api';
-import { useRouter } from 'next/navigation';
 import { JoinStatus, UserStatus } from '@/app/interface';
 import { setJoin } from '@/app/redux/userSlice';
-import { Avatar } from '@mui/material';
+import { Avatar, Grow, makeStyles } from '@mui/material';
 import { setFriend } from '@/app/redux/dmSlice';
-import { IoEventListener, IoEventOnce } from '@/app/context/socket';
+import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
 import { RootState } from '@/app/redux/store';
-
-const style = {
-  width: '100%',
-  maxWidth: 360,
-  bgcolor: 'background.paper',
-};
 
 const FriendList: React.FC = () => {
   const superSocket = useSuperSocket();
@@ -33,61 +25,61 @@ const FriendList: React.FC = () => {
     const eventListeners = [
       {
         event: 'getFriendStateList',
+        once: true,
         callback: (data: string[][]) => {
           setFriendList(data);
         },
       },
       {
         event: 'updateFriendStateList',
+        once: true,
         callback: () => {
           superSocket?.emit('getFriendStateList', myName);
         },
       },
     ];
 
-    // 소켓 이벤트 등록
-    eventListeners.forEach((listener) => {
-      IoEventOnce(superSocket!, listener.event, listener.callback);
-    });
-
+    registerSocketEvent(superSocket!, eventListeners);
     superSocket?.emit('getFriendStateList', myName);
-    return () => {};
+    return () => {
+      clearSocketEvent(superSocket!, eventListeners);
+    };
   }, [join]);
 
-  // IoEventListener(superSocket!, 'updateFriendList', () => {
-  //   superSocket?.emit('getFriendStateList', myName);
-  // });
+  const handleStartDM = (friendName: string) => {
+    dispatch(setFriend(friendName));
+    dispatch(setJoin(JoinStatus.DM));
+  };
 
   return (
     <>
-      {friendList.map((curFriend: string[], rowIdx: number) => (
-        <List key={rowIdx}>
+      {friendList.map((curFriend, rowIdx) => (
+        <Grow in={true} timeout={500 * (rowIdx + 1)} key={rowIdx}>
           <ListItem
-            key={rowIdx}
             divider
             onClick={() => {
-              dispatch(setFriend(curFriend[0]));
-              dispatch(setJoin(JoinStatus.DM));
+              handleStartDM(curFriend[0]);
             }}
           >
-            <ListItemText primary={`친구 이름: ${curFriend[0]}`} />
-            {curFriend[1] === UserStatus.ONLINE ? (
-              <Avatar sx={{ bgcolor: '#4caf50', width: 24, height: 24 }}>
-                {' '}
-              </Avatar>
-            ) : null}
-            {curFriend[1] === UserStatus.GAME ? (
-              <Avatar sx={{ bgcolor: '#ffeb3b', width: 24, height: 24 }}>
-                {' '}
-              </Avatar>
-            ) : null}
-            {curFriend[1] === UserStatus.OFFLINE ? (
-              <Avatar sx={{ bgcolor: '#9e9e9e', width: 24, height: 24 }}>
-                {' '}
-              </Avatar>
-            ) : null}
+            <ListItemText primary={curFriend[0]} />
+            <Avatar
+              sx={{
+                width: 15,
+                height: 15,
+                bgcolor:
+                  curFriend[1] === UserStatus.ONLINE
+                    ? '#4caf50'
+                    : curFriend[1] === UserStatus.GAME
+                    ? '#ffeb3b'
+                    : curFriend[1] === UserStatus.OFFLINE
+                    ? '#9e9e9e'
+                    : 'transparent',
+              }}
+            >
+              {' '}
+            </Avatar>
           </ListItem>
-        </List>
+        </Grow>
       ))}
     </>
   );

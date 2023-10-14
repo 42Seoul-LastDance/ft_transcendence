@@ -20,25 +20,20 @@ import {
   ChatMessage,
   ChattingPageProps,
   JoinStatus,
-  MemberList,
   SendMessageJson,
   receiveMessage,
 } from '../../interface';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
-
-import { setRoomMemberList } from '@/app/redux/roomSlice';
-import { IoEventListener, IoEventOnce } from '@/app/context/socket';
-import { isValid } from '../valid';
 import { setJoin } from '@/app/redux/userSlice';
 import { myAlert } from '../alert';
 import { useRouter } from 'next/navigation';
 import sendRequest from '@/app/api';
+import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
+import { isValid } from '../valid';
+import { maxTypeLength } from '@/app/globals';
 
 const ChattingPage = (props: ChattingPageProps) => {
   const [inputMessage, setInputMessage] = useState('');
-  // const chatMessages = useSelector(
-  //   (state: RootState) => state.room.chatMessages,
-  // );
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // 설정 아이콘 클릭 시 설정창 표시 여부
   const dispatch = useDispatch();
@@ -93,18 +88,10 @@ const ChattingPage = (props: ChattingPageProps) => {
         callback: handleExitRoom,
       },
     ];
-
-    // 소켓 이벤트 등록
-    eventListeners.forEach((listener) => {
-      IoEventOnce(props.socket!, listener.event, listener.callback);
-    });
-
-    // 이벤트 삭제
-    // return () => {
-    //   eventListeners.forEach((listener) => {
-    //     props.socket!.off(listener.event, listener.callback);
-    //   });
-    // };
+    registerSocketEvent(props.socket!, eventListeners);
+    return () => {
+      clearSocketEvent(props.socket!, eventListeners);
+    };
   }, [join, chatMessages]);
 
   // 기존 DM메시지 가져오기
@@ -141,7 +128,7 @@ const ChattingPage = (props: ChattingPageProps) => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isValid('메세지가', e.target.value + ' ⏎', 50, dispatch))
+    if (isValid('메세지가', e.target.value + ' ⏎', maxTypeLength, dispatch))
       setInputMessage(e.target.value);
   };
 

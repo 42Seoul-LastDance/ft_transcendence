@@ -11,8 +11,9 @@ import { ChatRoomDto, JoinStatus, RoomStatus } from '../../interface';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { IoEventListener } from '@/app/context/socket';
 import { isValid } from '../valid';
+import { maxNameLength, maxPasswordLength, maxTypeLength } from '@/app/globals';
 
-export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
+const CreateRoomForm = ({ onClose }: { onClose: () => void }) => {
   const chatSocket = useChatSocket();
   const dispatch = useDispatch();
   const [roomName, setRoomName] = useState<string>('');
@@ -70,9 +71,9 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
 
   const isBadInput = (): boolean => {
     if (
-      isValid('방이름이', roomName, 20, dispatch) === false ||
+      isValid('방이름이', roomName, maxNameLength, dispatch) === false ||
       (requirePassword &&
-        isValid('패스워드가', password, 20, dispatch) === false)
+        isValid('패스워드가', password, maxPasswordLength, dispatch) === false)
     )
       return true;
     return false;
@@ -80,12 +81,6 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
 
   const addNewRoom = () => {
     if (isBadInput()) return;
-
-    // IoEventListener(chatSocket!, 'createChatRoom', (data: ChatRoomDto) => {
-    //   dispatch(setChatRoom(data));
-    //   dispatch(setJoin(JoinStatus.CHAT));
-    //   onClose();
-    // });
 
     chatSocket?.emit('createChatRoom', {
       roomName: roomName,
@@ -99,6 +94,7 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
     <>
       <Box>
         <TextField
+          required
           label="방 이름"
           variant="outlined"
           value={roomName}
@@ -147,4 +143,6 @@ export default function CreateRoomForm({ onClose }: { onClose: () => void }) {
       </Box>
     </>
   );
-}
+};
+
+export default CreateRoomForm;

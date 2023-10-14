@@ -85,7 +85,7 @@ export const registerSocketEvent = (
   socket: Socket,
   eventListeners: EventListeners[],
 ): void => {
-  eventListeners.forEach(({ event, callback, once }) => {
+  eventListeners.forEach(({ event, once, callback }) => {
     if (once) {
       IoEventOnce(socket, event, callback);
     } else {

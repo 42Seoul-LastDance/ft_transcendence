@@ -11,3 +11,9 @@ export const getTime = (): string => {
   const parsedHour: number = parseInt(hour, 10) % 12 || 12; // 12시간 형식으로 변환
   return `${amOrPm} ${parsedHour}:${minute}`;
 };
+
+// user input 검증 길이
+export const maxUniqueNameLength = 20;
+export const maxPasswordLength = 20;
+export const maxNameLength = 20;
+export const maxTypeLength = 50;

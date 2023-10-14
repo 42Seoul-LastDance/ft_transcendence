@@ -5,16 +5,27 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import CreateRoomButton from './createRoomButton';
 import { useChatSocket } from '../../context/chatSocketContext';
-import { ChatRoomDto, JoinStatus, RoomStatus } from '../../interface';
+import {
+  ChatRoomDto,
+  EventListeners,
+  JoinStatus,
+  RoomStatus,
+} from '../../interface';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import { useDispatch } from 'react-redux';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { isValid } from '../valid';
 import { myAlert } from '../alert';
-import { IoEventListener, IoEventOnce } from '@/app/context/socket';
+import {
+  IoEventOnce,
+  clearSocketEvent,
+  registerSocketEvent,
+} from '@/app/context/socket';
 import { useEffect } from 'react';
 import { setRoomNameList } from '@/app/redux/roomSlice';
+import { Grow } from '@mui/material';
+import { maxPasswordLength } from '@/app/globals';
 
 const style = {
   width: '100%',
@@ -32,10 +43,17 @@ const ChatRoomList: React.FC = () => {
   const join = useSelector((state: RootState) => state.user.join);
 
   useEffect(() => {
-    IoEventListener(chatSocket!, 'getChatRoomList', (data: string[]) =>
-      dispatch(setRoomNameList(data)),
-    );
-    return () => {};
+    const eventListeners: EventListeners[] = [
+      {
+        event: 'getChatRoomList',
+        callback: (data: string[]) => dispatch(setRoomNameList(data)),
+      },
+    ];
+
+    registerSocketEvent(chatSocket!, eventListeners);
+    return () => {
+      clearSocketEvent(chatSocket!, eventListeners);
+    };
   }, [roomNameList]);
 
   const joinRoom = async (roomName: string) => {
@@ -50,7 +68,7 @@ const ChatRoomList: React.FC = () => {
       password = prompt('비밀번호를 입력하세요');
       if (
         password === null ||
-        !isValid('비밀번호가', password, 20, dispatch) === false
+        !isValid('비밀번호가', password, maxPasswordLength, dispatch) === false
       )
         return;
     }
@@ -97,15 +115,16 @@ const ChatRoomList: React.FC = () => {
       <List sx={style} component="nav" aria-label="mailbox folders">
         {roomNameList.map((roomName: string) => {
           return roomName !== chatRoom?.roomName ? (
-            <ListItem
-              key={roomName}
-              divider
-              onClick={async () => {
-                await joinRoom(roomName);
-              }}
-            >
-              <ListItemText primary={`방 이름: ${roomName}`} />
-            </ListItem>
+            <Grow in={true} key={roomName} timeout={1000}>
+              <ListItem
+                divider
+                onClick={async () => {
+                  await joinRoom(roomName);
+                }}
+              >
+                <ListItemText primary={`방 이름: ${roomName}`} />
+              </ListItem>
+            </Grow>
           ) : null;
         })}
       </List>
