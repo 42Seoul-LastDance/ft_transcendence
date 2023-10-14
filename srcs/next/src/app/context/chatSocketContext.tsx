@@ -73,6 +73,7 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
           chatSocket?.emit('getChatRoomList', {
             roomStatus: RoomStatus.PUBLIC,
           });
+          setChatSocket(chatSocket);
         },
       },
     ];
