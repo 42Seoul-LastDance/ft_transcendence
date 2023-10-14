@@ -7,6 +7,7 @@ import { setIsMatched, setSide } from '../redux/matchSlice';
 import { useGameSocket } from '../context/gameSocketContext';
 import { GameMode, HandShakeJson } from '../Enums';
 import CircularProgress from '@mui/material/CircularProgress';
+import { Button } from '@mui/material';
 
 const Matching = () => {
   const [isMatching, setIsMatching] = useState<boolean>(false);
@@ -27,7 +28,7 @@ const Matching = () => {
     <>
       {!isMatching && !isCustomGame ? (
         <>
-          <button
+          <Button
             onClick={() => {
               setIsMatching(true);
               socket?.emit('pushQueue', {
@@ -36,8 +37,8 @@ const Matching = () => {
             }}
           >
             Normal Matching
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => {
               setIsMatching(true);
               socket?.emit('pushQueue', {
@@ -46,7 +47,7 @@ const Matching = () => {
             }}
           >
             Hard Matching
-          </button>
+          </Button>
         </>
       ) : (
         <>
@@ -54,14 +55,14 @@ const Matching = () => {
             <h1> Matching... </h1>
             <CircularProgress />
           </div>
-          <button
+          <Button
             onClick={() => {
               setIsMatching(false);
               socket?.emit('popQueue');
             }}
           >
             Cancel Matching
-          </button>
+          </Button>
         </>
       )}
     </>

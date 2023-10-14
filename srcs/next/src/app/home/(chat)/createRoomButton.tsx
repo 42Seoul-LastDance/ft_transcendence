@@ -28,7 +28,7 @@ const CreateRoomButton: React.FC = () => {
   return (
     <div>
       <Box sx={{ '& > :not(style)': { m: 1 } }}>
-        <Fab color="primary" aria-label="add" onClick={handleOpen}>
+        <Fab color="primary" size="small" aria-label="add" onClick={handleOpen}>
           <AddIcon />
         </Fab>
       </Box>

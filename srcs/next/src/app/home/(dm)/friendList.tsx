@@ -8,10 +8,20 @@ import { useSuperSocket } from '../../context/superSocketContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { JoinStatus, UserStatus } from '@/app/interface';
 import { setJoin } from '@/app/redux/userSlice';
-import { Avatar, Grow, makeStyles } from '@mui/material';
+import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
+import {
+  Avatar,
+  Grow,
+  IconButton,
+  ListItemAvatar,
+  makeStyles,
+} from '@mui/material';
 import { setFriend } from '@/app/redux/dmSlice';
 import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
 import { RootState } from '@/app/redux/store';
+import sendRequest from '@/app/api';
+import { useRouter } from 'next/navigation';
+import { myAlert } from '../alert';
 
 const FriendList: React.FC = () => {
   const superSocket = useSuperSocket();
@@ -19,6 +29,7 @@ const FriendList: React.FC = () => {
   const [friendList, setFriendList] = useState<string[][]>([]);
   const myName = useSelector((state: RootState) => state.user.userName);
   const join = useSelector((state: RootState) => state.user.join);
+  const router = useRouter();
 
   useEffect(() => {
     console.log('--------- friendList component ---------');
@@ -46,7 +57,27 @@ const FriendList: React.FC = () => {
     };
   }, [join]);
 
-  const handleStartDM = (friendName: string) => {
+  const deleteFriend = async (
+    event: {
+      preventDefault: () => void;
+      stopPropagation: () => void;
+    },
+    selectFriend: string,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const response = await sendRequest(
+      'delete',
+      `/friends/delete/${selectFriend}`,
+      router,
+    );
+    if (response.status === 200) {
+      myAlert('info', `${selectFriend} 삭제 완료`, dispatch);
+      superSocket?.emit('updateFriendStateList', myName);
+    }
+  };
+
+  const handleStartDM = async (friendName: string) => {
     dispatch(setFriend(friendName));
     dispatch(setJoin(JoinStatus.DM));
   };
@@ -60,6 +91,7 @@ const FriendList: React.FC = () => {
             onClick={() => {
               handleStartDM(curFriend[0]);
             }}
+            className="list-item"
           >
             <ListItemText primary={curFriend[0]} />
             <Avatar
@@ -78,6 +110,13 @@ const FriendList: React.FC = () => {
             >
               {' '}
             </Avatar>
+            <IconButton
+              edge="end"
+              aria-label="delete"
+              onClick={(event) => deleteFriend(event, curFriend[0])}
+            >
+              <PersonRemoveIcon />
+            </IconButton>
           </ListItem>
         </Grow>
       ))}

@@ -112,8 +112,8 @@ const ChatRoomList: React.FC = () => {
 
   return (
     <>
-      <List sx={style} component="nav" aria-label="mailbox folders">
-        {roomNameList.map((roomName: string) => {
+      <List sx={style} aria-label="mailbox folders">
+        {roomNameList.map((roomName) => {
           return roomName !== chatRoom?.roomName ? (
             <Grow in={true} key={roomName} timeout={1000}>
               <ListItem
@@ -121,6 +121,7 @@ const ChatRoomList: React.FC = () => {
                 onClick={async () => {
                   await joinRoom(roomName);
                 }}
+                className="list-item"
               >
                 <ListItemText primary={`방 이름: ${roomName}`} />
               </ListItem>
@@ -132,5 +133,4 @@ const ChatRoomList: React.FC = () => {
     </>
   );
 };
-
 export default ChatRoomList;

@@ -1,13 +1,16 @@
 body {
-  background-color: rgb(41, 41, 41);
-  color: rgb(75, 75, 207);
+  background-color: rgb(39, 39, 42);
+  color: rgb(158, 158, 196);
 }
 
-/* CSS 파일이나 스타일 컴포넌트에 추가 */
 .alert-container {
   position: fixed;
   top: 0; /* 하단에 위치 */
   left: 50%; /* 가운데 정렬을 위해 왼쪽 기준으로 50% 이동 */
   transform: translateX(-50%); /* 가운데 정렬 */
   z-index: 999; /* 다른 요소 위에 표시 */
+}
+
+.list-item:hover {
+  background-color: #384357;
 }

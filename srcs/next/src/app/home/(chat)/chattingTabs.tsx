@@ -22,7 +22,7 @@ const ChattingTabs: React.FC = () => {
 
   return (
     <div>
-      <Tabs value={value} onChange={handleChange}>
+      <Tabs value={value} component="nav" onChange={handleChange}>
         <Tab label="Chatting" />
         <Tab label="Friends" />
         <Tab label="Requests" />
