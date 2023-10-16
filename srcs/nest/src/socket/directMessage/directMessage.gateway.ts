@@ -96,13 +96,35 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
     // * friendList
     @SubscribeMessage('getFriendStateList')
     async getFriendStateList(socket: Socket, userName: string): Promise<void> {
+        console.log('** DM - GET FRIEND STATE LIST**');
         await this.directMessageService.getFriendStateList(socket, userName);
     }
 
-    // * invite Chat Room
-    // @SubscribeMessage('invite')
+    // * invite
+    @SubscribeMessage('getInvitationList')
+    async getInvitationList(socket: Socket) {
+        console.log('DM socket:: getInvitationList');
+        const invitationList = await this.directMessageService.getInvitationList(socket.id);
+        socket.emit('getInvitationList', invitationList);
+    }
 
-    // * invite Game
+    @SubscribeMessage('sendInvitation')
+    async sendInvitation(socket: Socket, payload: JSON) {
+        console.log('DM socket:: sendInvitation');
+        await this.directMessageService.sendInvitation(socket.id, payload);
+    }
+
+    @SubscribeMessage('agreeInvite')
+    async agreeInvite(socket: Socket, payload: JSON) {
+        console.log('DM socket:: agreeInvite');
+        await this.directMessageService.agreeInvite(socket.id, payload);
+    }
+
+    @SubscribeMessage('declineInvite')
+    async declineInvite(socket: Socket, payload: JSON) {
+        console.log('DM socket:: declineInvite');
+        await this.directMessageService.declineInvite(socket.id, payload);
+    }
 
     // *
 }

@@ -1,32 +1,25 @@
-// import { PayloadAction, createSlice } from '@reduxjs/toolkit';
+import { PayloadAction, createSlice } from '@reduxjs/toolkit';
 
-// export interface FriendList {
-//   // friendNameList: string[];
-//   status: boolean;
-//   // lastChat: string;
-// }
+export interface FriendListType {
+  friendList: string[][];
+}
 
-// const initialState: FriendList = {
-//   // friendNameList: [],
-//   status: false,
-//   // lastChat: '',
-// };
+const initialState: FriendListType = {
+  friendList: [],
+};
 
-// const friendSlice = createSlice({
-//   name: 'friend',
-//   initialState,
-//   reducers: {
-//     // setFriendNameList: (state, action: PayloadAction<string[]>) => {
-//     //   state.friendNameList = action.payload;
-//     // },
-//     setStatus: (state, action: PayloadAction<boolean>) => {
-//       state.status = action.payload;
-//     },
-//     // setLastChat: (state, action: PayloadAction<string>) => {
-//     //   state.lastChat = action.payload;
-//     // },
-//   },
-// });
+const friendSlice = createSlice({
+  name: 'friend',
+  initialState,
+  reducers: {
+    setFriendList: (
+      state: FriendListType,
+      action: PayloadAction<string[][]>,
+    ) => {
+      state.friendList = action.payload;
+    },
+  },
+});
 
-// export default friendSlice;
-// export const { setStatus } = friendSlice.actions;
+export default friendSlice;
+export const { setFriendList } = friendSlice.actions;

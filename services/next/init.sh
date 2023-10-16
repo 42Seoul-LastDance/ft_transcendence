@@ -14,7 +14,7 @@ npm cache clean --force
 
 echo "----- 😎 Successfully installed -----"
 
-# npm --prefix srcs run build
-# npm --prefix srcs run start
-npm --prefix srcs run dev
+npm --prefix srcs run build
+npm --prefix srcs run start
+# npm --prefix srcs run dev
 #     props.socket?.emit('exitChatRoom');npm --prefix srcs run dev

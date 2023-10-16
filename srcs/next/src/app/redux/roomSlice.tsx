@@ -1,41 +1,43 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
-import { ChatMessage, MemberList } from '../interface';
+import { ChatMessage, Member, UserPermission } from '../interface';
 
 export interface RoomList {
   roomNameList: string[];
-  // chatMessages: ChatMessage[];
-  roomMemberList: MemberList[];
-  selectedMember: MemberList | null;
+  roomMemberList: Member[];
+  selectedMember: Member | null;
+  myPermission: UserPermission;
 }
 
 const initialState: RoomList = {
   roomNameList: [],
-  // chatMessages: [],
   roomMemberList: [],
   selectedMember: null,
+  myPermission: UserPermission.NONE,
 };
 
 const roomSlice = createSlice({
   name: 'room',
   initialState,
   reducers: {
-    setRoomNameList: (state, action: PayloadAction<string[]>) => {
+    setRoomNameList: (state: RoomList, action: PayloadAction<string[]>) => {
       state.roomNameList = action.payload;
     },
 
-    // setChatMessages: (state, action: PayloadAction<ChatMessage[]>) => {
-    //   state.chatMessages.push(action.payload[0]);
-    // },
-
-    // clearChatMessages: (state, action: PayloadAction<ChatMessage[]>) => {
-    //   state.chatMessages = action.payload;
-    // },
-
-    setRoomMemberList: (state, action: PayloadAction<MemberList[]>) => {
+    setRoomMemberList: (state: RoomList, action: PayloadAction<Member[]>) => {
       state.roomMemberList = action.payload;
     },
 
-    setSelectedMember: (state, action: PayloadAction<MemberList>) => {
+    setMyPermission: (
+      state: RoomList,
+      action: PayloadAction<UserPermission>,
+    ) => {
+      state.myPermission = action.payload;
+    },
+
+    setSelectedMember: (
+      state: RoomList,
+      action: PayloadAction<Member | null>,
+    ) => {
       state.selectedMember = action.payload;
     },
   },
@@ -44,8 +46,7 @@ const roomSlice = createSlice({
 export default roomSlice;
 export const {
   setRoomNameList,
-  // setChatMessages,
-  // clearChatMessages,
+  setMyPermission,
   setRoomMemberList,
   setSelectedMember,
 } = roomSlice.actions;

@@ -20,14 +20,14 @@ import { Response } from 'express';
 export class FriendController {
     constructor(private readonly friendService: FriendService) {}
 
-    // @Get('/getFriendList')
-    // @UseGuards(JwtAuthGuard)
-    // async getFriendList(@Req() req, @Res() res: Response) {
-    //     console.log(req.user);
-    //     const friendList = await this.friendService.getFriendNameList(+req.user.sub);
-    //     console.log(friendList);
-    //     return res.status(200).send(friendList);
-    // }
+    @Get('/getFriendList')
+    @UseGuards(JwtAuthGuard)
+    async getFriendList(@Req() req, @Res() res: Response) {
+        console.log(req.user);
+        const friendList = await this.friendService.getFriendNameList(+req.user.sub);
+        console.log(friendList);
+        return res.status(200).send(friendList);
+    }
 
     @Get('/isFriend/:friendName')
     @UseGuards(JwtAuthGuard)
@@ -54,7 +54,7 @@ export class FriendController {
     @Get('/getInvitation')
     @UseGuards(JwtAuthGuard)
     async getInvitation(@Req() req, @Res() res: Response) {
-        console.log('getinveiteList called');
+        console.log('Controller - getinviteList called');
         const invitations = await this.friendService.getInvitation(+req.user.sub);
         return res.send(invitations);
     }

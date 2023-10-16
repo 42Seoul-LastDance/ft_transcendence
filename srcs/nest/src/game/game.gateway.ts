@@ -76,6 +76,11 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         await this.gameService.inviteGame(client.id, +gameInfo['gameMode'], gameInfo['friendName']);
     }
 
+    @SubscribeMessage('quitInvite')
+    quitInvite(client: Socket) {
+        this.gameService.quitInvite(client.id);
+    }
+
     @SubscribeMessage('agreeInvite')
     async agreeInvite(client: Socket, gameInfo: JSON) {
         await this.gameService.agreeInvite(client.id, gameInfo['friendName']);

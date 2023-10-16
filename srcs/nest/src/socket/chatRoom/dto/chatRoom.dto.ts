@@ -17,16 +17,14 @@ export class ChatRoomDto {
     @IsBoolean()
     requirePassword: boolean;
 
-    // TODO : 리스트들 다 set으로 관리하기
-
     @IsArray()
     operatorList: Set<number> = new Set();
 
     @IsArray()
     memberList: Set<number> = new Set();
 
-    @IsArray()
-    inviteList: Set<number> = new Set();
+    // @IsArray()
+    // inviteList: Set<number> = new Set();
 
     @IsArray()
     banList: Set<number> = new Set();

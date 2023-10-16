@@ -92,44 +92,65 @@ export class UserService {
         }
     }
 
-    async updateUserNameBySlackId(slackId: string, userName: string): Promise<User> {
+    async updateUserInfo(
+        userId: number,
+        userName: string | undefined,
+        require2fa: boolean | undefined,
+        profileImage: Express.Multer.File | undefined,
+    ) {
         try {
-            const user = await this.getUserBySlackId(slackId);
-            user.userName = userName;
-            await this.userRepository.save(user);
-            return user;
-        } catch (error) {
-            if (error.code == '23505') throw new ConflictException('Existing userName');
-            else throw new InternalServerErrorException('from updateuserName');
-        }
-    }
-
-    async update2faConfBySlackId(slackId: string, is2fa: boolean): Promise<User> {
-        try {
-            const user = await this.getUserBySlackId(slackId);
-            user.require2fa = is2fa;
-            await this.userRepository.save(user);
-            return user;
-        } catch (error) {
-            throw new InternalServerErrorException('from update2fa');
-        }
-    }
-
-    async updateProfileImageBySlackId(slackId: string, img: string): Promise<User> {
-        try {
-            const user = await this.getUserBySlackId(slackId);
-            //* default 이미지가 아니었을 경우 기존 이미지 삭제
-            if (user.profileurl != 'default.png') {
-                const filePath = __dirname + '/../../profile/' + user.profileurl;
-                if (existsSync(filePath)) unlinkSync(__dirname + '/../../profile/' + user.profileurl);
+            const user = await this.findUserById(userId);
+            user.userName = userName ? userName : user.userName;
+            user.require2fa = require2fa ? require2fa : user.require2fa;
+            user.profileurl = profileImage ? profileImage.filename : user.profileurl;
+            await this.userRepository.update(userId, user);
+            if (userName) {
+                //TODO 유저네임 업데이트되었으면 친구들에게 emit 처리 필요-> 친구 목록, 친구 요청, blockUser
+                //근데... socketUsersService여기서 사용할 수 있나..?
             }
-            user.profileurl = img;
-            await this.userRepository.save(user);
-            return user;
         } catch (error) {
-            throw new InternalServerErrorException('from updateProfileImage');
+            console.log('[ERRRRRR] userService: updateUserInfo');
         }
     }
+
+    // async updateUserNameBySlackId(slackId: string, userName: string): Promise<User> {
+    //     try {
+    //         const user = await this.getUserBySlackId(slackId);
+    //         user.userName = userName;
+    //         await this.userRepository.save(user);
+    //         return user;
+    //     } catch (error) {
+    //         if (error.code == '23505') throw new ConflictException('Existing userName');
+    //         else throw new InternalServerErrorException('from updateuserName');
+    //     }
+    // }
+
+    // async update2faConfBySlackId(slackId: string, is2fa: boolean): Promise<User> {
+    //     try {
+    //         const user = await this.getUserBySlackId(slackId);
+    //         user.require2fa = is2fa;
+    //         await this.userRepository.save(user);
+    //         return user;
+    //     } catch (error) {
+    //         throw new InternalServerErrorException('from update2fa');
+    //     }
+    // }
+
+    // async updateProfileImageBySlackId(slackId: string, img: string): Promise<User> {
+    //     try {
+    //         const user = await this.getUserBySlackId(slackId);
+    //         //* default 이미지가 아니었을 경우 기존 이미지 삭제
+    //         if (user.profileurl != 'default.png') {
+    //             const filePath = __dirname + '/../../profile/' + user.profileurl;
+    //             if (existsSync(filePath)) unlinkSync(__dirname + '/../../profile/' + user.profileurl);
+    //         }
+    //         user.profileurl = img;
+    //         await this.userRepository.save(user);
+    //         return user;
+    //     } catch (error) {
+    //         throw new InternalServerErrorException('from updateProfileImage');
+    //     }
+    // }
 
     async saveUserCurrentRefreshToken(userId: number, refreshToken: string) {
         const salt = await bcrypt.genSalt(10);

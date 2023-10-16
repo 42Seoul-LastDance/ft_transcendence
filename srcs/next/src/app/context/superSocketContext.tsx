@@ -8,7 +8,7 @@ import {
 } from './socket';
 import { getCookie } from '../Cookie';
 import { useRouter } from 'next/navigation';
-import { EventListeners } from '../interface';
+import { Events } from '../interface';
 
 // SocketContext 생성
 const SuperSocketContext = createContext<Socket | undefined>(undefined);
@@ -27,7 +27,7 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const eventListeners: EventListeners[] = [
+    const e: Events[] = [
       {
         event: 'expireToken',
         callback: async () => {
@@ -41,10 +41,10 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
         },
       },
     ];
-    if (!superSocket.connected) superSocket.connect();
-    registerSocketEvent(superSocket, eventListeners);
+    superSocket.connect();
+    registerSocketEvent(superSocket, e);
     return () => {
-      clearSocketEvent(superSocket, eventListeners);
+      clearSocketEvent(superSocket, e);
     };
   }, []);
 

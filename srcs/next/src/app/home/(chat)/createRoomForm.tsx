@@ -5,11 +5,11 @@ import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useChatSocket } from '../../context/chatSocketContext';
 import { ChatRoomDto, JoinStatus, RoomStatus } from '../../interface';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
-import { IoEventListener } from '@/app/context/socket';
+import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
 import { isValid } from '../valid';
 import { maxNameLength, maxPasswordLength, maxTypeLength } from '@/app/globals';
 
@@ -24,7 +24,7 @@ const CreateRoomForm = ({ onClose }: { onClose: () => void }) => {
 
   useEffect(() => {
     console.log('--------- createRoomForm component ---------');
-    const eventListeners = [
+    const e = [
       {
         event: 'createChatRoom',
         callback: (data: ChatRoomDto) => {
@@ -34,15 +34,9 @@ const CreateRoomForm = ({ onClose }: { onClose: () => void }) => {
         },
       },
     ];
-    // 소켓 이벤트 등록
-    eventListeners.forEach((listener) => {
-      IoEventListener(chatSocket!, listener.event, listener.callback);
-    });
-    // 이벤트 삭제
+    registerSocketEvent(chatSocket!, e);
     return () => {
-      eventListeners.forEach((listener) => {
-        chatSocket!.off(listener.event, listener.callback);
-      });
+      clearSocketEvent(chatSocket!, e);
     };
   }, []);
 

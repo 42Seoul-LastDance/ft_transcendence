@@ -17,12 +17,14 @@ import { UserService } from 'src/user/user.service';
 import { RegenerateAuthGuard } from './regenerateAuth.guard';
 import { JwtAuthGuard } from './jwtAuth.guard';
 import { Jwt2faGuard } from './jwt2fa.guard';
+import { SocketUsersService } from '../socket/socketUsersService/socketUsers.service';
 
 @Controller('auth')
 export class AuthController {
     constructor(
         private authService: AuthService,
         private userService: UserService,
+        private socketUsersService: SocketUsersService,
     ) {}
     // * 1. 현재 클라이언트가 유효한 jwt 토큰을 가지고 있는지 확인 (메인 페이지에서)
     // * 2. 유효하지 않다면 `/42login`으로 보내서 oauth 인증 (로그인 페이지 -> 42 intra)
@@ -144,6 +146,7 @@ export class AuthController {
     async logout(@Req() req: any, @Res() res: Response) {
         console.log('logout called');
         await this.userService.removeRefreshToken(req.user);
+        await this.socketUsersService.clearServerData(req.user.sub);
         res.clearCookie('access_token');
         res.clearCookie('refresh_token');
         return res.send({

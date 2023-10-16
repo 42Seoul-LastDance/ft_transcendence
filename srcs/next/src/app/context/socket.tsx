@@ -2,7 +2,7 @@ import { Socket, io } from 'socket.io-client';
 import { BACK_URL } from '../globals';
 import { reGenerateToken } from '../auth';
 import { getCookie } from '../Cookie';
-import { EventListeners } from '../interface';
+import { Events } from '../interface';
 
 // socket io event hook
 export const IoEventOnce = (
@@ -62,16 +62,15 @@ export const createSocket = (
 export const handleTryAuth = async (socket: Socket, router: any) => {
   const response = await reGenerateToken(router);
 
+  console.log('response', response);
   switch (response.status) {
     case 200:
       const xAccessToken = getCookie('access_token');
-      if (socket?.connected) {
-        socket?.disconnect();
-        socket.auth = {
-          token: xAccessToken,
-        };
-        socket.connect();
-      }
+      if (socket?.connected) socket?.disconnect();
+      socket.auth = {
+        token: xAccessToken,
+      };
+      socket.connect();
       break;
     case 401:
       router.push('/');
@@ -81,11 +80,8 @@ export const handleTryAuth = async (socket: Socket, router: any) => {
   }
 };
 
-export const registerSocketEvent = (
-  socket: Socket,
-  eventListeners: EventListeners[],
-): void => {
-  eventListeners.forEach(({ event, once, callback }) => {
+export const registerSocketEvent = (socket: Socket, e: Events[]): void => {
+  e.forEach(({ event, once, callback }) => {
     if (once) {
       IoEventOnce(socket, event, callback);
     } else {
@@ -94,11 +90,8 @@ export const registerSocketEvent = (
   });
 };
 
-export const clearSocketEvent = (
-  socket: Socket,
-  eventListeners: EventListeners[],
-): void => {
-  eventListeners.forEach(({ event, callback }) => {
+export const clearSocketEvent = (socket: Socket, e: Events[]): void => {
+  e.forEach(({ event, callback }) => {
     socket?.off(event, callback);
   });
 };

@@ -15,6 +15,7 @@ import { MailService } from 'src/mail/mail.service';
 // import { RegenerateJwtStrategy } from './regenerate-auth.strategy';
 import { RegenerateAuthGuard } from './regenerateAuth.guard';
 // import { JwtAuthGuard } from './jwtAuth.guard';
+import { SocketUsersModule } from '../socket/socketUsersService/socketUsers.module';
 
 @Module({
     imports: [
@@ -33,6 +34,7 @@ import { RegenerateAuthGuard } from './regenerateAuth.guard';
         TypeOrmModule.forFeature([UserRepository]),
         PassportModule.register({ defaultStrategy: 'fortytwo' }),
         UserModule,
+        SocketUsersModule,
     ],
     controllers: [AuthController],
     providers: [

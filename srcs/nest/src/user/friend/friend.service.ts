@@ -38,8 +38,6 @@ export class FriendService {
                     { targetUserId: userId, status: FriendStatus.FRIEND },
                 ],
             });
-            console.log('foundFriend : ', foundFriend);
-
             for (const friend of foundFriend) {
                 let friendId: number;
                 if (userId === friend.requestUserId) friendId = friend.targetUserId;
@@ -64,23 +62,20 @@ export class FriendService {
                     { targetUserId: userId, status: FriendStatus.FRIEND },
                 ],
             });
-
-            console.log('foundFriend : ', foundFriend);
-
             for (const friend of foundFriend) {
                 let friendData;
                 if (userId === friend.requestUserId)
                     friendData = await this.userService.findUserById(friend.targetUserId);
                 else friendData = await this.userService.findUserById(friend.requestUserId);
-                console.log('{username, status:}', friendData);
+                // console.log('{username, status:}', friendData);
                 friendList.push(friendData.userName);
-                console.log('ppushed~~~~~~~~~');
+                // console.log('ppushed~~~~~~~~~');
             }
         } catch (error) {
             console.log(error);
             throw new InternalServerErrorException('friendService >> getFriendNameList');
         }
-        console.log('friend list: ', friendList);
+        // console.log('friend list: ', friendList);
         return friendList;
     }
 

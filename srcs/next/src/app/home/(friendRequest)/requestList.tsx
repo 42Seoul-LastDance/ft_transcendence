@@ -11,6 +11,8 @@ import { Button, Grow, TextField } from '@mui/material';
 import { isValid } from '../valid';
 import { maxUniqueNameLength } from '@/app/globals';
 import { myAlert } from '../alert';
+import FriendList from '../(dm)/friendList';
+import { FriendStatus } from '@/app/interface';
 
 const RequestList: React.FC = () => {
   const [requestList, setRequestList] = useState<string[]>([]);
@@ -51,7 +53,10 @@ const RequestList: React.FC = () => {
       `/friends/isFriend/${friendRequestName}`,
       router,
     );
-    if (response.status === 200) {
+    if (
+      response.status === 200 &&
+      response.data.status === FriendStatus.FRIEND
+    ) {
       myAlert('error', '이미 친구입니다.', dispatch);
       return true;
     } else return false;

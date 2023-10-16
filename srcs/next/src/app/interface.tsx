@@ -1,15 +1,15 @@
 import { Socket } from 'socket.io-client';
-import { userState } from './redux/userSlice';
 
 // RoomInfoInnerDto
 export interface ChatRoomDto {
-  inviteList: string[];
   banList: string[];
   muteList: string[];
   roomName: string;
   ownerName: string;
   status: RoomStatus; // 또는 RoomStatus 타입으로 정의
   requirePassword: boolean;
+
+  // myPermission : number??;
 }
 
 //createRoomDto
@@ -29,6 +29,7 @@ export enum UserPermission {
   OWNER = 0,
   ADMIN = 1,
   MEMBER = 2,
+  NONE = 3,
 }
 
 export interface ChatMessage {
@@ -55,7 +56,7 @@ export interface receiveMessage {
 
 export interface EmitResult {
   result: boolean;
-  reason: string | null;
+  reason: string;
 }
 
 export enum TokenType {
@@ -90,7 +91,7 @@ export enum JoinStatus {
   DM,
 }
 
-export interface MemberList {
+export interface Member {
   userName: string;
   permission: UserPermission;
 }
@@ -100,7 +101,7 @@ export interface SendMessageJson {
   content: string;
 }
 
-export interface EventListeners {
+export interface Events {
   event: string;
   once?: boolean;
   callback: (data: any) => void;

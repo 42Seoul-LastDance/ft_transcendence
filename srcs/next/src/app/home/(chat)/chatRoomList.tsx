@@ -7,7 +7,8 @@ import CreateRoomButton from './createRoomButton';
 import { useChatSocket } from '../../context/chatSocketContext';
 import {
   ChatRoomDto,
-  EventListeners,
+  EmitResult,
+  Events,
   JoinStatus,
   RoomStatus,
 } from '../../interface';
@@ -17,21 +18,11 @@ import { useDispatch } from 'react-redux';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { isValid } from '../valid';
 import { myAlert } from '../alert';
-import {
-  IoEventOnce,
-  clearSocketEvent,
-  registerSocketEvent,
-} from '@/app/context/socket';
+import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
 import { useEffect } from 'react';
 import { setRoomNameList } from '@/app/redux/roomSlice';
 import { Grow } from '@mui/material';
 import { maxPasswordLength } from '@/app/globals';
-
-const style = {
-  width: '100%',
-  maxWidth: 360,
-  bgcolor: 'background.paper',
-};
 
 const ChatRoomList: React.FC = () => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
@@ -43,84 +34,73 @@ const ChatRoomList: React.FC = () => {
   const join = useSelector((state: RootState) => state.user.join);
 
   useEffect(() => {
-    const eventListeners: EventListeners[] = [
+    const e: Events[] = [
       {
         event: 'getChatRoomList',
         callback: (data: string[]) => dispatch(setRoomNameList(data)),
       },
+      {
+        event: 'joinPublicChatRoom',
+        callback: (data: EmitResult) => {
+          if (data.result === true) {
+            dispatch(setJoin(JoinStatus.CHAT));
+            myAlert('success', data.reason, dispatch);
+          } else {
+            dispatch(setChatRoom(null));
+            dispatch(setJoin(JoinStatus.NONE));
+            myAlert('error', data.reason, dispatch);
+          }
+        },
+      },
+      {
+        event: 'getChatRoomInfo',
+        callback: (data: ChatRoomDto) => {
+          dispatch(setChatRoom(data));
+        },
+      },
     ];
-
-    registerSocketEvent(chatSocket!, eventListeners);
+    registerSocketEvent(chatSocket!, e);
     return () => {
-      clearSocketEvent(chatSocket!, eventListeners);
+      clearSocketEvent(chatSocket!, e);
     };
   }, [roomNameList]);
 
-  const joinRoom = async (roomName: string) => {
-    // 방 정보 받아오기
-    const data: ChatRoomDto = await getChatRoomInfo(roomName);
-    if (!data) return;
-    console.log('getChatRoomInfo Data', data);
-
-    // 비밀번호 문자열 검사
-    let password: string | null = null;
-    if (data.requirePassword) {
-      password = prompt('비밀번호를 입력하세요');
-      if (
-        password === null ||
-        !isValid('비밀번호가', password, maxPasswordLength, dispatch) === false
-      )
-        return;
+  // TODO: 내일 로직 바꾸기 ^ 3 🙈
+  useEffect(() => {
+    console.log('챗룸 유즈이펙트', chatRoom);
+    if (chatRoom) {
+      let password: string | null = null;
+      if (chatRoom.requirePassword) {
+        password = prompt('비밀번호를 입력하세요');
+        if (
+          password === null ||
+          isValid('비밀번호가', password, maxPasswordLength, dispatch) === false
+        )
+          return;
+      }
+      chatSocket?.emit('joinPublicChatRoom', {
+        roomName: chatRoom.roomName,
+        password: password,
+      });
     }
+  }, [chatRoom]);
 
-    // 방 들어갈 수 있는지 시도 해봄 (비밀번호 인증)
-    const canJoin = await joinChatRoom(roomName, password);
-    if (canJoin) {
-      dispatch(setChatRoom(data));
-      dispatch(setJoin(JoinStatus.CHAT));
-      myAlert('success', '채팅방에 입장하였습니다.', dispatch);
-    } else {
-      dispatch(setChatRoom(null));
-      dispatch(setJoin(JoinStatus.NONE));
-      myAlert('error', '비밀번호가 틀렸습니다.', dispatch);
-    }
-  };
-
-  const getChatRoomInfo = (roomName: string): Promise<ChatRoomDto> => {
-    return new Promise((resolve) => {
-      chatSocket?.emit('getChatRoomInfo', {
-        roomName,
-        status: RoomStatus.PUBLIC,
-      });
-      IoEventOnce(chatSocket!, 'getChatRoomInfo', (data: ChatRoomDto) => {
-        resolve(data);
-      });
-    });
-  };
-
-  const joinChatRoom = (
-    roomName: string,
-    password: string | null,
-  ): Promise<any> => {
-    return new Promise((resolve) => {
-      chatSocket?.emit('joinPublicChatRoom', { roomName, password });
-      IoEventOnce(chatSocket!, 'joinPublicChatRoom', (data: any) => {
-        resolve(data);
-      });
+  const joinRoom = (roomName: string) => {
+    chatSocket?.emit('getChatRoomInfo', {
+      roomName: roomName,
+      status: RoomStatus.PUBLIC,
     });
   };
 
   return (
     <>
-      <List sx={style} aria-label="mailbox folders">
-        {roomNameList.map((roomName) => {
+      <List aria-label="ChatRoom-List">
+        {roomNameList.map((roomName: string) => {
           return roomName !== chatRoom?.roomName ? (
             <Grow in={true} key={roomName} timeout={1000}>
               <ListItem
                 divider
-                onClick={async () => {
-                  await joinRoom(roomName);
-                }}
+                onClick={() => joinRoom(roomName)}
                 className="list-item"
               >
                 <ListItemText primary={`방 이름: ${roomName}`} />

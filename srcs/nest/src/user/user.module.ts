@@ -10,6 +10,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { GameModule } from 'src/game/game.module';
 import { GameService } from 'src/game/game.service';
+import { SocketUsersModule } from '../socket/socketUsersService/socketUsers.module';
 
 @Module({
     imports: [
@@ -43,6 +44,7 @@ import { GameService } from 'src/game/game.service';
                 },
             }),
         }),
+        // forwardRef(() => SocketUsersModule),
     ],
     controllers: [UserController],
     providers: [UserService, JwtAuthGuard, UserRepository],

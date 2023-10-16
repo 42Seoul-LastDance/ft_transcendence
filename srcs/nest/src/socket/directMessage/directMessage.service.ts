@@ -8,6 +8,8 @@ import { SocketUsersService } from '../socketUsersService/socketUsers.service';
 import { DirectMessageInfoDto } from './dto/directMessageInfo.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserStatus } from 'src/user/user-status.enum';
+import { InviteType } from '../socketUsersService/socketUsers.enum';
+import { Invitation } from '../socketUsersService/socketUsers.interface';
 const TIMEZONE: string = 'Asia/Seoul';
 
 @Injectable()
@@ -30,11 +32,12 @@ export class DirectMessageService {
     async addNewUser(socket: Socket, userId: number) {
         console.log('socket id, userId in addNewUser(DM) : ', socket.id, userId);
         const signedUser: Socket = this.socketUsersService.getDMSocketById(userId);
-        if (signedUser !== undefined) this.socketUsersService.deleteDMSocket(signedUser.id);
-        this.socketUsersService.addDMSocket(socket.id, userId);
+        if (signedUser !== undefined) await this.socketUsersService.deleteDMSocket(signedUser.id);
+        await this.socketUsersService.addDMSocket(socket.id, userId);
         this.socketUsersService.addDMUser(userId, socket);
         this.socketUsersService.setFriendList(userId);
         this.socketUsersService.setBlockList(userId);
+        this.socketUsersService.setInviteList(userId);
     }
 
     deleteUser(socket: Socket) {
@@ -133,5 +136,32 @@ export class DirectMessageService {
         const result: [string, UserStatus][] = await this.socketUsersService.getFriendStateList(userName);
         console.log('🏊GET FRIEND STATE LIST🏊', result);
         socket.emit('getFriendStateList', result);
+    }
+
+    // * invite
+    async getInvitationList(socketId: string) {
+        const invitationList: [string, InviteType][] = [];
+        const guestId: number = this.socketUsersService.getDMsocketList().get(socketId);
+        const invitations: Map<number, Invitation> = this.socketUsersService.getInviteListByUserId(guestId);
+        for (const hostId of invitations.keys()) {
+            const hostName = await this.socketUsersService.getUserNameByUserId(hostId);
+            invitationList.push([hostName, invitations.get(hostId).type]);
+        }
+        return invitationList;
+    }
+
+    async sendInvitation(socketId: string, payload: JSON) {
+        const guestSocket = await this.socketUsersService.addInvitation(socketId, payload);
+        guestSocket.emit('updateInvitation');
+    }
+
+    async agreeInvite(socketId: string, payload: JSON) {
+        await this.socketUsersService.agreeInvite(socketId, payload['hostName']);
+        //TODO 채팅관련 emit('updateInvitation') 필요한 지 확인 필요 (게임은 필요 없습니다)
+    }
+
+    async declineInvite(socketId: string, payload: JSON) {
+        const guestSocket = await this.socketUsersService.declineInvite(socketId, payload['hostName']);
+        guestSocket.emit('updateInvitation');
     }
 }

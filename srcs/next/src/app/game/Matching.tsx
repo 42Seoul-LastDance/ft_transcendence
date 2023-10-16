@@ -4,29 +4,28 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import { setIsMatched, setSide } from '../redux/matchSlice';
+import { GameJoinMode, GameMode, HandShakeJson } from '../Enums';
 import { useGameSocket } from '../context/gameSocketContext';
-import { GameMode, HandShakeJson } from '../Enums';
 import CircularProgress from '@mui/material/CircularProgress';
 import { Button } from '@mui/material';
 
 const Matching = () => {
   const [isMatching, setIsMatching] = useState<boolean>(false);
-  const isCustomGame = useSelector((state: RootState) => state.match.isCustom);
-  const isMatched = useSelector((state: RootState) => state.match.isCustom);
+  const customSet = useSelector((state: RootState) => state.match.customSet);
   const dispatch = useDispatch();
-
   const socket = useGameSocket();
 
-  if (!socket?.hasListeners('handShake')) {
-    socket?.on('handShake', (json: HandShakeJson) => {
-      dispatch(setSide({ side: json.side }));
-      dispatch(setIsMatched({ isMatched: true }));
-    });
-  }
+  useEffect(() => {
+    if (
+      customSet.joinMode === GameJoinMode.CUSTOM_RECV ||
+      customSet.joinMode === GameJoinMode.CUSTOM_SEND
+    )
+      setIsMatching(true);
+  }, []);
 
   return (
     <>
-      {!isMatching && !isCustomGame ? (
+      {!isMatching ? (
         <>
           <Button
             onClick={() => {
@@ -53,6 +52,7 @@ const Matching = () => {
         <>
           <div>
             <h1> Matching... </h1>
+            {/* 연습게임 넣을 예정 */}
             <CircularProgress />
           </div>
           <Button

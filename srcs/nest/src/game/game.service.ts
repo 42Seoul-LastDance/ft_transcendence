@@ -35,9 +35,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { GameRepository } from './game.repository';
 import { DateTime } from 'luxon';
 import { UserService } from 'src/user/user.service';
-// import { UserStatus } from 'src/user/user-status.enum';
 import { SocketUsersService } from '../socket/socketUsersService/socketUsers.service';
-import { UserStatus } from 'src/user/user-status.enum';
 
 @Injectable()
 export class GameService {
@@ -190,6 +188,11 @@ export class GameService {
             console.log('error >> gameService >> agreeInvite');
             throw new InternalServerErrorException('[ERR] gameService >> agreeInvite');
         }
+    }
+
+    quitInvite(playerId: string) {
+        const hostName = this.socketUsersService.getPlayerBySocketId(playerId).userName;
+        if (this.friendGameList.get(hostName)) this.friendGameList.delete(hostName);
     }
 
     denyInvite(playerId: string, friendName: string) {

@@ -4,14 +4,11 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal';
-import { Avatar, Divider } from '@mui/material';
 import { useChatSocket } from '@/app/context/chatSocketContext';
-import { setName } from '@/app/redux/userSlice';
 import { useRouter } from 'next/navigation';
 import sendRequest from '@/app/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/app/redux/store';
-import { AxiosResponse } from 'axios';
 import { UserProfileProps, FriendStatus } from '@/app/interface';
 
 const style = {
@@ -63,7 +60,6 @@ const UserProfile = (props: UserProfileProps) => {
         `/friends/isFriend/${props.targetName}`,
         router,
       );
-      console.log('이거 잘 오나요 ', friendResp.data);
       setFriendStatus(friendResp.data['status']);
       if (
         friendResp.data['status'] === FriendStatus.LAGGING ||
@@ -75,7 +71,6 @@ const UserProfile = (props: UserProfileProps) => {
         `/block/isBlocked/${props.targetName}`,
         router,
       );
-      console.log('이것도 잘 오나요', blockedResp);
       setIsBlocked(blockedResp.data['isBlocked']);
       const friendGameData = await sendRequest(
         'get',

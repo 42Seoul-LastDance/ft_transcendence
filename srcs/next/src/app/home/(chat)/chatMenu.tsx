@@ -1,29 +1,63 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import Box from '@mui/material/Box';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import UserProfile from '../(profile)/userProfile';
-import { MemberList, UserPermission, UserProfileProps } from '@/app/interface';
 import { useChatSocket } from '@/app/context/chatSocketContext';
 import { myAlert } from '../alert';
 import { useRouter } from 'next/navigation';
+import { GameJoinMode, GameMode } from '@/app/Enums';
+import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
+import Link from 'next/link';
+import { Events, UserPermission } from '@/app/interface';
+import { setMyPermission } from '@/app/redux/roomSlice';
+import { setCustomSet } from '@/app/redux/matchSlice';
 
 const ChatMenu = () => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const selectedMember = useSelector(
     (state: RootState) => state.room.selectedMember,
   );
+  const memberList = useSelector(
+    (state: RootState) => state.room.roomMemberList,
+  );
+  const myPermission = useSelector(
+    (state: RootState) => state.room.myPermission,
+  );
   const [isUserProfileOpen, setUserProfileOpen] = useState(false);
   const chatSocket = useChatSocket();
   const dispatch = useDispatch();
   const router = useRouter();
 
+  useEffect(() => {
+    const e: Events[] = [
+      {
+        event: 'getMyPermission',
+        callback: (data: UserPermission) => {
+          dispatch(setMyPermission(data));
+        },
+      },
+    ];
+    registerSocketEvent(chatSocket!, e);
+    chatSocket?.emit('getMyPermission', {
+      roomName: chatRoom?.roomName,
+      roomStatus: chatRoom?.status,
+    });
+    return () => {
+      clearSocketEvent(chatSocket!, e);
+    };
+  }, []);
+
+  // getMyPermission
+  // roomName, roomStatus
+
   // 프로필 버튼 클릭 핸들러
   const handleProfileClick = () => {
     setUserProfileOpen(true);
   };
+
   // 모달 닫기 핸들러
   const handleCloseProfileModal = () => {
     setUserProfileOpen(false);
@@ -38,13 +72,18 @@ const ChatMenu = () => {
       );
       setTimeout(() => {
         router.push('/');
-      }, 1000);
+      }, 3000);
     }
   };
 
-  const handleGameClick = () => {
-    console.log('game');
-    console.log('selectMember.userName', selectedMember?.userName);
+  const handleGameClick = (mode: GameMode) => {
+    dispatch(
+      setCustomSet({
+        joinMode: GameJoinMode.CUSTOM_SEND,
+        gameMode: mode,
+        opponentName: selectedMember?.userName,
+      }),
+    );
   };
 
   const handleKickClick = () => {
@@ -93,21 +132,47 @@ const ChatMenu = () => {
         <Button key="profile" onClick={handleProfileClick}>
           Profile
         </Button>
-        <Button key="game" onClick={handleGameClick}>
-          Game
-        </Button>
-        <Button key="kick" onClick={handleKickClick}>
-          Kick
-        </Button>
-        <Button key="ban" onClick={handleBanClick}>
-          Ban
-        </Button>
-        <Button key="mute" onClick={handleMuteClick}>
-          Mute
-        </Button>
-        <Button key="makeOperator" onClick={handleMakeOperatorClick}>
-          Make Operator
-        </Button>
+
+        <Link href={'/game'}>
+          <Button
+            key="gameNormal"
+            onClick={() => {
+              handleGameClick(GameMode.NORMAL);
+            }}
+          >
+            Invite Game Normal
+          </Button>
+        </Link>
+        <Link href={'/game'}>
+          <Button
+            key="gameHard"
+            onClick={() => {
+              handleGameClick(GameMode.HARD);
+            }}
+          >
+            Invite Game Hard
+          </Button>
+        </Link>
+
+        {myPermission <= UserPermission.ADMIN &&
+        myPermission < selectedMember!.permission ? (
+          <>
+            <Button key="kick" onClick={handleKickClick}>
+              Kick
+            </Button>
+            <Button key="ban" onClick={handleBanClick}>
+              Ban
+            </Button>
+            <Button key="mute" onClick={handleMuteClick}>
+              Mute
+            </Button>
+          </>
+        ) : null}
+        {myPermission === UserPermission.OWNER ? (
+          <Button key="makeOperator" onClick={handleMakeOperatorClick}>
+            Make Operator
+          </Button>
+        ) : null}
       </ButtonGroup>
       {isUserProfileOpen && (
         <UserProfile targetName={selectedMember!.userName} />

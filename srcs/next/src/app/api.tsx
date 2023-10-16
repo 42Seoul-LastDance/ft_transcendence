@@ -57,7 +57,9 @@ const sendRequest = async (
           console.log('토큰 재발급 성공! Response : ', response);
           return response;
         } catch (error) {
-          console.log('두 번째 요청 실패! <-- 말이 안 됨 ㄹㅇ');
+          console.log(
+            '두 번째 요청 실패! (토큰 재발급) <-- 말이 안 됨 ㄹㅇ 과제 리트 ㄱ',
+          );
           router.push('/');
         }
     }

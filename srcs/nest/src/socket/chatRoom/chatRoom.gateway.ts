@@ -10,6 +10,7 @@ import { ChatRoomService } from './chatRoom.service';
 import { CreateRoomDto } from './dto/createRoom.dto';
 import { JwtService } from '@nestjs/jwt';
 import { RoomStatus } from './roomStatus.enum';
+import { UserPermission } from './userPermission.enum';
 
 @WebSocketGateway({
     port: 3000,
@@ -47,19 +48,16 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
             await this.chatroomService.addNewUser(socket, decodedToken.sub, this.server);
         } catch (error) {
             console.log('error : ', error.message);
-            if (
-                // => null 들어가면 (토큰 형식 안맞)
-                // error.message === 'jwt malformed' ||
-                // => undefined 비어 있으면 (토큰 안들어옴)
-                // error.message === 'jwt must be provided' ||
-                error.message === 'jwt expired'
-            ) {
+            // => null 들어가면 (토큰 형식 안맞)
+            // error.message === 'jwt malformed' ||
+            // => undefined 비어 있으면 (토큰 안들어옴)
+            // error.message === 'jwt must be provided' ||
+            if (error.message === 'jwt expired') {
                 // `${BACK_URL}/auth/regenerateToken`
                 // * 토큰 만료 => 근데 왜 404 날라와요?.. ?
                 console.log('expireToken emit called');
                 socket.emit('expireToken');
-            }
-            socket.disconnect(true);
+            } else socket.disconnect(true);
             // console.log(error);
             return;
         }
@@ -70,10 +68,12 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         socket.on('disconnecting', async (reason) => {
             console.log('DISCONNECTING event : ', socket.rooms);
             const rooms: Set<string> = socket.rooms;
-            console.log('saved rooms:', rooms);
+            // console.log('saved rooms:', rooms);
             await this.chatroomService.leavePastRoom(socket, rooms, this.server);
             await this.chatroomService.deleteUser(socket);
-            console.log('DISCONNECTING event :: After LeavePastRoom :  ', socket.rooms);
+            const roomList = this.chatroomService.getChatRoomList();
+            this.server.emit('getChatRoomList', roomList);
+            // console.log('DISCONNECTING event :: After LeavePastRoom :  ', socket.rooms);
         });
         //test
         // socket.emit('expireToken');
@@ -98,12 +98,14 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('getMyName')
     async getMyName(socket: Socket) {
+        console.log('**GET MY NAME**');
         const userName = await this.chatroomService.getUserNameBySocket(socket);
         socket.emit('getMyName', userName);
     }
 
     @SubscribeMessage('expireToken')
     expireToken(socket: Socket, payload: string) {
+        console.log('**EXPIRE TOKEN**');
         // console.log('expireToken : ', payload);
         // 프론트 소켓은 별개라 업데이트 안됨 -jaejkim
         // socket.handshake.auth.token = payload;
@@ -112,6 +114,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('getChatRoomList')
     getChatRoomList(socket: Socket) {
+        console.log('**GET CHAT ROOM LIST**');
         // ”roomname”: string,
         // ”isLocked” : boolean,
         // ”status” : roomStatus,
@@ -124,6 +127,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('getChatRoomInfo')
     async getChatRoomInfo(socket: Socket, payload: JSON) {
+        console.log('**GET CHAT ROOM INFO**');
         //roomName: string
         //ownerName: string
         //roomstatus: RoomStatus
@@ -138,6 +142,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('getMemberStateList')
     async getMemberStateList(socket: Socket, payload: JSON) {
+        console.log('**GET MEMBER STATE LIST**');
         //roomName: string
         //status: RoomStatus
         const memberList = await this.chatroomService.getMemberStateList(
@@ -153,6 +158,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // * Message ===========================================================
     @SubscribeMessage('sendMessage')
     sendMessage(socket: Socket, payload: JSON): void {
+        console.log('**SEND MESSAGE**');
         console.log('SEND MESSAGE payload', payload, 'socket id:', socket.id);
 
         this.chatroomService.sendMessage(
@@ -174,7 +180,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     @SubscribeMessage('createChatRoom')
     async createChatRoom(socket: Socket, payload: JSON) {
         // console.log('createChatRoom payload : ', payload);
-        console.log('CREATE CHAT ROOM ');
+        console.log('**CREATE CHAT ROOM**');
         await this.chatroomService.createChatRoom(socket, Object.assign(new CreateRoomDto(), payload), this.server);
         // * 프론트 요청 : create 후 새로 갱신된 리스트 전송
         const chatRoomList = this.chatroomService.getChatRoomList();
@@ -211,7 +217,19 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // roomName: string
     @SubscribeMessage('exitChatRoom')
     exitChatRoom(socket: Socket) {
+        console.log('**EXIT CHAT ROOM**');
         this.chatroomService.leavePastRoom(socket, socket.rooms, this.server);
+    }
+
+    // getMyPermission
+    @SubscribeMessage('getMyPermission')
+    async getMyPermission(socket: Socket, payload: JSON) {
+        const userPermission: UserPermission = await this.chatroomService.getUserPermission(
+            socket,
+            payload['roomStatus'],
+            payload['roomName'],
+        );
+        socket.emit('getMyPermission', userPermission);
     }
 
     // * 채팅방 패스워드 관련 =================================================
@@ -295,11 +313,5 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
             userId: this.chatroomService.getUserId(socket),
             targetId: payload['targetName'],
         });
-    }
-
-    @SubscribeMessage('inviteUser')
-    async inviteUser(socket: Socket, payload: JSON) {
-        console.log('INVITE USER');
-        await this.chatroomService.inviteUser(socket, payload['roomName'], payload['userName']);
     }
 }

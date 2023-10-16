@@ -5,6 +5,8 @@ import { BlockedUsersService } from 'src/user/blockedUsers/blockedUsers.service'
 import { Player } from 'src/game/game.interface';
 import { FriendService } from 'src/user/friend/friend.service';
 import { UserStatus } from 'src/user/user-status.enum';
+import { Invitation } from './socketUsers.interface';
+import { InviteType } from './socketUsers.enum';
 
 @Injectable()
 export class SocketUsersService {
@@ -24,6 +26,7 @@ export class SocketUsersService {
     private gamePlayerList: Map<string, Player> = new Map<string, Player>(); //{socket.id, Player}
     private gameUserList: Map<number, string> = new Map<number, string>(); //{userId, socket.id}
 
+    private inviteList: Map<number, Map<number, Invitation>> = new Map<number, Map<number, Invitation>>(); //userId, {inviterId, Invitation}
     private blockList: Map<number, Array<number>> = new Map<number, Array<number>>(); //{user id , blockUserList} // ! -> DB에서 한번 가져 들고왔다가 지속 업데이트
     //TODO 친구 추가, 삭제 시 하기 리스트 업데이트되는지 확인 필요 (업데이트 안할거면 DB에서 매번 찾아서 하는 방법도 있어요)
     private friendList: Map<number, Array<number>> = new Map<number, Array<number>>(); //{user id , friendUserList}
@@ -62,6 +65,81 @@ export class SocketUsersService {
         this.blockList.delete(userId);
     }
 
+    //* Invitation--
+    setInviteList(userId: number) {
+        const invitations = new Map<number, Invitation>();
+        //없을 때만 만듦
+        if (this.inviteList.get(userId) === undefined) this.inviteList.set(userId, invitations);
+    }
+
+    //로그아웃 시 삭제로직
+    async clearServerData(userId: number) {
+        //보낸 초대 리스트 삭제
+        for (const guest of this.inviteList.keys()) {
+            if (this.inviteList.get(guest).get(userId)) {
+                this.inviteList.get(guest).delete(userId);
+                const guestSocket: Socket = this.dmUserList.get(guest);
+                guestSocket.emit('updateInvitation');
+            }
+        }
+        //받은 초대 리스트 삭제
+        this.inviteList.delete(userId);
+        //offline status 친구들에게 emit 처리
+        try {
+            await this.updateFriendListAndEmit(userId);
+        } catch (error) {
+            console.log('[ERRRRRR] clearServerData');
+        }
+    }
+
+    async addInvitation(socketId: string, payload: JSON): Promise<Socket> {
+        const hostId: number = this.dmSocketList.get(socketId);
+        const guestId: number = (await this.userService.getUserByUserName(payload['guestName'])).id;
+
+        const invitation: Invitation = {
+            type: payload['type'],
+            chatRoomName: payload['chatRoomName'] ? payload['chatRoomName'] : undefined,
+            chatRoomType: payload['chatRoomType'] ? payload['chatRoomType'] : undefined,
+        };
+        this.inviteList.get(guestId).set(hostId, invitation);
+        return this.dmUserList.get(guestId);
+    }
+
+    isInvited(socketId: string, roomName: string): Boolean {
+        //user가 해당 roomName privateRoom에 초대받았는지 반환
+        const userId = this.getUserIdByChatSocketId(socketId);
+        const invitations: Map<number, Invitation> = this.inviteList.get(userId);
+
+        for (const hostId of invitations.keys()) {
+            if (invitations.get(hostId).chatRoomName === roomName) return true;
+        }
+        return false;
+    }
+
+    async agreeInvite(socketId: string, hostName: string) {
+        const hostId: number = (await this.userService.getUserByUserName(hostName)).id;
+        const guestId: number = this.dmSocketList.get(socketId);
+        const invitation: Invitation = this.inviteList.get(guestId).get(hostId);
+        if (invitation === undefined) return;
+        //invitation 삭제
+        this.inviteList.get(guestId).delete(hostId);
+    }
+
+    async declineInvite(socketId: string, hostName: string): Promise<Socket> {
+        const hostId: number = (await this.userService.getUserByUserName(hostName)).id;
+        const guestId: number = this.dmSocketList.get(socketId);
+        const invitation: Invitation = this.inviteList.get(guestId).get(hostId);
+        if (invitation === undefined) return;
+        if (invitation.type === InviteType.GAME) {
+            //Game의 경우 game socket으로 초대 거절 이벤트 전달
+            const hostSocketId: string = this.gameUserList.get(hostId);
+            const hostSocket: Socket = this.gamePlayerList.get(hostSocketId).socket;
+            hostSocket.emit('denyInvite');
+        }
+        this.inviteList.get(guestId).delete(hostId);
+        return this.dmUserList.get(guestId);
+    }
+
     //* Game--
     getPlayerBySocketId(socketId: string): Player {
         const player: Player = this.gamePlayerList.get(socketId);
@@ -79,7 +157,7 @@ export class SocketUsersService {
     async addGameUserList(userId: number, socketId: string) {
         try {
             this.gameUserList.set(userId, socketId);
-            await this.updateFriendList(userId);
+            await this.updateFriendListAndEmit(userId);
         } catch (error) {
             console.log('[ERRRRRR] addGameUserList');
         }
@@ -88,7 +166,7 @@ export class SocketUsersService {
     async deleteGameUserList(userId: number, socketId: string) {
         try {
             if (socketId === this.gameUserList.get(userId)) this.gameUserList.delete(userId);
-            await this.updateFriendList(userId);
+            await this.updateFriendListAndEmit(userId);
         } catch (error) {
             console.log('[ERRRRRR] deleteGameUserList');
         }
@@ -111,8 +189,9 @@ export class SocketUsersService {
     deleteDMUserAll(socket: Socket): void {
         const userId = this.getUserIdByDMSocketId(socket.id);
         this.dmUserList.delete(userId);
-        this.dmSocketList.delete(socket.id);
+        this.deleteDMSocket(socket.id);
         this.blockList.delete(userId);
+        this.friendList.delete(userId);
     }
 
     getUserIdByDMSocketId(socketId: string): number | undefined {
@@ -120,12 +199,23 @@ export class SocketUsersService {
         return userId;
     }
 
-    addDMSocket(socketId: string, userId: number): void {
-        this.dmSocketList.set(socketId, userId);
+    async addDMSocket(socketId: string, userId: number): Promise<void> {
+        try {
+            this.dmSocketList.set(socketId, userId);
+            await this.updateFriendListAndEmit(userId);
+        } catch (error) {
+            console.log('[ERRRRRR] addDMSocket');
+        }
     }
 
-    deleteDMSocket(socketId: string): boolean {
-        return this.dmSocketList.delete(socketId);
+    async deleteDMSocket(socketId: string): Promise<boolean> {
+        try {
+            const userId: number = this.dmSocketList.get(socketId);
+            await this.updateFriendListAndEmit(userId);
+            return this.dmSocketList.delete(socketId);
+        } catch (error) {
+            console.log('[ERRRRRR] deleteDMSocket');
+        }
     }
 
     //* getter
@@ -169,6 +259,10 @@ export class SocketUsersService {
         return this.gameUserList;
     }
 
+    getInviteListByUserId(userId: number): Map<number, Invitation> {
+        return this.inviteList.get(userId);
+    }
+
     // * Blocking --
 
     async setBlockList(userId: number): Promise<void> {
@@ -202,16 +296,15 @@ export class SocketUsersService {
     }
 
     // * friend --
-    async updateFriendList(userId: number) {
+    async updateFriendListAndEmit(userId: number) {
         try {
             const foundFriendList: Array<number> = await this.friendService.getFriendList(userId);
             for (const friend of foundFriendList) {
                 const socket: Socket = this.dmUserList.get(friend);
                 if (socket) socket.emit('updateFriendList');
-                else console.log('여기여');
             }
         } catch (error) {
-            console.log('[ERRRRR] updateFriendList');
+            console.log('[ERRRRR] updateFriendListAndEmit');
         }
     }
 

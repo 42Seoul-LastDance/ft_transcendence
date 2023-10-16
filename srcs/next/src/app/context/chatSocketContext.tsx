@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { io, Socket } from 'socket.io-client';
+import { useDispatch } from 'react-redux';
+import { Socket } from 'socket.io-client';
 import { setRoomNameList } from '../redux/roomSlice';
-import { EventListeners, RoomStatus } from '../interface';
+import { Events, RoomStatus } from '../interface';
 import {
   clearSocketEvent,
   createSocket,
@@ -27,6 +27,7 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch();
   const router = useRouter();
   const [chatSocket, setChatSocket] = useState<Socket | undefined>(undefined);
+  // let chatSocket: Socket;
 
   // 소켓 수명 관리
   useEffect(() => {
@@ -37,24 +38,20 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
     const socket = createSocket('RoomChat', cookie);
+    socket.connect();
     setChatSocket(socket);
-
     return () => {
-      socket.disconnect();
+      chatSocket?.disconnect();
     };
   }, []);
 
-  //이벤트 관리
   useEffect(() => {
-    if (chatSocket?.connected === false) {
-      chatSocket.connect();
-      console.log('[Connect] chatSocket info', chatSocket);
-    }
-
-    const eventListeners: EventListeners[] = [
+    //이벤트 관리
+    const e: Events[] = [
       {
         event: 'expireToken',
         callback: async () => {
+          console.log('expireToken event Detected');
           await handleTryAuth(chatSocket!, router);
         },
       },
@@ -69,18 +66,18 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
       {
         event: 'connectSuccess',
         callback: () => {
+          console.log('[Connect] chatSocket info', chatSocket);
           chatSocket?.emit('getMyName');
           chatSocket?.emit('getChatRoomList', {
             roomStatus: RoomStatus.PUBLIC,
           });
-          setChatSocket(chatSocket);
         },
       },
     ];
 
-    registerSocketEvent(chatSocket!, eventListeners);
+    registerSocketEvent(chatSocket!, e);
     return () => {
-      clearSocketEvent(chatSocket!, eventListeners);
+      clearSocketEvent(chatSocket!, e);
     };
   }, [chatSocket]);
 

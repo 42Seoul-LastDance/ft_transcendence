@@ -54,7 +54,7 @@ const ChattingPage = (props: ChattingPageProps) => {
     if (listRef.current)
       listRef.current.scrollTop = listRef.current.scrollHeight;
 
-    const eventListeners = [
+    const e = [
       {
         event: 'sendMessage',
         callback: (data: SendMessageJson) => {
@@ -67,10 +67,7 @@ const ChattingPage = (props: ChattingPageProps) => {
             join === JoinStatus.DM &&
             (data.userName === friendName || data.userName === myName)
           ) {
-            console.log('dm state sendMessage');
-            setChatMessages((prevChatMessages) =>
-              prevChatMessages.concat(data),
-            );
+            setChatMessages((prevMessages) => prevMessages.concat(data));
           } else {
             console.log('과제 retry');
           }
@@ -80,7 +77,7 @@ const ChattingPage = (props: ChattingPageProps) => {
         event: 'receiveMessage',
         callback: (data: receiveMessage) => {
           if (data.canReceive === false) return;
-          setChatMessages((prevChatMessages) => prevChatMessages.concat(data));
+          setChatMessages((prevMessages) => prevMessages.concat(data));
         },
       },
       {
@@ -88,17 +85,22 @@ const ChattingPage = (props: ChattingPageProps) => {
         callback: handleExitRoom,
       },
     ];
-    registerSocketEvent(props.socket!, eventListeners);
+    registerSocketEvent(props.socket!, e);
     return () => {
-      clearSocketEvent(props.socket!, eventListeners);
+      clearSocketEvent(props.socket!, e);
     };
   }, [join, chatMessages]);
+  //
+
+  useEffect(() => {
+    setChatMessages([]);
+    if (join === JoinStatus.DM) prevDmMessages();
+  }, [target]);
 
   // 기존 DM메시지 가져오기
   const prevDmMessages = async () => {
     const response = await sendRequest('get', `/DM/with/${friendName}`, router); // ChatMessages[] 로 올 예정
     setChatMessages(response.data);
-    console.log('여긴데', response.data);
   };
 
   // 메세지 보내기
@@ -139,12 +141,6 @@ const ChattingPage = (props: ChattingPageProps) => {
     myAlert('success', '나가졌어요 펑 ~', dispatch);
     props.socket?.emit('getRoomNameList');
   };
-
-  useEffect(() => {
-    props.socket?.emit('exitChatRoom');
-    setChatMessages([]);
-    if (join === JoinStatus.DM) prevDmMessages();
-  }, [target]);
 
   return (
     <Container

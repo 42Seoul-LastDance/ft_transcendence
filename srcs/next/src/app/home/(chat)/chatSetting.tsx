@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import CommonListItem from './CommonListItem';
 import ChatMenu from './chatMenu';
-import { ChatRoomDto, MemberList } from '@/app/interface';
+import { ChatRoomDto, Member } from '@/app/interface';
 import { useChatSocket } from '@/app/context/chatSocketContext';
 import { IoEventListener } from '@/app/context/socket';
 import { setRoomMemberList, setSelectedMember } from '@/app/redux/roomSlice';
@@ -19,46 +19,55 @@ const ChatSetting: React.FC = () => {
   const memberList = useSelector(
     (state: RootState) => state.room.roomMemberList,
   );
+  const selectedMember = useSelector(
+    (state: RootState) => state.room.selectedMember,
+  );
 
   useEffect(() => {
     console.log('--------- chatSetting component ---------');
 
-    const eventListeners = [
+    const e = [
       {
         event: 'getMemberStateList',
-        callback: (data: MemberList[]) => dispatch(setRoomMemberList(data)),
+        callback: (data: Member[]) => dispatch(setRoomMemberList(data)),
       },
     ];
 
     // 소켓 이벤트 등록
-    eventListeners.forEach(({ event, callback }) => {
+    e.forEach(({ event, callback }) => {
       IoEventListener(chatSocket!, event, callback);
     });
     return () => {
       // 이벤트 삭제
-      eventListeners.forEach(({ event, callback }) => {
+      e.forEach(({ event, callback }) => {
         chatSocket?.off(event, callback);
       });
     };
   }, [memberList]);
 
-  const handleClick = (event: MouseEvent<HTMLDivElement>) => {
+  const handleClick = (event: MouseEvent<HTMLDivElement>, member: Member) => {
+    dispatch(setSelectedMember(member));
     setAnchorEl(event.currentTarget);
   };
 
   const handleClose = () => {
     setAnchorEl(null);
   };
+  useEffect(() => {
+    console.log('셀멤 ', selectedMember);
+  }, [selectedMember]);
 
   return (
     <>
       <List sx={{ width: 300, bgcolor: 'background.paper' }}>
         <p>채팅방 유저 리스트</p>
-        {memberList.map((member: MemberList, index: number) => (
+        {memberList.map((member: Member, index: number) => (
           <CommonListItem
             key={index}
             text={member.userName}
-            onClick={(event) => handleClick(event)}
+            onClick={(event: React.MouseEvent<HTMLDivElement>) =>
+              handleClick(event, member)
+            }
           />
         ))}
         <Menu

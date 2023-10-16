@@ -17,15 +17,6 @@ export default function Home() {
       <Link href={`${BACK_URL}/auth/42login`}>
         <Button variant="contained">42login</Button>
       </Link>
-      {/* <Button
-        variant="contained"
-        onClick={() => {
-          router.push('/test');
-        }}
-      >
-        5억년버튼
-      </Button>
-      <Divider /> */}
     </main>
   );
 }

@@ -25,7 +25,7 @@ const Game = () => {
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [isReady, setIsReady] = useState<boolean>(true);
   const dispatch = useDispatch();
-  const isCustomGame = useSelector((state: RootState) => state.match.isCustom);
+  // const isCustomGame = useSelector((state: RootState) => state.match.isCustom);
   const socket = useGameSocket();
   var mySide: PlayerSide = PlayerSide.NONE;
 
@@ -72,7 +72,7 @@ const Game = () => {
         console.log('! gameOver Event Detected : ', json);
         sendMessage('GameManager', 'GameOver', JSON.stringify(json));
         setGameOver(true);
-        if (isCustomGame) setIsReady(false);
+        // if (isCustomGame) setIsReady(false);
         // else
         // 	dispatch(setIsMatched({ isMatched: false }));
       });

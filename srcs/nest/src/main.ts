@@ -1,10 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as express from 'express';
-// import { SocketIoAdapter } from './adapters/socket-io.adapters';
 
 async function bootstrap() {
+    // Set the defaultMaxListeners before creating the NestJS app instance
+
     const app = await NestFactory.create(AppModule, { cors: true });
+    require('events').EventEmitter.defaultMaxListeners = 0;
 
     app.enableCors({
         origin: true,
@@ -13,11 +15,9 @@ async function bootstrap() {
         allowedHeaders: 'Authorization, X-Requested-With, X-HTTP-Method-Override, Content-Type',
     });
 
-    // app.useWebSocketAdapter(new SocketIoAdapter(app));
-
-    //정적파일 미들웨어 추가
-    // app.use(express.static('public'));
+    // Other app configuration and startup code...
 
     await app.listen(3000);
 }
+
 bootstrap();

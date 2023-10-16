@@ -5,6 +5,7 @@ import userSlice from './userSlice';
 import roomSlice from './roomSlice';
 import alertSlice from './alertSlice';
 import dmSlice from './dmSlice';
+import friendSlice from './friendSlice';
 
 const store = configureStore({
   reducer: {
@@ -13,12 +14,9 @@ const store = configureStore({
     match: matchSlice.reducer,
     alert: alertSlice.reducer,
     dm: dmSlice.reducer,
+    friend: friendSlice.reducer,
   },
 });
 
 export default store;
 export type RootState = ReturnType<typeof store.getState>;
-export const useAppDispatch: () => typeof store.dispatch = useDispatch;
-export const useAppSelector: TypedUseSelectorHook<
-  ReturnType<typeof store.getState>
-> = useSelector;

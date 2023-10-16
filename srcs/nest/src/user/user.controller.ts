@@ -78,37 +78,39 @@ export class UserController {
 
     //TODO user info update 하나로 합치기
     //* user info update ===============================================================
-    @Patch('/update/:id')
+    @Patch('/update/')
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(FileInterceptor('profileImage'))
     async updateUserInfo(
         @Req() req,
         @Res() res: Response,
-        @Param('id', ParseIntPipe) id: number,
-        @Body('profileImage') @UploadedFile() profileImage: Express.Multer.File,
-        @Body('userName') userName: string,
-    ) {}
-
-    @Patch('/update/:userName')
-    @UseGuards(JwtAuthGuard)
-    async updateUserName(@Req() req, @Param('userName') userName: string) {
-        const user = await this.userService.getUserByUserName(userName);
-        if (user) throw new BadRequestException('already used ');
-        await this.userService.updateUserNameBySlackId(req.user.slackId, userName);
+        @Body('profileImage') @UploadedFile() profileImage: Express.Multer.File | undefined,
+        @Body('userName') userName: string | undefined,
+        @Body('require2fa') require2fa: boolean | undefined,
+    ) {
+        await this.userService.updateUserInfo(req.user.sub, userName, require2fa, profileImage);
     }
 
-    @Patch('/update/tfa')
-    @UseGuards(JwtAuthGuard)
-    async updateUser2fa(@Req() req, @Body('2fa') is2fa: boolean) {
-        await this.userService.update2faConfBySlackId(req.user.slackId, is2fa);
-    }
+    // @Patch('/update/:userName')
+    // @UseGuards(JwtAuthGuard)
+    // async updateUserName(@Req() req, @Param('userName') userName: string) {
+    //     const user = await this.userService.getUserByUserName(userName);
+    //     if (user) throw new BadRequestException('already used ');
+    //     await this.userService.updateUserNameBySlackId(req.user.slackId, userName);
+    // }
 
-    @Patch('/update/profileImage')
-    @UseGuards(JwtAuthGuard)
-    @UseInterceptors(FileInterceptor('image_url'))
-    async updateProfileImage(@Req() req, @UploadedFile() file: Express.Multer.File) {
-        await this.userService.updateProfileImageBySlackId(req.user.slackId, file.filename);
-    }
+    // @Patch('/update/tfa')
+    // @UseGuards(JwtAuthGuard)
+    // async updateUser2fa(@Req() req, @Body('2fa') is2fa: boolean) {
+    //     await this.userService.update2faConfBySlackId(req.user.slackId, is2fa);
+    // }
+
+    // @Patch('/update/profileImage')
+    // @UseGuards(JwtAuthGuard)
+    // @UseInterceptors(FileInterceptor('image_url'))
+    // async updateProfileImage(@Req() req, @UploadedFile() file: Express.Multer.File) {
+    //     await this.userService.updateProfileImageBySlackId(req.user.slackId, file.filename);
+    // }
     //* EOF user info update ===============================================================
 
     @Get('/profile/:username')
