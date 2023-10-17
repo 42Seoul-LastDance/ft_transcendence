@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class MailService {
+    private logger = new Logger(MailService.name);
     constructor(private userService: UserService) {}
 
     // async verifyFactorAuthentication(): Promise<bool> {

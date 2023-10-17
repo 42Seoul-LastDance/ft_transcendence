@@ -4,6 +4,7 @@ import {
     Inject,
     Injectable,
     InternalServerErrorException,
+    Logger,
     NotFoundException,
     UnauthorizedException,
     forwardRef,
@@ -23,6 +24,7 @@ import { POINT, LEVELUP } from 'src/game/game.constants';
 
 @Injectable()
 export class UserService {
+    private logger = new Logger(UserService.name);
     constructor(
         @InjectRepository(User)
         private readonly userRepository: UserRepository,
@@ -53,7 +55,7 @@ export class UserService {
             where: { id: id },
         });
         if (!user) {
-            console.log('findUserById error - not found');
+            this.logger.warn('findUserById error - not found');
             throw new NotFoundException(`user with id ${id} not found`);
         }
         return user;
@@ -84,7 +86,7 @@ export class UserService {
                 level: 0,
             } as User);
             const user = await this.userRepository.save(newUser);
-            console.log('register user in UserService:', newUser);
+            this.logger.log('register user in UserService:', newUser);
             return user;
         } catch (error) {
             if (error.code == '23505') throw new ConflictException('Existing userName');
@@ -106,10 +108,10 @@ export class UserService {
             await this.userRepository.update(userId, user);
             if (userName) {
                 //TODO 유저네임 업데이트되었으면 친구들에게 emit 처리 필요-> 친구 목록, 친구 요청, blockUser
-                //근데... socketUsersService여기서 사용할 수 있나..?
+                //-> 프론트에서 updateUserName 이벤트 받을 예정
             }
         } catch (error) {
-            console.log('[ERRRRRR] userService: updateUserInfo');
+            this.logger.error('[ERRRRRR] userService: updateUserInfo');
         }
     }
 
@@ -229,6 +231,19 @@ export class UserService {
         else return false;
     }
 
+    async getUserSetInfo(userId: number) {
+        const user: User = await this.findUserById(userId);
+
+        if (user) {
+            const userSetting = {
+                userName: user.userName,
+                require2fa: user.require2fa,
+            };
+            return userSetting;
+        }
+        return {};
+    }
+
     async getUserProfile(username: string): Promise<UserProfileDto> {
         const user = await this.getUserByUserName(username);
         const userProfileDto: UserProfileDto = {
@@ -242,7 +257,7 @@ export class UserService {
 
     async getUserProfileImage(username: string): Promise<{ image: Buffer; mimeType: string }> {
         const user = await this.getUserByUserName(username);
-        const profileImgTarget = user.profileurl || 'default.png';
+        const profileImgTarget = user.profileurl ? user.profileurl : 'default.png';
         const imagePath = __dirname + '/../../profile/' + profileImgTarget;
         const image = readFileSync(imagePath); // 이미지 파일을 읽어옴
         if (!image) throw new InternalServerErrorException(`could not read ${imagePath}`);

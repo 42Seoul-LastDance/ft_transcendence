@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { BlockedUsersRepository } from './blockedUsers.repository';
 import { BlockedUsers } from './blockedUsers.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from '../user.service';
 @Injectable()
 export class BlockedUsersService {
+    private logger = new Logger(BlockedUsersService.name);
     constructor(
         @InjectRepository(BlockedUsers)
         private blockedUsersRepository: BlockedUsersRepository,
@@ -18,10 +19,10 @@ export class BlockedUsersService {
             targetUserId: targetId,
         });
         await this.blockedUsersRepository.save(blockInfo);
-        console.log(
-            'BLOCK USER Saved.',
-            (await this.userSerivce.findUserById(userId)).userName,
-            (await this.userSerivce.findUserById(targetId)).userName,
+        this.logger.log(
+            `Saved : ${(await this.userSerivce.findUserById(userId)).userName} blocked ${
+                (await this.userSerivce.findUserById(targetId)).userName
+            }`,
         );
     }
 
@@ -30,11 +31,11 @@ export class BlockedUsersService {
     }
 
     async isBlocked(userId: number, targetId: number): Promise<boolean> {
+        if (userId === targetId) return false;
         const check = await this.blockedUsersRepository.find({
             where: { requestUserId: userId, targetUserId: targetId },
         });
-        console.log(`@@@@@ Checking User ${userId} blocks User ${targetId} : ${check}`);
-        console.log('check :::', check);
+        this.logger.debug(`Checking User ${userId} blocks User ${targetId}`);
         if (check === undefined || check === null || check.length === 0) return false;
         return true;
     }
@@ -59,14 +60,12 @@ export class BlockedUsersService {
         const foundBlockUsers: BlockedUsers[] = await this.blockedUsersRepository.find({
             where: { requestUserId: id },
         });
-        console.log('found Blocked user:', blockListId);
-        // if (!foundBlockUsers) return [];
         for (const blockUser of blockListId) {
             console.log('found Blocked user:', blockListId);
             const blockUserName = (await this.userSerivce.findUserById(blockUser)).userName;
             blockList.push(blockUserName);
         }
-        console.log('block list in GET BLOCK USER NAME LISt', blockList);
+        this.logger.debug('GET BLOCK USER NAME LIST : ', blockList);
         return blockList;
     }
 }

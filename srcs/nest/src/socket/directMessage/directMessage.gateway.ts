@@ -10,6 +10,7 @@ import { DirectMessageService } from './directMessage.service';
 import { DateTime } from 'luxon';
 import { JwtService } from '@nestjs/jwt';
 import { UserStatus } from 'src/user/user-status.enum';
+import { Logger } from '@nestjs/common';
 export const TIMEZONE: string = 'Asia/Seoul';
 
 @WebSocketGateway({
@@ -22,6 +23,7 @@ export const TIMEZONE: string = 'Asia/Seoul';
     namespace: 'DM',
 })
 export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisconnect {
+    private logger = new Logger(DirectMessageGateway.name);
     constructor(
         private directMessageService: DirectMessageService,
         private jwtService: JwtService,
@@ -42,22 +44,22 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
                 secret: process.env.JWT_SECRET_KEY,
             });
             await this.directMessageService.addNewUser(socket, decodedToken.sub);
+            this.logger.log(`NEW CONNECTION WITH ${decodedToken.userName}, ${socket.id}`);
         } catch (error) {
+            this.logger.warn(`Handle Connection : ${error.message}`);
             if (error.message === 'jwt expired') {
-                console.log('DM : expireToken emit called');
+                this.logger.log('expireToken emit called');
                 socket.emit('expireToken');
             }
             socket.disconnect(true);
-            // console.log(error);
             return;
         }
-        console.log(socket.id, ': new connection. (DM)');
         socket.emit('connectSuccess');
     }
 
     handleDisconnect(socket: Socket) {
         this.directMessageService.deleteUser(socket);
-        console.log(socket.id, ': lost connection. (DM)');
+        this.logger.log(`DM socket >>> LOST CONNECTION WITH ${socket.id}`);
     }
 
     // * Sender =============================================================
@@ -72,59 +74,81 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
     async receiveMessage(socket: Socket, payload: JSON) {
         //userName: string,
         //content: string,
-        console.log('DM : RECEIVE MESSAGE <---- 이거 왜 보냄??');
+        this.logger.log('DM : RECEIVE MESSAGE <---- 이거 왜 보냄??');
     }
 
     @SubscribeMessage('expireToken')
     expireToken(socket: Socket, payload: string) {
-        console.log('expireToken called - DM');
+        this.logger.log('expireToken called - DM');
+    }
+
+    @SubscribeMessage('getMyName')
+    async getMyName(socket: Socket) {
+        const userName = await this.directMessageService.getuserNameBySocketId(socket.id);
+        this.logger.log(`getMyName : ${userName}`);
+        socket.emit('getMyName', userName);
     }
 
     //* updateBlockUser
     @SubscribeMessage('blockUser')
     blockUser(socket: Socket, payload: JSON) {
-        console.log('blockUser called - DM');
+        this.logger.log('blockUser called - DM');
         this.directMessageService.blockUser(socket, payload['userId'], payload['targetId']);
     }
 
     @SubscribeMessage('unBlockUser')
     unblockUser(socket: Socket, payload: JSON) {
-        console.log('unBlockUser called - DM');
+        this.logger.log('unBlockUser called - DM');
         this.directMessageService.unblockUser(socket, payload['userId'], payload['targetId']);
     }
 
     // * friendList
     @SubscribeMessage('getFriendStateList')
     async getFriendStateList(socket: Socket, userName: string): Promise<void> {
-        console.log('** DM - GET FRIEND STATE LIST**');
+        this.logger.log('** DM - GET FRIEND STATE LIST**');
         await this.directMessageService.getFriendStateList(socket, userName);
     }
 
     // * invite
     @SubscribeMessage('getInvitationList')
     async getInvitationList(socket: Socket) {
-        console.log('DM socket:: getInvitationList');
+        this.logger.log('DM socket:: getInvitationList');
         const invitationList = await this.directMessageService.getInvitationList(socket.id);
         socket.emit('getInvitationList', invitationList);
     }
 
     @SubscribeMessage('sendInvitation')
     async sendInvitation(socket: Socket, payload: JSON) {
-        console.log('DM socket:: sendInvitation');
+        this.logger.log('DM socket:: sendInvitation');
         await this.directMessageService.sendInvitation(socket.id, payload);
     }
 
     @SubscribeMessage('agreeInvite')
     async agreeInvite(socket: Socket, payload: JSON) {
-        console.log('DM socket:: agreeInvite');
+        this.logger.log('DM socket:: agreeInvite');
         await this.directMessageService.agreeInvite(socket.id, payload);
     }
 
     @SubscribeMessage('declineInvite')
     async declineInvite(socket: Socket, payload: JSON) {
-        console.log('DM socket:: declineInvite');
+        this.logger.log('DM socket:: declineInvite');
         await this.directMessageService.declineInvite(socket.id, payload);
     }
+    @SubscribeMessage('acceptFriend')
+    async acceptFriend(socket: Socket, payload: JSON) {
+        this.logger.log('DM socket:: acceptFriend');
+        await this.directMessageService.addFriend(socket, payload);
+    }
 
-    // *
+    @SubscribeMessage('deleteFriend')
+    async deleteFriend(socket: Socket, payload: JSON) {
+        this.logger.log('DM socket:: deleteFriend');
+        await this.directMessageService.deleteFriend(socket, payload);
+    }
+
+    // *update userName
+    @SubscribeMessage('updateUserName')
+    async updateUserName(socket: Socket, paylod: JSON) {
+        this.logger.log('updateUserName');
+    }
 }

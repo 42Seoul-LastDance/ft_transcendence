@@ -1,10 +1,11 @@
-import { Controller, Get, Put, Delete, Patch, Param, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Delete, Patch, Param, Req, Res, UseGuards, Logger } from '@nestjs/common';
 import { GameService } from './game.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { Response } from 'express';
 
 @Controller('games')
 export class GameController {
+    private logger = new Logger(GameController.name);
     constructor(private readonly gameService: GameService) {}
 
     @Get('/getGameData/:userName')

@@ -8,6 +8,7 @@ import {
     Req,
     Res,
     UseGuards,
+    Logger,
     // NotFoundException,
     // InternalServerErrorException,
     // BadRequestException,
@@ -18,6 +19,7 @@ import { Response } from 'express';
 
 @Controller('friends')
 export class FriendController {
+    private logger = new Logger(FriendController.name);
     constructor(private readonly friendService: FriendService) {}
 
     @Get('/getFriendList')
@@ -54,7 +56,7 @@ export class FriendController {
     @Get('/getInvitation')
     @UseGuards(JwtAuthGuard)
     async getInvitation(@Req() req, @Res() res: Response) {
-        console.log('Controller - getinviteList called');
+        this.logger.log('getinviteList called');
         const invitations = await this.friendService.getInvitation(+req.user.sub);
         return res.send(invitations);
     }

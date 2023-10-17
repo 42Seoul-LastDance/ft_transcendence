@@ -1,4 +1,4 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { UserService } from 'src/user/user.service';
 import { BlockedUsersService } from 'src/user/blockedUsers/blockedUsers.service';
@@ -10,7 +10,7 @@ import { InviteType } from './socketUsers.enum';
 
 @Injectable()
 export class SocketUsersService {
-    // private static instance: SocketUsersService | null = null;
+    private logger = new Logger(SocketUsersService.name);
     constructor(
         private blockedUsersService: BlockedUsersService,
         private userService: UserService,
@@ -31,7 +31,7 @@ export class SocketUsersService {
     //TODO 친구 추가, 삭제 시 하기 리스트 업데이트되는지 확인 필요 (업데이트 안할거면 DB에서 매번 찾아서 하는 방법도 있어요)
     private friendList: Map<number, Array<number>> = new Map<number, Array<number>>(); //{user id , friendUserList}
 
-    //* socket --
+    //* socket
     getChatSocketById(userId: number): Socket | undefined {
         const socket = this.chatRoomUserList.get(userId);
         return socket;
@@ -60,8 +60,8 @@ export class SocketUsersService {
 
     deleteChatUserAll(socket: Socket): void {
         const userId = this.getUserIdByChatSocketId(socket.id);
-        if (this.chatRoomUserList.delete(userId)) console.log('chatRoomUserList DELETED : ', userId);
-        if (this.chatRoomSocketList.delete(socket.id)) console.log('chatRoomSocketList DELETED : ', socket.id);
+        if (this.chatRoomUserList.delete(userId)) this.logger.log(`chatRoomUserList DELETED : ${userId}`);
+        if (this.chatRoomSocketList.delete(socket.id)) this.logger.log(`chatRoomSocketList DELETED : ${socket.id}`);
         this.blockList.delete(userId);
     }
 
@@ -88,18 +88,21 @@ export class SocketUsersService {
         try {
             await this.updateFriendListAndEmit(userId);
         } catch (error) {
-            console.log('[ERRRRRR] clearServerData');
+            this.logger.error('[ERRRRRR] clearServerData');
         }
     }
 
-    async addInvitation(socketId: string, payload: JSON): Promise<Socket> {
+    async sendInvitation(socketId: string, payload: JSON): Promise<Socket> {
         const hostId: number = this.dmSocketList.get(socketId);
+        const hostName: string = await this.getUserNameByUserId(hostId);
         const guestId: number = (await this.userService.getUserByUserName(payload['guestName'])).id;
 
         const invitation: Invitation = {
-            type: payload['type'],
+            hostName: hostName,
+            inviteType: payload['inviteType'],
             chatRoomName: payload['chatRoomName'] ? payload['chatRoomName'] : undefined,
             chatRoomType: payload['chatRoomType'] ? payload['chatRoomType'] : undefined,
+            gameMode: payload['gameMode'] ? payload['gameMode'] : undefined,
         };
         this.inviteList.get(guestId).set(hostId, invitation);
         return this.dmUserList.get(guestId);
@@ -130,7 +133,7 @@ export class SocketUsersService {
         const guestId: number = this.dmSocketList.get(socketId);
         const invitation: Invitation = this.inviteList.get(guestId).get(hostId);
         if (invitation === undefined) return;
-        if (invitation.type === InviteType.GAME) {
+        if (invitation.inviteType === InviteType.GAME) {
             //Game의 경우 game socket으로 초대 거절 이벤트 전달
             const hostSocketId: string = this.gameUserList.get(hostId);
             const hostSocket: Socket = this.gamePlayerList.get(hostSocketId).socket;
@@ -159,7 +162,7 @@ export class SocketUsersService {
             this.gameUserList.set(userId, socketId);
             await this.updateFriendListAndEmit(userId);
         } catch (error) {
-            console.log('[ERRRRRR] addGameUserList');
+            this.logger.error('[ERRRRRR] addGameUserList');
         }
     }
 
@@ -168,7 +171,7 @@ export class SocketUsersService {
             if (socketId === this.gameUserList.get(userId)) this.gameUserList.delete(userId);
             await this.updateFriendListAndEmit(userId);
         } catch (error) {
-            console.log('[ERRRRRR] deleteGameUserList');
+            this.logger.error('[ERRRRRR] deleteGameUserList');
         }
     }
 
@@ -204,7 +207,7 @@ export class SocketUsersService {
             this.dmSocketList.set(socketId, userId);
             await this.updateFriendListAndEmit(userId);
         } catch (error) {
-            console.log('[ERRRRRR] addDMSocket');
+            this.logger.error('[ERRRRRR] addDMSocket');
         }
     }
 
@@ -214,7 +217,7 @@ export class SocketUsersService {
             await this.updateFriendListAndEmit(userId);
             return this.dmSocketList.delete(socketId);
         } catch (error) {
-            console.log('[ERRRRRR] deleteDMSocket');
+            this.logger.error('[ERRRRRR] deleteDMSocket');
         }
     }
 
@@ -290,7 +293,7 @@ export class SocketUsersService {
     async disconnectIfConnected(userId: number): Promise<void> {
         const socket = this.chatRoomUserList.get(userId);
         if (socket === undefined || socket === null) return;
-        console.log('!!!DISCONNECT because user already existed.', (await this.userService.findUserById(userId)).id);
+        this.logger.log(`DISCONNECT because ${userId} was already connected.`);
         this.deleteChatUserAll(socket);
         socket.disconnect(false);
     }
@@ -304,13 +307,43 @@ export class SocketUsersService {
                 if (socket) socket.emit('updateFriendList');
             }
         } catch (error) {
-            console.log('[ERRRRR] updateFriendListAndEmit');
+            this.logger.error('[ERRRRR] updateFriendListAndEmit');
         }
     }
 
     async setFriendList(userId: number) {
         const foundFriendList: Array<number> = await this.friendService.getFriendList(userId); // => Array<number> => map.insert (userId : Array)
         this.friendList.set(userId, foundFriendList);
+    }
+
+    addFriend(userId: number, targetId: number) {
+        // map에서 userID value를 찾고 (=> Array<number>) 거기에 targetId 추가, 이미 있다면 무시
+        const foundFriendList: Array<number> = this.friendList.get(userId);
+        const targetFriendList: Array<number> = this.friendList.get(targetId);
+
+        try {
+            foundFriendList.push(targetId);
+            targetFriendList.push(userId);
+        } catch (e) {
+            this.logger.warn(`cannot addFriend : ${e}`);
+        }
+    }
+
+    deleteFriend(userId: number, targetId: number) {
+        const foundFriendList: Array<number> = this.friendList.get(userId); // => Array<number> => map.insert (userId : Array)
+        const targetFriendList: Array<number> = this.friendList.get(targetId);
+        try {
+            const idx = foundFriendList.indexOf(targetId);
+            foundFriendList.splice(idx, 1);
+        } catch (e) {
+            this.logger.error(`cannot deleteFriend : ${e}`);
+        }
+        try {
+            const targetIdx = targetFriendList.indexOf(userId);
+            targetFriendList.splice(targetIdx, 1);
+        } catch (e) {
+            this.logger.warn(`cannot deleteFriend : ${e}`);
+        }
     }
 
     getStatusById(userId: number): UserStatus {
@@ -330,8 +363,9 @@ export class SocketUsersService {
         const userId = await this.getUserIdByUserName(userName);
         const friendStateList: [string, UserStatus][] = [];
 
-        const friendNameList: string[] = await this.friendService.getFriendNameList(userId);
-        for (const friendName of friendNameList) {
+        const friendIdList: Array<number> = this.friendList.get(userId);
+        for (const friendId of friendIdList) {
+            const friendName = await this.getUserNameByUserId(friendId);
             friendStateList.push([friendName, await this.getStatusByUserName(friendName)]);
         }
         return friendStateList;

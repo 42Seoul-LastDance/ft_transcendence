@@ -40,7 +40,7 @@ export class FortytwoStrategy extends PassportStrategy(Strategy, 'fortytwo') {
 
     //인증이 성공한 후 호출된다.
     async validate(accessToken: string, refreshToken: string, @Res() res: Response) {
-        console.log('42 valdation 함수 호출');
+        // console.log('42 valdation 함수 호출');
 
         try {
             const response = await axios.get('https://api.intra.42.fr/v2/me', {

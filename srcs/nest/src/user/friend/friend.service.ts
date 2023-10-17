@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { FriendRepository } from './friend.repository';
 import { Friend } from './friend.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,6 +8,7 @@ import { FriendStatus } from './friend.enum';
 
 @Injectable()
 export class FriendService {
+    private logger = new Logger(FriendService.name);
     constructor(
         @InjectRepository(Friend)
         private friendRepository: FriendRepository,
@@ -125,6 +126,7 @@ export class FriendService {
     }
 
     async deleteFriend(userId: number, friendName: string) {
+        //TODO : socketUserService의 friendList 업데이트
         try {
             const friendId = (await this.userService.getUserByUserName(friendName)).id;
             const data = await this.getFriendData(userId, friendId);
@@ -158,6 +160,7 @@ export class FriendService {
     }
 
     async acceptRequest(userId: number, friendName: string) {
+        //TODO : socketUserService의 friendList 업데이트
         try {
             const status = await this.getFriendStatus(userId, friendName);
             if (status !== FriendStatus.LAGGING) return;

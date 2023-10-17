@@ -3,7 +3,9 @@ import { InviteType } from './socketUsers.enum';
 import { GameMode } from 'src/game/game.enum';
 
 export interface Invitation {
-    type: InviteType;
+    hostName: string;
+    inviteType: InviteType;
     chatRoomName: string | undefined;
     chatRoomType: RoomStatus | undefined;
+    gameMode: GameMode | undefined;
 }

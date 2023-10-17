@@ -117,7 +117,7 @@ export class GameService {
     //Player 삭제 (handleDisconnect용)
     deletePlayer(playerId: string) {
         this.resetPlayer(this.socketUsersService.getPlayerBySocketId(playerId));
-        console.log('entering >> gameService >> deletePlayer');
+        // console.log('entering >> gameService >> deletePlayer');
         this.socketUsersService.deletePlayer(playerId);
     }
 
@@ -151,7 +151,7 @@ export class GameService {
             const friendId = (await this.userService.getUserByUserName(friendName)).id;
             this.updatePlayer(playerId, gameMode, GameType.FRIEND, friendId);
             this.friendGameList.set(hostName, playerId);
-            console.log('inviteGame:', hostName, 'waiting for', friendName);
+            // console.log('inviteGame:', hostName, 'waiting for', friendName);
         } catch (error) {
             console.log('error >> gameService >> inviteGame');
             throw new InternalServerErrorException('[ERR] gameService >> inviteGame');
@@ -527,6 +527,7 @@ export class GameService {
             player.roomId = roomId;
             player.side = side;
             player.socket.emit('handShake', { side: side });
+            // console.log('handShake done', playerId);
         } catch (error) {
             throw new InternalServerErrorException('[ERR] gameService >> handShake');
         }
@@ -543,6 +544,7 @@ export class GameService {
 
     updatePlayer(playerId: string, gameMode: number, gameType: number, friendId?: number | undefined) {
         const player: Player = this.socketUsersService.getPlayerBySocketId(playerId);
+        //TODO throw 다른걸로 변경 필요
         if (player === undefined) throw new BadRequestException('player undefined');
         if (player.roomId) throw new BadRequestException('player already in gameRoom');
         if (friendId) player.friendId = friendId;

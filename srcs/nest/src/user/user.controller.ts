@@ -14,6 +14,7 @@ import {
     InternalServerErrorException,
     BadRequestException,
     ParseIntPipe,
+    Logger,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
@@ -23,6 +24,7 @@ import { UserProfileDto } from './dto/userProfile.dto';
 
 @Controller('users')
 export class UserController {
+    private logger = new Logger(UserController.name);
     constructor(private readonly userService: UserService) {}
 
     //* user signup
@@ -76,7 +78,7 @@ export class UserController {
     //     );
     // }
 
-    //TODO user info update 하나로 합치기
+    //TODO user info update 하나로 합치기 => 테스트 필요
     //* user info update ===============================================================
     @Patch('/update/')
     @UseGuards(JwtAuthGuard)
@@ -88,6 +90,7 @@ export class UserController {
         @Body('userName') userName: string | undefined,
         @Body('require2fa') require2fa: boolean | undefined,
     ) {
+        console.log('update', userName, require2fa, profileImage?.filename);
         await this.userService.updateUserInfo(req.user.sub, userName, require2fa, profileImage);
     }
 
@@ -113,6 +116,18 @@ export class UserController {
     // }
     //* EOF user info update ===============================================================
 
+    @Get('/userInfo')
+    @UseGuards(JwtAuthGuard)
+    async getUserSetInfo(@Req() req, @Res() res: Response) {
+        try {
+            const userSetting = await this.userService.getUserSetInfo(req.user.sub);
+            return res.status(200).json(userSetting);
+        } catch (error) {
+            //TODO front에 어떻게 보내줘야 하지? (프론트와 함께 고민 필요)
+            return res.status(200).json(['sth happened from back... sorry']);
+        }
+    }
+
     @Get('/profile/:username')
     @UseGuards(JwtAuthGuard)
     async getProfile(@Param('username') username: string, @Res() res) {
@@ -130,54 +145,23 @@ export class UserController {
             res.setHeader('Content-Type', mimeType); // 이미지의 MIME 타입 설정
             res.send(image); // 이미지 파일을 클라이언트로 전송
         } catch (error) {
+            this.logger.error(`Failed to send profile image : ${error}`);
             if (error.getStatus() == 404) throw new NotFoundException();
             else throw new InternalServerErrorException();
         }
     }
 
-    @Get('/:name')
-    // @UseGuards(JwtAuthGuard) // TODO : enroll 과 accesstoken 분리 필요 -> 중복체크는 가드 없이 그냥 쓰는걸로 하자~
+    @Get('/username/:name')
+    @UseGuards(JwtAuthGuard)
     async checkUniqueName(@Param('name') name: string, @Res() res: Response) {
-        let user;
         try {
-            console.log(`checking name : ${name}`);
-            user = await this.userService.getUserByUserName(name);
+            // console.log(`checking name : ${name}`);
+            const user = await this.userService.getUserByUserName(name);
+            if (user) throw new BadRequestException(`${name} already exist`);
+            res.send(200);
         } catch (error) {
-            if (error.getStatus() == 404) throw new NotFoundException('no such user');
+            if (error.getStatus() == 404) res.send(200);
             else throw new InternalServerErrorException();
         }
-        if (user) throw new BadRequestException(`${name} already exist`);
     }
-
-    @Get('/status/:id')
-    @UseGuards(JwtAuthGuard)
-    getStatus(@Param() id) {
-        // TODO: 서로 친구인지 조회 필요
-    }
-
-    // @Get()
-    // findAll(): Promise<User[]> {
-    //     return this.userService.findAll();
-    // }
-
-    // @Post()
-    // @UsePipes(ValidationPipe)
-    // async createUser(@Body() createUserDto: CreateUserDto): Promise<User> {
-    //     return this.userService.createUser(createUserDto);
-    // }
-
-    // @Get('searchOne')
-    // async searchOne(@Query('name') name: string): Promise<User> {
-    //     return this.userService.searchOne(name);
-    // }
-
-    // @Get('searchUser')
-    // async searchUser(@Query('slackId') slackId: string): Promise<User[]> {
-    //     return this.userService.getUserListBySlackId(slackId);
-    // }
-
-    // @Delete('deleteOne/:id')
-    // async deleteOne(@Param('id') id: number): Promise<void> {
-    //     await this.userService.deleteOne(id);
-    // }
 }

@@ -1,4 +1,12 @@
-import { Injectable, UnauthorizedException, Res, HttpStatus, InternalServerErrorException } from '@nestjs/common';
+import {
+    Injectable,
+    UnauthorizedException,
+    Res,
+    HttpStatus,
+    InternalServerErrorException,
+    Logger,
+    BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 import { Auth42Dto } from './dto/auth42.dto';
@@ -9,6 +17,7 @@ import { UserInfoDto } from 'src/user/dto/userInfo.dto';
 
 @Injectable()
 export class AuthService {
+    private logger = new Logger(AuthService.name);
     constructor(
         private jwtService: JwtService,
         private userService: UserService,
@@ -67,6 +76,7 @@ export class AuthService {
         //jwt payload 에서 id추출.
         const token = this.getRefreshTokenFromRequest(request);
         if (!token) {
+            this.logger.error('no token');
             throw new UnauthorizedException('no token ');
         }
         let payload;
@@ -76,6 +86,7 @@ export class AuthService {
             });
             await this.userService.verifyRefreshToken(payload, token);
         } catch {
+            this.logger.error('not verified token');
             throw new UnauthorizedException('not verified token');
         }
 
@@ -120,8 +131,8 @@ export class AuthService {
             return userExists;
         } catch (error) {
             if (error.getStatus() == 404) {
-                console.log('user does not exist, so must be saved.\n');
-                return await this.userService.registerUser(user, user.image_url);
+                // console.log('user does not exist, so must be saved.\n');
+                return await this.userService.registerUser(user, 'default.png');
             } else throw error;
         }
     }
@@ -131,7 +142,7 @@ export class AuthService {
             this.mailService.sendMail(id);
             res.status(HttpStatus.OK);
         } catch (error) {
-            throw new InternalServerErrorException('error from twofactorAuthentication');
+            throw new BadRequestException('error from twofactorAuthentication');
         }
     }
 
@@ -142,7 +153,10 @@ export class AuthService {
         } catch (error) {
             if (error.getStatus() == 404) {
                 return false;
-            } else throw new InternalServerErrorException('from 42callback');
+            } else {
+                this.logger.error('checkUserIfExists error');
+                throw new BadRequestException('from 42callback');
+            }
         }
     }
 }

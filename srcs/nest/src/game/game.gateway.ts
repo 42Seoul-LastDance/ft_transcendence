@@ -8,6 +8,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { GameService } from './game.service';
 import { JwtService } from '@nestjs/jwt';
+import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({
     port: 3000,
@@ -19,6 +20,7 @@ import { JwtService } from '@nestjs/jwt';
     namespace: 'Game',
 })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
+    private logger = new Logger(GameGateway.name);
     constructor(
         private gameService: GameService,
         private jwtService: JwtService,
@@ -36,21 +38,21 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             });
             // console.log('GAME SOCKET NEW CONNECTION WITH ', decodedToken.userName);
             await this.gameService.createPlayer(client, decodedToken.sub);
+            this.logger.log(`NEW CONNECTION WITH ${decodedToken.userName}, ${client.id}`);
         } catch (error) {
-            console.log('error : ', error.message);
+            this.logger.warn(`Handle Connection : ${error.message}`);
             if (error.message === 'jwt expired') {
                 client.emit('expireToken');
             }
             client.disconnect(true);
             return;
         }
-        console.log(client.id, ': new connection. (Game)');
     }
 
     async handleDisconnect(client: Socket) {
         await this.gameService.handleDisconnect(client.id);
         this.gameService.deletePlayer(client.id);
-        console.log(client.id, ': lost connection. (Game)');
+        this.logger.log(`LOST CONNECTION WITH ${client.id}`);
     }
 
     //* Match Game ======================================

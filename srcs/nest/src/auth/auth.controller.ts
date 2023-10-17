@@ -9,6 +9,7 @@ import {
     UnauthorizedException,
     Query,
     InternalServerErrorException,
+    Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -21,6 +22,7 @@ import { SocketUsersService } from '../socket/socketUsersService/socketUsers.ser
 
 @Controller('auth')
 export class AuthController {
+    private logger = new Logger(AuthController.name);
     constructor(
         private authService: AuthService,
         private userService: UserService,
@@ -54,7 +56,7 @@ export class AuthController {
     @Get('/callback')
     @UseGuards(FortytwoAuthGuard)
     async callBack(@Req() req, @Res() res: Response) {
-        console.log('42 callback 함수 호출');
+        this.logger.log('42 callback called.');
 
         //유저 검색해 신규 유저면 등록해줌 => 유저 리턴 (0912 작업 내용)
         const user = await this.authService.signUser(req.user);
@@ -123,9 +125,8 @@ export class AuthController {
     @Get('/regenerateToken')
     @UseGuards(RegenerateAuthGuard)
     async regenerateToken(@Req() req, @Res() res: Response) {
-        console.log('regenerateToken called');
+        this.logger.log('regenerateToken called');
         const newToken = await this.authService.regenerateJwt(req);
-        // console.log('newToken : ', newToken);
         return res.header({ 'x-access-token': newToken }).json({ token: newToken });
         // res.clearCookie('access_token', { domain: process.env.FRONT_URL, path: '/' });
 
@@ -144,11 +145,11 @@ export class AuthController {
     @Post('/logout')
     @UseGuards(JwtAuthGuard)
     async logout(@Req() req: any, @Res() res: Response) {
-        console.log('logout called');
         await this.userService.removeRefreshToken(req.user);
         await this.socketUsersService.clearServerData(req.user.sub);
         res.clearCookie('access_token');
         res.clearCookie('refresh_token');
+        res.statusCode = 200;
         return res.send({
             message: 'logout success',
         });

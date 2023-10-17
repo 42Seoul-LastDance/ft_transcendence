@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Delete, Patch, Param, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Delete, Patch, Param, Req, Res, UseGuards, Logger } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { Response } from 'express';
 import { BlockedUsersService } from './blockedUsers.service';
@@ -6,6 +6,7 @@ import { UserService } from '../user.service';
 
 @Controller('block')
 export class BlockedUsersController {
+    private logger = new Logger(BlockedUsersController.name);
     constructor(
         private userService: UserService,
         private readonly blockedUsersService: BlockedUsersService,

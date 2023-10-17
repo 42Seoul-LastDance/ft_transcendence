@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { DirectMessageRepository } from './directMessage.repository';
 import { Socket } from 'socket.io';
 import { DirectMessage } from './directMessage.entity';
@@ -14,6 +14,7 @@ const TIMEZONE: string = 'Asia/Seoul';
 
 @Injectable()
 export class DirectMessageService {
+    private logger = new Logger(DirectMessageService.name);
     constructor(
         @InjectRepository(DirectMessage)
         private directMessageRepository: DirectMessageRepository,
@@ -30,7 +31,7 @@ export class DirectMessageService {
     }
 
     async addNewUser(socket: Socket, userId: number) {
-        console.log('socket id, userId in addNewUser(DM) : ', socket.id, userId);
+        this.logger.debug(`ADD NEW USER : ${userId}, ${socket.id}`);
         const signedUser: Socket = this.socketUsersService.getDMSocketById(userId);
         if (signedUser !== undefined) await this.socketUsersService.deleteDMSocket(signedUser.id);
         await this.socketUsersService.addDMSocket(socket.id, userId);
@@ -38,6 +39,12 @@ export class DirectMessageService {
         this.socketUsersService.setFriendList(userId);
         this.socketUsersService.setBlockList(userId);
         this.socketUsersService.setInviteList(userId);
+    }
+
+    async getuserNameBySocketId(socketId: string): Promise<string> {
+        return await this.socketUsersService.getUserNameByUserId(
+            this.socketUsersService.getUserIdByDMSocketId(socketId),
+        );
     }
 
     deleteUser(socket: Socket) {
@@ -130,38 +137,71 @@ export class DirectMessageService {
 
     async getFriendStateList(socket: Socket, userName: string): Promise<[string, UserStatus][]> {
         if (userName === undefined || userName === null) {
+            this.logger.error('userName undefined');
             this.emitFailReason(socket, 'getFriendStateList', 'username error');
             return;
         }
         const result: [string, UserStatus][] = await this.socketUsersService.getFriendStateList(userName);
-        console.log('🏊GET FRIEND STATE LIST🏊', result);
+        this.logger.debug(`GET FRIEND STATE LIST :: ${userName} with : ${result}`);
         socket.emit('getFriendStateList', result);
     }
 
     // * invite
     async getInvitationList(socketId: string) {
-        const invitationList: [string, InviteType][] = [];
+        const invitationList: Invitation[] = [];
         const guestId: number = this.socketUsersService.getDMsocketList().get(socketId);
         const invitations: Map<number, Invitation> = this.socketUsersService.getInviteListByUserId(guestId);
         for (const hostId of invitations.keys()) {
-            const hostName = await this.socketUsersService.getUserNameByUserId(hostId);
-            invitationList.push([hostName, invitations.get(hostId).type]);
+            invitationList.push(invitations.get(hostId));
         }
         return invitationList;
     }
 
     async sendInvitation(socketId: string, payload: JSON) {
-        const guestSocket = await this.socketUsersService.addInvitation(socketId, payload);
+        const guestSocket = await this.socketUsersService.sendInvitation(socketId, payload);
         guestSocket.emit('updateInvitation');
     }
 
     async agreeInvite(socketId: string, payload: JSON) {
         await this.socketUsersService.agreeInvite(socketId, payload['hostName']);
-        //TODO 채팅관련 emit('updateInvitation') 필요한 지 확인 필요 (게임은 필요 없습니다)
     }
 
     async declineInvite(socketId: string, payload: JSON) {
         const guestSocket = await this.socketUsersService.declineInvite(socketId, payload['hostName']);
         guestSocket.emit('updateInvitation');
+    }
+
+    async deleteFriend(socket: Socket, payload: JSON) {
+        // 친구 삭제 이벤트가 일어날 때 친구 리스트 실시간 업데이트
+        // 프론트로 다시 getFriendStateList 날려주기
+        // TODO : socketUsersService->friendList 업데이트
+        const userName = payload['userName'];
+        const targetName = payload['targetName'];
+        const userId = this.socketUsersService.getUserIdByDMSocketId(socket.id);
+        const targetId = await this.socketUsersService.getUserIdByUserName(targetName);
+
+        this.socketUsersService.deleteFriend(userId, targetId);
+        const targetSocket = this.socketUsersService.getDMSocketById(targetId);
+        await this.getFriendStateList(socket, userName);
+        if (targetSocket) await this.getFriendStateList(targetSocket, targetName);
+    }
+
+    async addFriend(socket: Socket, payload: JSON) {
+        const userName = payload['userName'];
+        const targetName = payload['targetName'];
+        const userId = this.socketUsersService.getUserIdByDMSocketId(socket.id);
+        const targetId = await this.socketUsersService.getUserIdByUserName(targetName);
+
+        this.socketUsersService.addFriend(userId, targetId);
+        const targetSocket = this.socketUsersService.getDMSocketById(targetId);
+        await this.getFriendStateList(socket, userName);
+        if (targetSocket != undefined && targetSocket !== null) await this.getFriendStateList(targetSocket, targetName);
+        else this.logger.error('targetSocket does not exist');
+    }
+
+    async updateUserName(socket: Socket) {
+        //TODO 1. friendList에서 friend 에게 getFriendStateList 날리기
+        //TODO 2. 속해있는 방이 있다면 getMemberList 날리기
+        //TODO 3.
     }
 }

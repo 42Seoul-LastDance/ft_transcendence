@@ -5,6 +5,8 @@ import {
     WebSocketGateway,
     WebSocketServer,
 } from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
+import { AppService } from 'src/app.service';
 import { Server, Socket } from 'socket.io';
 import { ChatRoomService } from './chatRoom.service';
 import { CreateRoomDto } from './dto/createRoom.dto';
@@ -22,6 +24,7 @@ import { UserPermission } from './userPermission.enum';
     namespace: 'RoomChat',
 })
 export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
+    private logger = new Logger(ChatRoomGateway.name);
     constructor(
         private chatroomService: ChatRoomService,
         private jwtService: JwtService,
@@ -38,16 +41,14 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         // console.log('socket.handshake.auth.token : ', socket.handshake.auth.token); // * 실 구현은 auth.token으로 전달 받기
         const tokenString: string = socket.handshake.auth.token as string;
         try {
-            if (!tokenString) {
-                throw new Error('jwt is empty.');
-            }
+            if (!tokenString) throw new Error('jwt is empty.');
             const decodedToken = this.jwtService.verify(tokenString, {
                 secret: process.env.JWT_SECRET_KEY,
             });
-            console.log('NEW CONNECTION WITH', decodedToken.userName);
             await this.chatroomService.addNewUser(socket, decodedToken.sub, this.server);
+            this.logger.log(`NEW CONNECTION WITH ${decodedToken.userName}, ${socket.id}`);
         } catch (error) {
-            console.log('error : ', error.message);
+            this.logger.warn(`Handle Connection : ${error.message}`);
             // => null 들어가면 (토큰 형식 안맞)
             // error.message === 'jwt malformed' ||
             // => undefined 비어 있으면 (토큰 안들어옴)
@@ -55,18 +56,17 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
             if (error.message === 'jwt expired') {
                 // `${BACK_URL}/auth/regenerateToken`
                 // * 토큰 만료 => 근데 왜 404 날라와요?.. ?
-                console.log('expireToken emit called');
+                this.logger.log('expireToken emit called');
                 socket.emit('expireToken');
             } else socket.disconnect(true);
             // console.log(error);
             return;
         }
-        // });
-        console.log(socket.id, ': new connection. (Chat)');
         socket.emit('connectSuccess');
 
         socket.on('disconnecting', async (reason) => {
-            console.log('DISCONNECTING event : ', socket.rooms);
+            // console.log('DISCONNECTING event : ', socket.rooms);
+
             const rooms: Set<string> = socket.rooms;
             // console.log('saved rooms:', rooms);
             await this.chatroomService.leavePastRoom(socket, rooms, this.server);
@@ -80,13 +80,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     async handleDisconnect(socket: Socket) {
-        //     const userName = this.chatroomService.getUserId(socket);
-        //     console.log('DISCONNECT ', userName);
-        //     console.log('disconnection handling :: rooms : ', socket.rooms);
-        //     // if (await this.chatroomService.leavePastRoom(socket, this.server) === false)
-        // await this.chatroomService.leavePastRoom(socket, socket.rooms, this.server);
-        // this.chatroomService.deleteUser(socket);
-        console.log(socket.id, ': lost connection. (Chat)');
+        this.logger.log(`CHAT socket >>> LOST CONNECTION WITH ${socket.id}`);
     }
 
     // * Getter ===========================================================
@@ -96,16 +90,9 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     //     socket.emit('getBlockUser', blockList);
     // }
 
-    @SubscribeMessage('getMyName')
-    async getMyName(socket: Socket) {
-        console.log('**GET MY NAME**');
-        const userName = await this.chatroomService.getUserNameBySocket(socket);
-        socket.emit('getMyName', userName);
-    }
-
     @SubscribeMessage('expireToken')
     expireToken(socket: Socket, payload: string) {
-        console.log('**EXPIRE TOKEN**');
+        this.logger.log('EXPIRE TOKEN');
         // console.log('expireToken : ', payload);
         // 프론트 소켓은 별개라 업데이트 안됨 -jaejkim
         // socket.handshake.auth.token = payload;
@@ -114,12 +101,12 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('getChatRoomList')
     getChatRoomList(socket: Socket) {
-        console.log('**GET CHAT ROOM LIST**');
+        this.logger.log('GET CHAT ROOM List*');
         // ”roomname”: string,
         // ”isLocked” : boolean,
         // ”status” : roomStatus,
         const chatRoomList = this.chatroomService.getChatRoomList();
-        console.log('----------------------getChatRoomList --------------------------------> ', chatRoomList);
+        this.logger.debug(`GET CHAT ROOM LIST : ${chatRoomList}`);
         socket.emit('getChatRoomList', chatRoomList);
         // socket.emit('getChatRoomList', {'chatRoomList': {chatRoomList}});
         // Object.fromEntries(chatRoomList)
@@ -127,7 +114,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('getChatRoomInfo')
     async getChatRoomInfo(socket: Socket, payload: JSON) {
-        console.log('**GET CHAT ROOM INFO**');
+        this.logger.log('GET CHAT ROOM INFO*');
         //roomName: string
         //ownerName: string
         //roomstatus: RoomStatus
@@ -136,13 +123,14 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
         // memberList: Array<string>
         const chatRoomInfo = await this.chatroomService.getChatRoomInfo(socket, payload['roomName'], payload['status']);
         socket.emit('getChatRoomInfo', chatRoomInfo);
-        console.log('getChatRoomInfo :: ', chatRoomInfo);
+        this.logger.debug('GET CHAT ROOM INFO :', chatRoomInfo, socket);
         // Object.fromEntries(chatRoomList)
     }
 
     @SubscribeMessage('getMemberStateList')
     async getMemberStateList(socket: Socket, payload: JSON) {
-        console.log('**GET MEMBER STATE LIST**');
+        this.logger.log('GET MEMBER STATE LIST');
+
         //roomName: string
         //status: RoomStatus
         const memberList = await this.chatroomService.getMemberStateList(
@@ -151,15 +139,21 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
             payload['status'],
         );
         socket.emit('getMemberStateList', memberList);
-        console.log('memberListInfo :: ', memberList);
+        this.logger.debug('memberListInfo :: ', memberList);
         // Object.fromEntries(chatRoomList)
+    }
+
+    @SubscribeMessage('getMyName')
+    async getMyName(socket: Socket) {
+        const userName = await this.chatroomService.getUserNameBySocket(socket);
+        this.logger.log(`getMyName : ${userName}`);
+        socket.emit('getMyName', userName);
     }
 
     // * Message ===========================================================
     @SubscribeMessage('sendMessage')
     sendMessage(socket: Socket, payload: JSON): void {
-        console.log('**SEND MESSAGE**');
-        console.log('SEND MESSAGE payload', payload, 'socket id:', socket.id);
+        this.logger.log(`SEND MESSAGE : ${payload['userName']} in ${payload['roomName']} : ${payload['content']}`);
 
         this.chatroomService.sendMessage(
             socket,
@@ -179,30 +173,28 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // * ChatRoom Method ===========================================================
     @SubscribeMessage('createChatRoom')
     async createChatRoom(socket: Socket, payload: JSON) {
-        // console.log('createChatRoom payload : ', payload);
-        console.log('**CREATE CHAT ROOM**');
+        this.logger.log('CREATE CHAT ROOM');
         await this.chatroomService.createChatRoom(socket, Object.assign(new CreateRoomDto(), payload), this.server);
         // * 프론트 요청 : create 후 새로 갱신된 리스트 전송
         const chatRoomList = this.chatroomService.getChatRoomList();
         const chatRoomInfo = await this.chatroomService.getChatRoomInfo(socket, payload['roomName'], payload['status']);
-        console.log('createChatRoom :: ', chatRoomList, chatRoomInfo);
+        // this.logger.debug(`createChatRoom :: chatRoomList : ${chatRoomList}`);
+        // this.logger.debug(`createChatRoom :: chatRoomInfo : ${chatRoomInfo}`);
         socket.emit('createChatRoom', chatRoomInfo);
         this.server.emit('getChatRoomList', chatRoomList);
     }
 
     @SubscribeMessage('joinPublicChatRoom')
     async joinPublicChatRoom(socket: Socket, payload: JSON) {
-        console.log('JOIN PUBLIC CHAT ROOM password', payload);
+        this.logger.log('JOIN PUBLIC CHAT ROOM');
         await this.chatroomService.joinPublicChatRoom(socket, payload['roomName'], payload['password'], this.server);
         const chatRoomInfo = await this.chatroomService.getChatRoomInfo(socket, payload['roomName'], RoomStatus.PUBLIC);
-        console.log('JOIN PUBLIC CHAT ROOM :: broadcasting : ', chatRoomInfo);
         this.server.to(payload['roomName']).emit('getChatRoomInfo', chatRoomInfo);
-        // const chatRoomList = this.chatroomService.getChatRoomList();
-        // socket.emit('getChatRoomList', chatRoomList);
     }
 
     @SubscribeMessage('joinPrivateChatRoom')
     async joinPrivateChatRoom(socket: Socket, payload: JSON) {
+        this.logger.log('JOIN PRIVATE CHAT ROOM');
         await this.chatroomService.joinPrivateChatRoom(socket, payload['roomName'], this.server);
         const chatRoomInfo = await this.chatroomService.getChatRoomInfo(
             socket,
@@ -210,15 +202,14 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
             RoomStatus.PRIVATE,
         );
         this.server.to(payload['roomName']).emit('getChatRoomInfo', chatRoomInfo);
-        // const chatRoomList = this.chatroomService.getChatRoomList();
-        // socket.emit('getChatRoomList', chatRoomList);
     }
 
     // roomName: string
     @SubscribeMessage('exitChatRoom')
     exitChatRoom(socket: Socket) {
-        console.log('**EXIT CHAT ROOM**');
+        this.logger.log('EXIT CHAT ROOM');
         this.chatroomService.leavePastRoom(socket, socket.rooms, this.server);
+        this.getChatRoomList(socket);
     }
 
     // getMyPermission
@@ -235,26 +226,26 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // * 채팅방 패스워드 관련 =================================================
     @SubscribeMessage('setRoomPassword')
     setRoomPassword(socket: Socket, payload: JSON) {
-        console.log('SET ROOM PASSWORD');
+        this.logger.log('SET ROOM PASSWORD');
         this.chatroomService.setRoomPassword(socket, payload['roomName'], payload['password']);
     }
 
     @SubscribeMessage('unsetRoomPassword')
     unsetRoomPassword(socket: Socket, payload: JSON) {
-        console.log('UNSET ROOM PASSWORD');
+        this.logger.log('UNSET ROOM PASSWORD');
         this.chatroomService.unsetRoomPassword(socket, payload['roomName']);
     }
 
     // * Owner & Operator =====================================================
     @SubscribeMessage('grantUser')
     async grantUser(socket: Socket, payload: JSON) {
-        console.log('GRANT USER');
+        this.logger.log('GRANT USER');
         await this.chatroomService.grantUser(socket, payload['roomName'], payload['roomStatus'], payload['targetName']);
     }
 
     @SubscribeMessage('ungrantUser')
     async ungrantUser(socket: Socket, payload: JSON) {
-        console.log('UNGRANT USER');
+        this.logger.log('UNGRANT USER');
         await this.chatroomService.ungrantUser(
             socket,
             payload['roomName'],
@@ -265,13 +256,13 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('kickUser')
     async kickUser(socket: Socket, payload: JSON) {
-        console.log('KICK USER');
+        this.logger.log('KICK USER');
         await this.chatroomService.kickUser(socket, payload['roomName'], payload['targetName'], this.server);
     }
 
     @SubscribeMessage('muteUser')
     async muteUser(socket: Socket, payload: JSON) {
-        console.log('MUTE USER');
+        this.logger.log('MUTE USER');
         await this.chatroomService.muteUser(
             socket,
             payload['status'],
@@ -283,13 +274,13 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('banUser')
     async banUser(socket: Socket, payload: JSON) {
-        console.log('BAN USER');
+        this.logger.log('BAN USER');
         this.chatroomService.banUser(socket, payload['roomName'], payload['roomStatus'], payload['targetName']);
     }
 
     @SubscribeMessage('unbanUser')
     async unbanUser(socket: Socket, payload: JSON) {
-        console.log('UNBAN USER');
+        this.logger.log('UNBAN USER');
         this.chatroomService.unbanUser(socket, payload['roomName'], payload['roomStatus'], payload['targetName']);
     }
 
@@ -297,7 +288,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('blockUser')
     async blockUser(socket: Socket, payload: JSON) {
-        console.log('BLOCK USER');
+        this.logger.log('BLOCK USER');
         this.chatroomService.blockUser(socket, payload['targetName']);
         this.server.serverSideEmit('blockUser', {
             userId: this.chatroomService.getUserId(socket),
@@ -307,7 +298,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     @SubscribeMessage('unBlockUser')
     async unBlockUser(socket: Socket, payload: JSON) {
-        console.log('UNBLOCK USER');
+        this.logger.log('UNBLOCK USER');
         this.chatroomService.unBlockUser(socket, payload['targetName']);
         this.server.serverSideEmit('blockUser', {
             userId: this.chatroomService.getUserId(socket),
