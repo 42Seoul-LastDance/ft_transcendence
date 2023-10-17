@@ -1,3 +1,5 @@
+import { RoomStatus } from './interface';
+
 export const enum Emoji {
   NONE = -1,
   HI = 0,
@@ -65,4 +67,18 @@ export interface InviteGameJson {
 
 export interface AgreeInviteJson {
   friendName: string | null;
+}
+
+export enum InviteType {
+  NONE = -1,
+  CHAT = 0,
+  GAME = 1,
+}
+
+export interface GetInvitationListJson {
+  hostName: string;
+  inviteType: InviteType;
+  chatRoomName: string;
+  chatRoomType: RoomStatus;
+  gameType: GameMode;
 }

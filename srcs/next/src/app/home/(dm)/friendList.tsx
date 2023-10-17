@@ -68,8 +68,11 @@ const FriendList: React.FC = () => {
     );
     if (response.status === 200) {
       myAlert('info', `${selectFriend} 삭제 완료`, dispatch);
-      superSocket?.emit('getFriendStateList', myName);
-    }
+      superSocket?.emit('deleteFriend', {
+        userName: myName,
+        targetName: selectFriend,
+      });
+    } else if (response.status === 404) router.push('/404');
   };
 
   const handleStartDM = async (friendName: string) => {
@@ -81,7 +84,7 @@ const FriendList: React.FC = () => {
     <>
       {Array.isArray(friendList) ? (
         friendList?.map((curFriend: string[], rowIdx: number) => (
-          <Grow in={true} timeout={500 * (rowIdx + 1)} key={rowIdx}>
+          <Grow in={true} timeout={400 * (rowIdx + 1)} key={rowIdx}>
             <ListItem
               key={rowIdx}
               divider

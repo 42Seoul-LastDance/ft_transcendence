@@ -146,7 +146,7 @@ export class UserController {
             res.send(image); // 이미지 파일을 클라이언트로 전송
         } catch (error) {
             this.logger.error(`Failed to send profile image : ${error}`);
-            if (error.getStatus() == 404) throw new NotFoundException();
+            if (error.status === 404) throw new NotFoundException();
             else throw new InternalServerErrorException();
         }
     }
@@ -158,9 +158,9 @@ export class UserController {
             // console.log(`checking name : ${name}`);
             const user = await this.userService.getUserByUserName(name);
             if (user) throw new BadRequestException(`${name} already exist`);
-            res.send(200);
+            res.sendStatus(200);
         } catch (error) {
-            if (error.getStatus() == 404) res.send(200);
+            if (error.getStatus() == 404) res.sendStatus(200);
             else throw new InternalServerErrorException();
         }
     }

@@ -103,7 +103,7 @@ export class UserService {
         try {
             const user = await this.findUserById(userId);
             user.userName = userName ? userName : user.userName;
-            user.require2fa = require2fa ? require2fa : user.require2fa;
+            user.require2fa = require2fa;
             user.profileurl = profileImage ? profileImage.filename : user.profileurl;
             await this.userRepository.update(userId, user);
             if (userName) {
@@ -256,13 +256,19 @@ export class UserService {
     }
 
     async getUserProfileImage(username: string): Promise<{ image: Buffer; mimeType: string }> {
-        const user = await this.getUserByUserName(username);
-        const profileImgTarget = user.profileurl ? user.profileurl : 'default.png';
-        const imagePath = __dirname + '/../../profile/' + profileImgTarget;
-        const image = readFileSync(imagePath); // 이미지 파일을 읽어옴
-        if (!image) throw new InternalServerErrorException(`could not read ${imagePath}`);
-        const mimeType = 'image/' + extname(profileImgTarget).substring(1);
-        return { image, mimeType };
+        try {
+            const user = await this.getUserByUserName(username);
+            const profileImgTarget = user.profileurl ? user.profileurl : 'default.png';
+            const imagePath = '/usr/app/srcs/profile/' + profileImgTarget;
+            const image = readFileSync(imagePath); // 이미지 파일을 읽어옴
+            if (!image) {
+                throw new InternalServerErrorException(`could not read ${imagePath}`);
+            }
+            const mimeType = 'image/' + extname(profileImgTarget).substring(1);
+            return { image, mimeType };
+        } catch (error) {
+            console.log('ERRRRR: getUserProfileImage', error);
+        }
     }
 
     async updateUserExp(userId: number, score: number) {

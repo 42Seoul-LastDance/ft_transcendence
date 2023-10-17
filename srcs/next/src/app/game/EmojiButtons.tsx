@@ -1,10 +1,14 @@
 'use client';
-
+import React, { useState } from 'react';
 import { useGameSocket } from '../context/gameSocketContext';
 import { Emoji } from '../Enums';
+import { useDispatch } from 'react-redux';
+import { setMyEmoji } from '../redux/matchSlice';
 
 const EmojiButtons = () => {
   const socket = useGameSocket();
+  const dispatch = useDispatch();
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
   const buttonStyle = {
     background: 'transparent', // 투명 배경 설정
@@ -22,6 +26,12 @@ const EmojiButtons = () => {
       <button
         onClick={() => {
           socket?.emit('sendEmoji', { type: Emoji.HI });
+          dispatch(setMyEmoji({ myEmoji: '/emoji/emoji_HI.png' }));
+          if (timeoutId) clearTimeout(timeoutId);
+          const newTimeoutId = setTimeout(() => {
+            dispatch(setMyEmoji({ myEmoji: '' }));
+          }, 2000);
+          setTimeoutId(newTimeoutId);
         }}
         style={buttonStyle}
       >
@@ -31,6 +41,12 @@ const EmojiButtons = () => {
       <button
         onClick={() => {
           socket?.emit('sendEmoji', { type: Emoji.THUMBUP });
+          dispatch(setMyEmoji({ myEmoji: '/emoji/emoji_THUMBUP.png' }));
+          if (timeoutId) clearTimeout(timeoutId);
+          const newTimeoutId = setTimeout(() => {
+            dispatch(setMyEmoji({ myEmoji: '' }));
+          }, 2000);
+          setTimeoutId(newTimeoutId);
         }}
         style={buttonStyle}
       >
@@ -40,6 +56,12 @@ const EmojiButtons = () => {
       <button
         onClick={() => {
           socket?.emit('sendEmoji', { type: Emoji.FANFARE });
+          dispatch(setMyEmoji({ myEmoji: '/emoji/emoji_FANFARE.png' }));
+          if (timeoutId) clearTimeout(timeoutId);
+          const newTimeoutId = setTimeout(() => {
+            dispatch(setMyEmoji({ myEmoji: '' }));
+          }, 2000);
+          setTimeoutId(newTimeoutId);
         }}
         style={buttonStyle}
       >
@@ -49,6 +71,12 @@ const EmojiButtons = () => {
       <button
         onClick={() => {
           socket?.emit('sendEmoji', { type: Emoji.TONGUE });
+          dispatch(setMyEmoji({ myEmoji: '/emoji/emoji_TONGUE.png' }));
+          if (timeoutId) clearTimeout(timeoutId);
+          const newTimeoutId = setTimeout(() => {
+            dispatch(setMyEmoji({ myEmoji: '' }));
+          }, 2000);
+          setTimeoutId(newTimeoutId);
         }}
         style={buttonStyle}
       >
@@ -58,6 +86,12 @@ const EmojiButtons = () => {
       <button
         onClick={() => {
           socket?.emit('sendEmoji', { type: Emoji.SUNGLASSES });
+          dispatch(setMyEmoji({ myEmoji: '/emoji/emoji_SUNGLASSES.png' }));
+          if (timeoutId) clearTimeout(timeoutId);
+          const newTimeoutId = setTimeout(() => {
+            dispatch(setMyEmoji({ myEmoji: '' }));
+          }, 2000);
+          setTimeoutId(newTimeoutId);
         }}
         style={buttonStyle}
       >
@@ -67,6 +101,12 @@ const EmojiButtons = () => {
       <button
         onClick={() => {
           socket?.emit('sendEmoji', { type: Emoji.BADWORDS });
+          dispatch(setMyEmoji({ myEmoji: '/emoji/emoji_BADWORDS.png' }));
+          if (timeoutId) clearTimeout(timeoutId);
+          const newTimeoutId = setTimeout(() => {
+            dispatch(setMyEmoji({ myEmoji: '' }));
+          }, 2000);
+          setTimeoutId(newTimeoutId);
         }}
         style={buttonStyle}
       >

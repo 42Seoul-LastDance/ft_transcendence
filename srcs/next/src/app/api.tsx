@@ -41,26 +41,37 @@ const sendRequest = async (
     console.log('두 번째 요청');
     switch (error.response?.status) {
       case 404:
-        router.push('/');
+        router.push('/404');
         break;
       case 401:
         await reGenerateToken(router);
         axiosInstance.defaults.headers.common[
           'Authorization'
         ] = `Bearer ${getCookie('access_token')}`;
+        let secondResponse;
         try {
-          const response = await axiosInstance({
+          secondResponse = await axiosInstance({
             method,
             url,
             data,
           });
-          console.log('토큰 재발급 성공! Response : ', response);
-          return response;
-        } catch (error) {
-          console.log(
-            '두 번째 요청 실패! (토큰 재발급) <-- 말이 안 됨 ㄹㅇ 과제 리트 ㄱ',
-          );
-          router.push('/');
+          console.log('토큰 재발급 성공! Response : ', secondResponse);
+          return secondResponse;
+        } catch (error: any) {
+          console.log('두 번째 요청 실패! (토큰 재발급)', secondResponse);
+          switch (error.response?.status) {
+            case 404:
+              router.push('/404');
+              break;
+            case 401:
+              console.log('ERR : 말이 안 됨', secondResponse);
+              router.push('/');
+              break;
+            default:
+              console.log('이건 무슨 에러?', secondResponse);
+              router.push('/');
+              break;
+          }
         }
     }
     return new Promise(() => {});

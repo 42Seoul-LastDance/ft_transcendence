@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { io, Socket } from 'socket.io-client';
-import { setRoomNameList } from '../redux/roomSlice';
-import { RoomStatus } from '../interface';
 import {
   IoEventListener,
   IoEventOnce,

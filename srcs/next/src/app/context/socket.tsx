@@ -12,6 +12,7 @@ export const IoEventOnce = (
 ) => {
   if (!chatSocket?.hasListeners(eventName)) {
     chatSocket?.once(eventName, (data?: any) => {
+      console.log(`[Socket.IO] ${eventName} data: `, data);
       eventHandler(data);
     });
     console.log(`[Socket.IO] once ${eventName}`);

@@ -9,6 +9,7 @@ import {
   ChatRoomDto,
   EmitResult,
   Events,
+  GetChatRoomListJSON,
   JoinStatus,
   RoomStatus,
 } from '../../interface';
@@ -19,8 +20,8 @@ import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { isValid } from '../valid';
 import { myAlert } from '../alert';
 import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
-import { useEffect } from 'react';
-import { setRoomNameList } from '@/app/redux/roomSlice';
+import { useEffect, useState } from 'react';
+import { setRoomList } from '@/app/redux/roomSlice';
 import { Grow } from '@mui/material';
 import { maxPasswordLength } from '@/app/globals';
 
@@ -28,34 +29,35 @@ const ChatRoomList: React.FC = () => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const chatSocket = useChatSocket();
   const dispatch = useDispatch();
-  const roomNameList = useSelector(
-    (state: RootState) => state.room.roomNameList,
-  );
+  const roomList = useSelector((state: RootState) => state.room.roomList);
   const join = useSelector((state: RootState) => state.user.join);
+  const [click, setClick] = useState<boolean>(false);
 
   useEffect(() => {
     const e: Events[] = [
       {
+        event: 'getChatRoomInfo',
+        callback: (data: ChatRoomDto) => {
+          dispatch(setChatRoom(data));
+        },
+      },
+      {
         event: 'getChatRoomList',
-        callback: (data: string[]) => dispatch(setRoomNameList(data)),
+        callback: (data: GetChatRoomListJSON[]) => dispatch(setRoomList(data)),
       },
       {
         event: 'joinPublicChatRoom',
+        once: true,
         callback: (data: EmitResult) => {
+          setClick(false);
           if (data.result === true) {
             dispatch(setJoin(JoinStatus.CHAT));
             myAlert('success', data.reason, dispatch);
           } else {
-            dispatch(setChatRoom(null));
+            // dispatch(setChatRoom(null));
             dispatch(setJoin(JoinStatus.NONE));
             myAlert('error', data.reason, dispatch);
           }
-        },
-      },
-      {
-        event: 'getChatRoomInfo',
-        callback: (data: ChatRoomDto) => {
-          dispatch(setChatRoom(data));
         },
       },
     ];
@@ -63,47 +65,35 @@ const ChatRoomList: React.FC = () => {
     return () => {
       clearSocketEvent(chatSocket!, e);
     };
-  }, [roomNameList]);
+  }, [join, chatRoom, click]);
 
-  // TODO: 내일 로직 바꾸기 ^ 3 🙈
-  useEffect(() => {
-    console.log('챗룸 유즈이펙트', chatRoom);
-    if (chatRoom) {
-      let password: string | null = null;
-      if (chatRoom.requirePassword) {
-        password = prompt('비밀번호를 입력하세요');
-        if (
-          password === null ||
-          isValid('비밀번호가', password, maxPasswordLength, dispatch) === false
-        )
-          return;
-      }
-      chatSocket?.emit('joinPublicChatRoom', {
-        roomName: chatRoom.roomName,
-        password: password,
-      });
+  const joinRoom = (room: GetChatRoomListJSON) => {
+    setClick(true);
+    let password;
+    console.log('clicked room : ', room);
+    if (room.requirePassword) {
+      password = prompt(); // 비밀번호 비동기 입력
+      if (!isValid('비밀번호가', password!, maxPasswordLength, dispatch))
+        return;
     }
-  }, [chatRoom]);
-
-  const joinRoom = (roomName: string) => {
-    chatSocket?.emit('getChatRoomInfo', {
-      roomName: roomName,
-      status: RoomStatus.PUBLIC,
+    chatSocket!.emit('joinPublicChatRoom', {
+      roomName: room.roomName,
+      password: password ? password : null,
     });
   };
 
   return (
     <>
       <List aria-label="ChatRoom-List">
-        {roomNameList.map((roomName: string) => {
-          return roomName !== chatRoom?.roomName ? (
-            <Grow in={true} key={roomName} timeout={1000}>
+        {roomList.map((room: GetChatRoomListJSON, rowIdx: number) => {
+          return room.roomName !== chatRoom?.roomName ? (
+            <Grow in={true} key={room.roomName} timeout={1000}>
               <ListItem
                 divider
-                onClick={() => joinRoom(roomName)}
+                onClick={() => joinRoom(room)}
                 className="list-item"
               >
-                <ListItemText primary={`방 이름: ${roomName}`} />
+                <ListItemText primary={`방 이름: ${room.roomName}`} />
               </ListItem>
             </Grow>
           ) : null;

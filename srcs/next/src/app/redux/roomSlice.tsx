@@ -1,15 +1,20 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
-import { ChatMessage, Member, UserPermission } from '../interface';
+import {
+  ChatMessage,
+  GetChatRoomListJSON,
+  Member,
+  UserPermission,
+} from '../interface';
 
 export interface RoomList {
-  roomNameList: string[];
+  roomList: GetChatRoomListJSON[];
   roomMemberList: Member[];
   selectedMember: Member | null;
   myPermission: UserPermission;
 }
 
 const initialState: RoomList = {
-  roomNameList: [],
+  roomList: [],
   roomMemberList: [],
   selectedMember: null,
   myPermission: UserPermission.NONE,
@@ -19,8 +24,11 @@ const roomSlice = createSlice({
   name: 'room',
   initialState,
   reducers: {
-    setRoomNameList: (state: RoomList, action: PayloadAction<string[]>) => {
-      state.roomNameList = action.payload;
+    setRoomList: (
+      state: RoomList,
+      action: PayloadAction<GetChatRoomListJSON[]>,
+    ) => {
+      state.roomList = action.payload;
     },
 
     setRoomMemberList: (state: RoomList, action: PayloadAction<Member[]>) => {
@@ -45,7 +53,7 @@ const roomSlice = createSlice({
 
 export default roomSlice;
 export const {
-  setRoomNameList,
+  setRoomList,
   setMyPermission,
   setRoomMemberList,
   setSelectedMember,

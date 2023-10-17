@@ -13,19 +13,24 @@ import SuperSocketProvider, {
 import Link from 'next/link';
 import UserProfile from './(profile)/userProfile';
 import { useEffect, useState } from 'react';
-import { JoinStatus } from '../interface';
+import { JoinStatus, RoomStatus } from '../interface';
 import { setIsMatched } from '../redux/matchSlice';
 import AutoAlert from './alert';
 import { Button, CircularProgress, LinearProgress } from '@mui/material';
-// import DMPage from './(dm)/dmPage';
+import { setJoin } from '../redux/userSlice';
 
 const HomeContent = () => {
   const myName = useSelector((state: RootState) => state.user.userName);
   const dispatch = useDispatch();
+  const chatSocket = useChatSocket();
   const [render, setRender] = useState<boolean | undefined>(false);
 
   useEffect(() => {
     dispatch(setIsMatched({ isMatched: false }));
+    dispatch(setJoin(JoinStatus.NONE));
+    chatSocket?.emit('getChatRoomList', {
+      roomStatus: RoomStatus.PUBLIC,
+    });
   }, []);
 
   // useEffect(() => {
@@ -35,8 +40,8 @@ const HomeContent = () => {
   return (
     <>
       {/* {render ? ( */}
+      {myName}
       <>
-        <UserProfile targetName={myName!} />
         <br />
         <Link href="/game">
           <Button variant="outlined" color="secondary">
@@ -45,9 +50,7 @@ const HomeContent = () => {
         </Link>
         <br />
         <div style={{ display: 'flex' }}>
-          <ChatSocketProvider>
-            <ChattingTabs />
-          </ChatSocketProvider>
+          <ChattingTabs />
         </div>
       </>
       {/* ) : (
@@ -60,14 +63,14 @@ const HomeContent = () => {
 const MainHome = () => {
   return (
     <>
-      <Provider store={store}>
+      {/* <Provider store={store}>
         <SuperSocketProvider>
-          {/* <ChatSocketProvider> */}
-          <AutoAlert severity={'warning'} />
-          <HomeContent />
-          {/* </ChatSocketProvider> */}
+          <ChatSocketProvider> */}
+      <AutoAlert severity={'warning'} />
+      <HomeContent />
+      {/* </ChatSocketProvider>
         </SuperSocketProvider>
-      </Provider>
+      </Provider> */}
     </>
   );
 };

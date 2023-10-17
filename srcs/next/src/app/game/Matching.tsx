@@ -13,7 +13,7 @@ const Matching = () => {
   const [isMatching, setIsMatching] = useState<boolean>(false);
   const customSet = useSelector((state: RootState) => state.match.customSet);
   const dispatch = useDispatch();
-  const socket = useGameSocket();
+  const gameSocket = useGameSocket();
 
   useEffect(() => {
     if (
@@ -30,7 +30,7 @@ const Matching = () => {
           <Button
             onClick={() => {
               setIsMatching(true);
-              socket?.emit('pushQueue', {
+              gameSocket?.emit('pushQueue', {
                 gameMode: GameMode.NORMAL,
               });
             }}
@@ -40,7 +40,7 @@ const Matching = () => {
           <Button
             onClick={() => {
               setIsMatching(true);
-              socket?.emit('pushQueue', {
+              gameSocket?.emit('pushQueue', {
                 gameMode: GameMode.HARD,
               });
             }}
@@ -58,7 +58,7 @@ const Matching = () => {
           <Button
             onClick={() => {
               setIsMatching(false);
-              socket?.emit('popQueue');
+              gameSocket?.emit('popQueue');
             }}
           >
             Cancel Matching

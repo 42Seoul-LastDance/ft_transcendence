@@ -7,9 +7,12 @@ import Modal from '@mui/material/Modal';
 import { useChatSocket } from '@/app/context/chatSocketContext';
 import { useRouter } from 'next/navigation';
 import sendRequest from '@/app/api';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/app/redux/store';
 import { UserProfileProps, FriendStatus } from '@/app/interface';
+import { setViewProfile } from '@/app/redux/viewSlice';
+import { useSuperSocket } from '@/app/context/superSocketContext';
+import { removeCookie } from '@/app/Cookie';
 
 const style = {
   position: 'absolute' as 'absolute',
@@ -25,9 +28,11 @@ const style = {
 
 const UserProfile = (props: UserProfileProps) => {
   const chatSocket = useChatSocket();
+  const superSocket = useSuperSocket();
   const router = useRouter();
   const myName = useSelector((state: RootState) => state.user.userName);
-  const [open, setOpen] = useState<boolean>(false);
+  const viewProfile = useSelector((state: RootState) => state.view.viewProfile);
+  const [close, setClose] = useState<boolean>(false);
   const [level, setLevel] = useState<number>(0);
   const [exp, setExp] = useState<number>(0);
   // const [userName, setUserName] = useState<string>(''); <-- 이거 안 보내주셔도요돼이 /user/profile/<name>의 username
@@ -50,10 +55,11 @@ const UserProfile = (props: UserProfileProps) => {
   const [friendRequestAvailable, setFriendRequestAvailable] =
     useState<boolean>(true);
   const [isBlocked, setIsBlocked] = useState<boolean>(true);
+  const dispatch = useDispatch();
 
   const handleOpen = async () => {
-    if (props.targetName === myName) chatSocket?.disconnect();
-    setOpen(true);
+    setClose(false);
+
     if (myName !== props.targetName) {
       const friendResp = await sendRequest(
         'get',
@@ -105,9 +111,16 @@ const UserProfile = (props: UserProfileProps) => {
     setHardLose(gameData.data['hardLose']);
   };
 
+  useEffect(() => {
+    if (viewProfile === true) handleOpen();
+  }, [viewProfile]);
+
+  useEffect(() => {
+    if (close === true) dispatch(setViewProfile(false));
+  }, [close]);
+
   const handleClose = () => {
-    if (props.targetName === myName) chatSocket?.connect();
-    setOpen(false);
+    setClose(true);
   };
 
   const requestBeFriend = async () => {
@@ -142,11 +155,24 @@ const UserProfile = (props: UserProfileProps) => {
     );
   };
 
+  const logout = async () => {
+    const response = await sendRequest('post', `/auth/logout`, router);
+    if (response.status === 201) {
+      superSocket?.disconnect();
+      chatSocket?.disconnect();
+      removeCookie('access_token');
+      removeCookie('refresh_token');
+      setTimeout(() => {
+        router.push('/');
+      }, 1000);
+    }
+  };
+
   return (
     <>
-      <Button onClick={handleOpen}>See Profile</Button>
+      {/* <Button onClick={handleOpen}></Button> */}
       <Modal
-        open={open}
+        open={viewProfile}
         onClose={handleClose}
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
@@ -165,11 +191,19 @@ const UserProfile = (props: UserProfileProps) => {
             {/* <Divider /> */}
             Total Ranking Game : {normalWin + normalLose + hardWin + hardLose}
             <br />
-            Normal Ranking Game Winning Rate:{' '}
-            {(normalWin / (normalWin + normalLose)) * 100}%
+            {normalWin + normalLose > 0 && (
+              <span>
+                Normal Ranking Game Winning Rate:{' '}
+                {((normalWin / (normalWin + normalLose)) * 100).toFixed(2)}%
+              </span>
+            )}
             <br />
-            Hard Ranking Game Winning Rate:{' '}
-            {(hardWin / (hardWin + hardLose)) * 100}%
+            {hardWin + hardLose > 0 && (
+              <span>
+                Hard Ranking Game Winning Rate:{' '}
+                {((hardWin / (hardWin + hardLose)) * 100).toFixed(2)}%
+              </span>
+            )}
             <br />
           </Typography>
           {myName !== props.targetName ? (
@@ -178,17 +212,34 @@ const UserProfile = (props: UserProfileProps) => {
               Total Friend Game :{' '}
               {fNormalWin + fNormalLose + fHardWin + fNormalLose}
               <br />
-              Normal Friend Game Winning Rate:{' '}
-              {(fNormalWin / (fNormalWin + fNormalLose)) * 100}%
+              {fNormalWin + fNormalLose > 0 && (
+                <span>
+                  Normal Friend Game Winning Rate:{' '}
+                  {((fNormalWin / (fNormalWin + fNormalLose)) * 100).toFixed(2)}
+                  %
+                </span>
+              )}
               <br />
-              Hard Friend Game Winning Rate:{' '}
-              {(fHardWin / (fHardWin + fNormalLose)) * 100}%
+              {fHardWin + fHardLose > 0 && (
+                <span>
+                  Hard Friend Game Winning Rate:{' '}
+                  {((fHardWin / (fHardWin + fHardLose)) * 100).toFixed(2)}%
+                </span>
+              )}
               <br />
-              Left Side Winning Rate:{' '}
-              {(fLeftWin / (fLeftWin + fLeftLose)) * 100}%
+              {fLeftWin + fLeftLose > 0 && (
+                <span>
+                  Left Side Winning Rate:{' '}
+                  {((fLeftWin / (fLeftWin + fLeftLose)) * 100).toFixed(2)}%
+                </span>
+              )}
               <br />
-              Right Side Winning Rate:{' '}
-              {(fRightWin / (fRightWin + fRightLose)) * 100}%{/* <Divider /> */}
+              {fRightWin + fRightLose > 0 && (
+                <span>
+                  Right Side Winning Rate:{' '}
+                  {((fRightWin / (fRightWin + fRightLose)) * 100).toFixed(2)}%
+                </span>
+              )}
             </Typography>
           ) : null}
           {myName !== props.targetName &&
@@ -207,6 +258,9 @@ const UserProfile = (props: UserProfileProps) => {
             ) : (
               <Button onClick={block}>차단 하기</Button>
             ))}
+          {/* {myName === props.targetName && (
+            <Button onClick={logout}> 로그아웃 </Button>
+          )} */}
         </Box>
       </Modal>
     </>

@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { FriendRepository } from './friend.repository';
 import { Friend } from './friend.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -89,7 +89,7 @@ export class FriendService {
             return data.status; //FRIEND, REQUESTED
         } catch (error) {
             console.log(error);
-            throw new InternalServerErrorException('friendService >> getFriendStatus');
+            throw new BadRequestException('friendService >> getFriendStatus');
         }
     }
 
@@ -121,7 +121,7 @@ export class FriendService {
             }
         } catch (error) {
             console.log(error);
-            throw new InternalServerErrorException('friendService >> requestFriend');
+            throw new BadRequestException('friendService >> requestFriend');
         }
     }
 
@@ -134,7 +134,7 @@ export class FriendService {
             await this.friendRepository.delete(data.id);
         } catch (error) {
             console.log(error);
-            throw new InternalServerErrorException('friendService >> deleteFriend');
+            throw new BadRequestException('friendService >> deleteFriend');
         }
     }
 
@@ -155,7 +155,7 @@ export class FriendService {
             return invitations;
         } catch (error) {
             console.log(error);
-            throw new InternalServerErrorException('friendService >> getInvitation');
+            throw new BadRequestException('friendService >> getInvitation');
         }
     }
 
@@ -172,7 +172,7 @@ export class FriendService {
             );
         } catch (error) {
             console.log(error);
-            throw new InternalServerErrorException('friendService >> acceptRequest');
+            throw new BadRequestException('friendService >> acceptRequest');
         }
     }
 
@@ -186,7 +186,7 @@ export class FriendService {
             await this.friendRepository.delete(data.id);
         } catch (error) {
             console.log(error);
-            throw new InternalServerErrorException('friendService >> declineRequest');
+            throw new BadRequestException('friendService >> declineRequest');
         }
     }
 }

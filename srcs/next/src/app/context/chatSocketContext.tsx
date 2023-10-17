@@ -1,8 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Socket } from 'socket.io-client';
-import { setRoomNameList } from '../redux/roomSlice';
-import { Events, RoomStatus } from '../interface';
+import { setRoomList } from '../redux/roomSlice';
+import {
+  Events,
+  GetChatRoomListJSON,
+  JoinStatus,
+  RoomStatus,
+} from '../interface';
 import {
   clearSocketEvent,
   createSocket,
@@ -11,7 +16,7 @@ import {
 } from './socket';
 import { getCookie, removeCookie, setCookie } from '../Cookie';
 import { useRouter } from 'next/navigation';
-import { setName } from '../redux/userSlice';
+import { setJoin, setName } from '../redux/userSlice';
 
 // SocketContext 생성
 const ChatSocketContext = createContext<Socket | undefined>(undefined);
@@ -51,23 +56,17 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
       {
         event: 'expireToken',
         callback: async () => {
-          console.log('expireToken event Detected');
           await handleTryAuth(chatSocket!, router);
         },
       },
       {
-        event: 'getMyName',
-        callback: (data: string) => dispatch(setName(data)),
-      },
-      {
         event: 'getChatRoomList',
-        callback: (data: string[]) => dispatch(setRoomNameList(data)),
+        callback: (data: GetChatRoomListJSON[]) => dispatch(setRoomList(data)),
       },
       {
         event: 'connectSuccess',
         callback: () => {
           console.log('[Connect] chatSocket info', chatSocket);
-          chatSocket?.emit('getMyName');
           chatSocket?.emit('getChatRoomList', {
             roomStatus: RoomStatus.PUBLIC,
           });

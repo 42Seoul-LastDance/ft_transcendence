@@ -6,6 +6,7 @@ import roomSlice from './roomSlice';
 import alertSlice from './alertSlice';
 import dmSlice from './dmSlice';
 import friendSlice from './friendSlice';
+import viewSlice from './viewSlice';
 
 const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ const store = configureStore({
     alert: alertSlice.reducer,
     dm: dmSlice.reducer,
     friend: friendSlice.reducer,
+    view: viewSlice.reducer,
   },
 });
 

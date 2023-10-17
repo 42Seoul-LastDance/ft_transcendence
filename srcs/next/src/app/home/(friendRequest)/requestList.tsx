@@ -4,20 +4,24 @@ import React, { useEffect, useState } from 'react';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import sendRequest from '../../api';
 import { useRouter } from 'next/navigation';
-import { Button, Grow, TextField } from '@mui/material';
+import { Button, Grow, IconButton, TextField } from '@mui/material';
 import { isValid } from '../valid';
 import { maxUniqueNameLength } from '@/app/globals';
 import { myAlert } from '../alert';
 import FriendList from '../(dm)/friendList';
 import { FriendStatus } from '@/app/interface';
-
+import CachedIcon from '@mui/icons-material/Cached';
+import { useSuperSocket } from '@/app/context/superSocketContext';
+import { RootState } from '@/app/redux/store';
 const RequestList: React.FC = () => {
   const [requestList, setRequestList] = useState<string[]>([]);
   const router = useRouter();
   const [friendRequestName, setFriendRequestName] = useState<string>('');
+  const myName = useSelector((state: RootState) => state.user.userName);
+  const superSocket = useSuperSocket();
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -44,7 +48,13 @@ const RequestList: React.FC = () => {
       `/friends/saYes/${friendName}`,
       router,
     );
-    if (requestUnblock.status === 200) handleGetFriendInvitation();
+    if (requestUnblock.status === 200) {
+      handleGetFriendInvitation();
+      superSocket?.emit('acceptFriend', {
+        userName: myName,
+        targetName: friendName,
+      });
+    }
   };
 
   const checkAlreadyFriend = async () => {
@@ -114,7 +124,12 @@ const RequestList: React.FC = () => {
         </Button>
       </div>
       <List>
-        <p>받은 친구 요청 리스트 </p>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <p style={{ marginRight: '8px' }}>받은 친구 요청 리스트</p>
+          <IconButton aria-label="refresh" onClick={handleGetFriendInvitation}>
+            <CachedIcon />
+          </IconButton>
+        </div>
         {requestList.map((friendName: string, index: number) => (
           <Grow in={true} timeout={500 * (index + 1)} key={index}>
             <ListItem key={friendName} divider>

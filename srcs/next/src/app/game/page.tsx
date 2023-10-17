@@ -19,14 +19,14 @@ const GameHomeContent = () => {
   const searchParams = useSearchParams();
   const customSet = useSelector((state: RootState) => state.match.customSet);
 
-  useEffect(() => {
-    if (!gameSocket?.hasListeners('handShake')) {
-      gameSocket?.on('handShake', (json: HandShakeJson) => {
-        dispatch(setSide({ side: json.side }));
-        dispatch(setIsMatched({ isMatched: true }));
-      });
-    }
+  if (!gameSocket?.hasListeners('handShake')) {
+    gameSocket?.on('handShake', (json: HandShakeJson) => {
+      dispatch(setSide({ side: json.side }));
+      dispatch(setIsMatched({ isMatched: true }));
+    });
+  }
 
+  useEffect(() => {
     if (customSet.joinMode === GameJoinMode.CUSTOM_SEND) {
       dispatch(setIsMatched({ isMatched: false }));
       gameSocket?.emit('inviteGame', {

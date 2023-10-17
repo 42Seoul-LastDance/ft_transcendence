@@ -24,7 +24,7 @@ import {
   receiveMessage,
 } from '../../interface';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
-import { setJoin } from '@/app/redux/userSlice';
+import { setChatRoom, setJoin } from '@/app/redux/userSlice';
 import { myAlert } from '../alert';
 import { useRouter } from 'next/navigation';
 import sendRequest from '@/app/api';
@@ -44,6 +44,7 @@ const ChattingPage = (props: ChattingPageProps) => {
   const router = useRouter();
   const friendName = useSelector((state: RootState) => state.dm.friendName);
   let target: string | undefined | null = undefined;
+  const [mount, setMount] = useState<boolean>(false);
 
   join === JoinStatus.CHAT
     ? (target = chatRoom?.roomName)
@@ -57,27 +58,32 @@ const ChattingPage = (props: ChattingPageProps) => {
     const e = [
       {
         event: 'sendMessage',
-        callback: (data: SendMessageJson) => {
-          if (join === JoinStatus.CHAT) {
-            props.socket?.emit('receiveMessage', {
-              userName: data.userName,
-              content: data.content,
-            });
-          } else if (
+        once: true,
+        callback: (data: ChatMessage) => {
+          if (join === JoinStatus.CHAT)
+            props.socket?.emit('receiveMessage', data);
+          else if (
+            // dm일때 target이랑 받아온 username이랑 다르면 안그림 (방어)
             join === JoinStatus.DM &&
             (data.userName === friendName || data.userName === myName)
           ) {
-            setChatMessages((prevMessages) => prevMessages.concat(data));
-          } else {
-            console.log('과제 retry');
-          }
+            // setChatMessages((prevMessages) => [...prevMessages, data]);
+            setChatMessages([...chatMessages, data]);
+          } else console.log('join이 CHAT도 아니고 DM도 아님.');
         },
       },
       {
         event: 'receiveMessage',
+        once: true,
         callback: (data: receiveMessage) => {
           if (data.canReceive === false) return;
-          setChatMessages((prevMessages) => prevMessages.concat(data));
+
+          let newMsg: ChatMessage = {
+            userName: data.userName,
+            content: data.content,
+          };
+          setChatMessages([...chatMessages, newMsg]);
+          // setChatMessages((prevMessages) => [...prevMessages, newMsg]);
         },
       },
       {
@@ -89,12 +95,12 @@ const ChattingPage = (props: ChattingPageProps) => {
     return () => {
       clearSocketEvent(props.socket!, e);
     };
-  }, [join, chatMessages]);
-  //
+  }, [join, chatMessages, mount]);
 
   useEffect(() => {
-    setChatMessages([]);
     if (join === JoinStatus.DM) prevDmMessages();
+    else if (join === JoinStatus.CHAT) setChatMessages([]);
+    // TODO : 채팅방 입장 -> 퇴장 -> 다시 입장 시 메시지 안 옴!
   }, [target]);
 
   // 기존 DM메시지 가져오기
@@ -135,11 +141,10 @@ const ChattingPage = (props: ChattingPageProps) => {
   };
 
   const handleExitRoom = () => {
+    dispatch(setChatRoom(null));
     props.socket?.emit('exitChatRoom');
+    myAlert('success', '채팅방을 나갔습니다', dispatch);
     dispatch(setJoin(JoinStatus.NONE));
-    setChatMessages([]);
-    myAlert('success', '나가졌어요 펑 ~', dispatch);
-    props.socket?.emit('getRoomNameList');
   };
 
   return (
@@ -158,7 +163,7 @@ const ChattingPage = (props: ChattingPageProps) => {
           <IconButton
             color="primary"
             aria-label="settings"
-            sx={{ position: 'absolute', top: '16px', right: '20px' }}
+            sx={{ position: 'absolute', bottom: '16px', right: '20px' }}
             onClick={toggleSettings}
           >
             <SettingsIcon />
@@ -166,7 +171,7 @@ const ChattingPage = (props: ChattingPageProps) => {
           <IconButton
             color="primary"
             aria-label="quit"
-            sx={{ position: 'absolute', top: '16px', right: '60px' }}
+            sx={{ position: 'absolute', bottom: '16px', right: '60px' }}
             onClick={handleExitRoom}
           >
             <DirectionsRunIcon />

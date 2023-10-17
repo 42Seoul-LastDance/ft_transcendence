@@ -61,20 +61,24 @@ export class AuthController {
         //유저 검색해 신규 유저면 등록해줌 => 유저 리턴 (0912 작업 내용)
         const user = await this.authService.signUser(req.user);
 
-        if (user.require2fa === true) {
-            res.status(HttpStatus.OK);
-            const token = this.authService.generate2faToken(user.id, user.userName);
-            res.cookie('2fa_token', token, {
-                maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-                // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                // secure: false,
-            });
+        //TODO : 2fa logic 잠시 막아둠(0912)
+        // if (user.require2fa === true) {
+        //     res.status(HttpStatus.OK);
+        //     const token = this.authService.generate2faToken(user.id, user.userName);
+        //     res.cookie('2fa_token', token, {
+        //         maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+        //         // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+        //         // secure: false,
+        //     });
 
-            //mail 보내기
-            return res.status(200).json({
-                message: '2fa',
-            });
-        }
+        //     //mail 보내기
+        //     // return res.status(200).json({
+        //     //     message: '2fa',
+        //     // });
+
+        //     //임시로 막아놓으ㅡㅁ
+        //     return res.redirect(process.env.FRONT_URL + '/home'); //TODO : 로직 변경
+        // }
 
         const { jwt, refreshToken } = await this.authService.generateAuthToken(user.id, user.userName);
         res.status(HttpStatus.OK);

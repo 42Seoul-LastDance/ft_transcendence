@@ -53,9 +53,6 @@ const ChatSetting: React.FC = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
-  useEffect(() => {
-    console.log('셀멤 ', selectedMember);
-  }, [selectedMember]);
 
   return (
     <>

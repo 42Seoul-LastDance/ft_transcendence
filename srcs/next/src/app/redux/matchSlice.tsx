@@ -6,6 +6,7 @@ export interface MatchState {
   isMatched: boolean;
   side: PlayerSide;
   emoji: string;
+  myEmoji: string;
   leftName: string;
   rightName: string;
 }
@@ -19,6 +20,7 @@ const initialState: MatchState = {
   isMatched: false,
   side: PlayerSide.NONE,
   emoji: '',
+  myEmoji: '',
   leftName: '  ???  ',
   rightName: '  ???  ',
 };
@@ -54,6 +56,12 @@ export const matchSlice = createSlice({
     setEmoji: (state: MatchState, action: PayloadAction<{ emoji: string }>) => {
       state.emoji = action.payload.emoji;
     },
+    setMyEmoji: (
+      state: MatchState,
+      action: PayloadAction<{ myEmoji: string }>,
+    ) => {
+      state.myEmoji = action.payload.myEmoji;
+    },
     setNames: (
       state: MatchState,
       action: PayloadAction<{ leftName: string; rightName: string }>,
@@ -65,5 +73,11 @@ export const matchSlice = createSlice({
 });
 
 export default matchSlice.reducer;
-export const { setIsMatched, setSide, setCustomSet, setEmoji, setNames } =
-  matchSlice.actions;
+export const {
+  setIsMatched,
+  setSide,
+  setCustomSet,
+  setEmoji,
+  setMyEmoji,
+  setNames,
+} = matchSlice.actions;

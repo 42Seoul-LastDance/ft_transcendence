@@ -15,17 +15,33 @@ const imageStyle = {
 const UserPannel: React.FC<UserPannelProps> = ({ screenSide }) => {
   const mySide = useSelector((state: RootState) => state.match.side);
   const emoji = useSelector((state: RootState) => state.match.emoji);
+  const myEmoji = useSelector((state: RootState) => state.match.myEmoji);
   const leftName = useSelector((state: RootState) => state.match.leftName);
   const rightName = useSelector((state: RootState) => state.match.rightName);
 
   return (
     <>
-      {mySide !== screenSide && <img src={emoji} style={imageStyle} />}
+      {/* {mySide !== screenSide && <img src={emoji} style={imageStyle} />} */}
+      {/* {mySide === screenSide && <img src={myEmoji} style={imageStyle} />} */}
+      {screenSide === PlayerSide.LEFT ? (
+        mySide === PlayerSide.LEFT ? (
+          <img src={myEmoji} style={imageStyle} />
+        ) : (
+          <img src={emoji} style={imageStyle} />
+        )
+      ) : null}
       {screenSide === PlayerSide.LEFT ? (
         <div>{leftName}</div>
       ) : (
         <div>{rightName}</div>
       )}
+      {screenSide === PlayerSide.RIGHT ? (
+        mySide === PlayerSide.RIGHT ? (
+          <img src={myEmoji} style={imageStyle} />
+        ) : (
+          <img src={emoji} style={imageStyle} />
+        )
+      ) : null}
     </>
   );
 };

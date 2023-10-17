@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ChatRoomDto, JoinStatus } from '../interface';
 
 export interface userState {
-  imageUrl: string | null;
+  userImg: string | null;
   isAvailable: boolean | null;
   token: string | null;
   chatRoom: ChatRoomDto | null;
@@ -11,7 +11,7 @@ export interface userState {
 }
 
 const initialState: userState = {
-  imageUrl: null,
+  userImg: null,
   isAvailable: null,
   token: null,
   chatRoom: null,
@@ -26,8 +26,8 @@ const userSlice = createSlice({
     setToken: (state: userState, action: PayloadAction<string>) => {
       state.token = action.payload;
     },
-    setImageUrl: (state: userState, action: PayloadAction<string>) => {
-      state.imageUrl = action.payload;
+    setUserImg: (state: userState, action: PayloadAction<string>) => {
+      state.userImg = action.payload;
     },
     setAvailable: (state: userState, action: PayloadAction<boolean>) => {
       state.isAvailable = action.payload;
@@ -49,8 +49,8 @@ const userSlice = createSlice({
 
 export default userSlice;
 export const {
+  setUserImg,
   setToken,
-  setImageUrl,
   setAvailable,
   setChatRoom,
   setName,

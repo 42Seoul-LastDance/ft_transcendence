@@ -24,6 +24,7 @@ const Game = () => {
 
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [isReady, setIsReady] = useState<boolean>(true);
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const dispatch = useDispatch();
   // const isCustomGame = useSelector((state: RootState) => state.match.isCustom);
   const socket = useGameSocket();
@@ -124,9 +125,9 @@ const Game = () => {
 
   if (!socket?.hasListeners('sendEmoji')) {
     socket?.on('sendEmoji', (json: SendEmojiJson) => {
-      if (json.type === Emoji.HI)
+      if (json.type === Emoji.HI) {
         dispatch(setEmoji({ emoji: '/emoji/emoji_HI.png' }));
-      else if (json.type === Emoji.THUMBUP)
+      } else if (json.type === Emoji.THUMBUP)
         dispatch(setEmoji({ emoji: '/emoji/emoji_THUMBUP.png' }));
       else if (json.type === Emoji.FANFARE)
         dispatch(setEmoji({ emoji: '/emoji/emoji_FANFARE.png' }));
@@ -136,9 +137,11 @@ const Game = () => {
         dispatch(setEmoji({ emoji: '/emoji/emoji_SUNGLASSES.png' }));
       else if (json.type === Emoji.BADWORDS)
         dispatch(setEmoji({ emoji: '/emoji/emoji_BADWORDS.png' }));
-      setTimeout(() => {
-        dispatch(setEmoji({ emoji: '' })); //
+      if (timeoutId) clearTimeout(timeoutId);
+      const newTimeoutId = setTimeout(() => {
+        dispatch(setEmoji({ emoji: '' }));
       }, 2000);
+      setTimeoutId(newTimeoutId);
     });
   }
 

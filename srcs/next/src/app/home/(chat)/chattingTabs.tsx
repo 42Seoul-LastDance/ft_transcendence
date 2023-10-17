@@ -10,11 +10,9 @@ import { useSuperSocket } from '@/app/context/superSocketContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { JoinStatus } from '@/app/interface';
 import { setJoin } from '@/app/redux/userSlice';
-import ChatSocketProvider, {
-  useChatSocket,
-} from '@/app/context/chatSocketContext';
 import ChattingPage from './chattingPage';
 import { RootState } from '@/app/redux/store';
+import { useChatSocket } from '@/app/context/chatSocketContext';
 
 const ChattingTabs: React.FC = () => {
   const [value, setValue] = useState<number>(0);
@@ -30,7 +28,7 @@ const ChattingTabs: React.FC = () => {
 
   return (
     <div>
-      <Tabs value={value} component="nav" onChange={handleChange}>
+      <Tabs value={value} onChange={handleChange}>
         <Tab label="Chatting" />
         <Tab label="Friends" />
         <Tab label="Requests" />

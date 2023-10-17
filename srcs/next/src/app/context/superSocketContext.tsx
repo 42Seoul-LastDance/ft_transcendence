@@ -9,6 +9,8 @@ import {
 import { getCookie } from '../Cookie';
 import { useRouter } from 'next/navigation';
 import { Events } from '../interface';
+import { setName } from '../redux/userSlice';
+import { useDispatch } from 'react-redux';
 
 // SocketContext 생성
 const SuperSocketContext = createContext<Socket | undefined>(undefined);
@@ -24,6 +26,7 @@ const superSocket = createSocket('DM', getCookie('access_token'));
 
 const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
   // 소켓 상태 관리
+  const dispatch = useDispatch();
   const router = useRouter();
 
   useEffect(() => {
@@ -37,8 +40,13 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
       {
         event: 'connectSuccess',
         callback: () => {
+          superSocket?.emit('getMyName');
           console.log('[Connect] superSocket info', superSocket);
         },
+      },
+      {
+        event: 'getMyName',
+        callback: (data: string) => dispatch(setName(data)),
       },
     ];
     superSocket.connect();

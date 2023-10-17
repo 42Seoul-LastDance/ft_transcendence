@@ -50,10 +50,6 @@ export interface receiveMessage {
   canReceive: boolean;
 }
 
-export interface receiveMessage {
-  canReceive: boolean;
-}
-
 export interface EmitResult {
   result: boolean;
   reason: string;
@@ -96,13 +92,13 @@ export interface Member {
   permission: UserPermission;
 }
 
-export interface SendMessageJson {
-  userName: string;
-  content: string;
-}
-
 export interface Events {
   event: string;
   once?: boolean;
   callback: (data: any) => void;
+}
+
+export interface GetChatRoomListJSON {
+  roomName: string;
+  requirePassword: boolean;
 }
