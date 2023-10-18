@@ -10,13 +10,12 @@ export const IoEventOnce = (
   eventName: string,
   eventHandler: (data: any) => void,
 ) => {
-  if (!chatSocket?.hasListeners(eventName)) {
-    chatSocket?.once(eventName, (data?: any) => {
-      console.log(`[Socket.IO] ${eventName} data: `, data);
-      eventHandler(data);
-    });
-    console.log(`[Socket.IO] once ${eventName}`);
-  }
+  chatSocket?.off(eventName);
+  chatSocket?.once(eventName, (data?: any) => {
+    console.log(`[Socket.IO] ${eventName} data: `, data);
+    eventHandler(data);
+  });
+  console.log(`[Socket.IO] once ${eventName}`);
 };
 
 export const IoEventListenerEmpty = (
@@ -53,7 +52,7 @@ export const createSocket = (
     autoConnect: false, // 첫 연결시 커넥션
     transports: ['websocket'],
     closeOnBeforeunload: true,
-    reconnection: true, // 오류시 재연결
+    reconnection: false, // 오류시 재연결
     auth: {
       token: token,
     },
@@ -63,7 +62,6 @@ export const createSocket = (
 export const handleTryAuth = async (socket: Socket, router: any) => {
   const response = await reGenerateToken(router);
 
-  console.log('response', response);
   switch (response.status) {
     case 200:
       const xAccessToken = getCookie('access_token');

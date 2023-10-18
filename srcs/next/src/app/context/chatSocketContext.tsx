@@ -32,7 +32,6 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch();
   const router = useRouter();
   const [chatSocket, setChatSocket] = useState<Socket | undefined>(undefined);
-  // let chatSocket: Socket;
 
   // 소켓 수명 관리
   useEffect(() => {

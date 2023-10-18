@@ -27,18 +27,14 @@ const sendRequest = async (
     axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
     // Axios 요청 보내기
-    console.log('첫 번째 요청');
     const response = await axiosInstance({
       method,
       url,
       data,
     });
 
-    console.log('첫 번째 요청 성공! Response : ', response);
     return response;
   } catch (error: any) {
-    console.log('첫 번째 요청 실패!');
-    console.log('두 번째 요청');
     switch (error.response?.status) {
       case 404:
         router.push('/404');

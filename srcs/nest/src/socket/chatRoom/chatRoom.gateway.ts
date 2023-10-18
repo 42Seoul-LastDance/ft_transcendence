@@ -139,16 +139,17 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
             payload['status'],
         );
         socket.emit('getMemberStateList', memberList);
-        this.logger.debug('memberListInfo :: ', memberList);
+        // this.logger.debug('memberListInfo :: ', memberList);
         // Object.fromEntries(chatRoomList)
     }
 
-    @SubscribeMessage('getMyName')
-    async getMyName(socket: Socket) {
-        const userName = await this.chatroomService.getUserNameBySocket(socket);
-        this.logger.log(`getMyName : ${userName}`);
-        socket.emit('getMyName', userName);
-    }
+    //? 'getMyName' 이벤트 DM 소켓으로만 보낸다고 합니다 (juhoh)
+    // @SubscribeMessage('getMyName')
+    // async getMyName(socket: Socket) {
+    //     const userName = await this.chatroomService.getUserNameBySocket(socket);
+    //     this.logger.log(`getMyName : ${userName}`);
+    //     socket.emit('getMyName', userName);
+    // }
 
     // * Message ===========================================================
     @SubscribeMessage('sendMessage')

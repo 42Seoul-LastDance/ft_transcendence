@@ -3,7 +3,8 @@ import { PlayerSide, GameJoinMode, GameMode, CustomGameSet } from '../Enums';
 
 export interface MatchState {
   customSet: CustomGameSet;
-  isMatched: boolean;
+  isMatched: boolean | undefined;
+  isMatchInProgress: boolean;
   side: PlayerSide;
   emoji: string;
   myEmoji: string;
@@ -17,12 +18,13 @@ const initialState: MatchState = {
     gameMode: GameMode.NONE,
     opponentName: '',
   },
-  isMatched: false,
+  isMatched: undefined,
+  isMatchInProgress: false,
   side: PlayerSide.NONE,
   emoji: '',
   myEmoji: '',
-  leftName: '  ???  ',
-  rightName: '  ???  ',
+  leftName: '???',
+  rightName: '???',
 };
 
 export const matchSlice = createSlice({
@@ -43,9 +45,15 @@ export const matchSlice = createSlice({
     },
     setIsMatched: (
       state: MatchState,
-      action: PayloadAction<{ isMatched: boolean }>,
+      action: PayloadAction<{ isMatched: boolean | undefined }>,
     ) => {
       state.isMatched = action.payload.isMatched;
+    },
+    setIsMatchInProgress: (
+      state: MatchState,
+      action: PayloadAction<{ isMatchInProgress: boolean }>,
+    ) => {
+      state.isMatchInProgress = action.payload.isMatchInProgress;
     },
     setSide: (
       state: MatchState,
@@ -80,4 +88,5 @@ export const {
   setEmoji,
   setMyEmoji,
   setNames,
+  setIsMatchInProgress,
 } = matchSlice.actions;

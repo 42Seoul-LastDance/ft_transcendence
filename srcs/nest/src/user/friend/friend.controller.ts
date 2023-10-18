@@ -22,15 +22,6 @@ export class FriendController {
     private logger = new Logger(FriendController.name);
     constructor(private readonly friendService: FriendService) {}
 
-    // @Get('/getFriendList')
-    // @UseGuards(JwtAuthGuard)
-    // async getFriendList(@Req() req, @Res() res: Response) {
-    //     console.log(req.user);
-    //     const friendList = await this.friendService.getFriendNameAndSlackIdList(+req.user.sub);
-    //     this.logger.log(friendList);
-    //     return res.status(200).send(friendList);
-    // }
-
     @Get('/isFriend/:friendName')
     @UseGuards(JwtAuthGuard)
     async getFriendStatus(@Req() req, @Res() res: Response, @Param('friendName') friendName: string) {
@@ -46,10 +37,10 @@ export class FriendController {
         return res.sendStatus(200);
     }
 
-    @Delete('/delete/:friendName')
+    @Delete('/delete/:slackId')
     @UseGuards(JwtAuthGuard)
-    async deleteFriend(@Req() req, @Res() res: Response, @Param('friendName') friendName: string) {
-        await this.friendService.deleteFriend(+req.user.sub, friendName);
+    async deleteFriend(@Req() req, @Res() res: Response, @Param('slackId') slackId: string) {
+        await this.friendService.deleteFriend(+req.user.sub, slackId);
         return res.sendStatus(200);
     }
 

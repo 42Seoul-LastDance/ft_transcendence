@@ -62,8 +62,11 @@ const SettingInfo = () => {
 
   const checkDuplicate = async (): Promise<boolean> => {
     const response = await sendRequest(
-      'get',
-      `/users/username/${inputName}`,
+      'post',
+      `/users/username/`,
+      {
+        name: inputName,
+      },
       router,
     );
     if (response.status < 300) return true;
@@ -85,14 +88,9 @@ const SettingInfo = () => {
     });
     if (response.status < 300) {
       getUserInfo();
-      myAlert('success', '1', dispatch);
       getUserProfileImg();
-      myAlert('success', '2', dispatch);
       dispatch(setName(inputName));
-      myAlert('success', '3', dispatch);
       dispatch(setUserImg(inputImg!));
-      myAlert('success', '4', dispatch);
-      router.push('/home');
     } else {
       myAlert('error', 'sth went wrong', dispatch);
     }
@@ -133,10 +131,10 @@ const SettingInfo = () => {
     <>
       <List>
         <ListItem key="userName" divider>
-          <ListItemText primary={`유저 이름: ${myName}`} />
+          <ListItemText primary={`유저 이름: ${myName ? myName : ''}`} />
           <TextField
             id="outlined-basic"
-            label="Outlined"
+            label="uniqueName"
             variant="outlined"
             value={inputName}
             onChange={handleNameChange}

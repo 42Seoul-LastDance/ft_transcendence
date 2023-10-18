@@ -8,6 +8,8 @@ import { UserStatus } from 'src/user/user-status.enum';
 import { Invitation } from './socketUsers.interface';
 import { InviteType } from './socketUsers.enum';
 import { User } from 'src/user/user.entity';
+import { GameMode } from 'src/game/game.enum';
+import { RoomStatus } from '../chatRoom/roomStatus.enum';
 
 @Injectable()
 export class SocketUsersService {
@@ -105,10 +107,14 @@ export class SocketUsersService {
         const invitation: Invitation = {
             hostName: host.userName,
             hostSlackId: host.slackId,
-            inviteType: payload['inviteType'],
+            inviteType: +payload['inviteType'] === InviteType.CHAT ? InviteType.CHAT : InviteType.GAME,
             chatRoomName: payload['chatRoomName'] ? payload['chatRoomName'] : undefined,
-            chatRoomType: payload['chatRoomType'] ? payload['chatRoomType'] : undefined,
-            gameMode: payload['gameMode'] ? payload['gameMode'] : undefined,
+            chatRoomType: payload['chatRoomType']
+                ? payload['chatRoomType'] === RoomStatus.PRIVATE
+                    ? RoomStatus.PRIVATE
+                    : RoomStatus.PUBLIC
+                : undefined,
+            gameMode: payload['gameMode'] ? GameMode.HARD : GameMode.NORMAL,
         };
         this.inviteList.get(guestId).set(hostId, invitation);
         return this.dmUserList.get(guestId);
@@ -132,6 +138,7 @@ export class SocketUsersService {
         if (invitation === undefined) return;
         //invitation 삭제
         this.inviteList.get(guestId).delete(hostId);
+        return this.dmUserList.get(guestId);
     }
 
     async declineInvite(socketId: string, hostSlackId: string): Promise<Socket> {
@@ -141,9 +148,10 @@ export class SocketUsersService {
         if (invitation === undefined) return;
         if (invitation.inviteType === InviteType.GAME) {
             //Game의 경우 game socket으로 초대 거절 이벤트 전달
-            const hostSocketId: string = this.gameUserList.get(hostId);
-            const hostSocket: Socket = this.gamePlayerList.get(hostSocketId).socket;
-            hostSocket.emit('denyInvite');
+            const hostGameSocketId: string = this.gameUserList.get(hostId);
+            const hostGameSocket: Socket = this.gamePlayerList.get(hostGameSocketId).socket;
+            hostGameSocket.emit('denyInvite');
+            console.log('game socket으로 emit: denyInvite', hostId, hostSlackId);
         }
         this.inviteList.get(guestId).delete(hostId);
         return this.dmUserList.get(guestId);
@@ -228,6 +236,10 @@ export class SocketUsersService {
     }
 
     //* getter
+    async getUserByUserId(userId: number): Promise<User> {
+        return await this.userService.findUserById(userId);
+    }
+
     async getUserNameByUserId(userId: number): Promise<string> {
         return (await this.userService.findUserById(userId)).userName;
     }
@@ -365,14 +377,21 @@ export class SocketUsersService {
         return this.getStatusById(userId);
     }
 
-    async getFriendStateList(userName: string): Promise<[string, UserStatus][]> {
+    async getFriendStateList(
+        userName: string,
+    ): Promise<{ userName: string; slackId: string; userStatus: UserStatus }[]> {
         const userId = await this.getUserIdByUserName(userName);
-        const friendStateList: [string, UserStatus][] = [];
+        const friendStateList: { userName: string; slackId: string; userStatus: UserStatus }[] = [];
 
         const friendIdList: Array<number> = this.friendList.get(userId);
         for (const friendId of friendIdList) {
-            const friendName = await this.getUserNameByUserId(friendId);
-            friendStateList.push([friendName, await this.getStatusByUserName(friendName)]);
+            const friend: User = await this.getUserByUserId(friendId);
+            const friendInfo = {
+                userName: friend.userName,
+                slackId: friend.slackId,
+                userStatus: await this.getStatusByUserName(friend.userName),
+            };
+            friendStateList.push(friendInfo);
         }
         return friendStateList;
     }

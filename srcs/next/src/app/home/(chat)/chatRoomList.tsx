@@ -70,7 +70,6 @@ const ChatRoomList: React.FC = () => {
   const joinRoom = (room: GetChatRoomListJSON) => {
     setClick(true);
     let password;
-    console.log('clicked room : ', room);
     if (room.requirePassword) {
       password = prompt(); // 비밀번호 비동기 입력
       if (!isValid('비밀번호가', password!, maxPasswordLength, dispatch))
@@ -93,6 +92,7 @@ const ChatRoomList: React.FC = () => {
                 onClick={() => joinRoom(room)}
                 className="list-item"
               >
+                room.requirePassWord ? (<></>):(null)
                 <ListItemText primary={`방 이름: ${room.roomName}`} />
               </ListItem>
             </Grow>

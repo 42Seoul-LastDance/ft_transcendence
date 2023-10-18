@@ -77,8 +77,9 @@ export enum InviteType {
 
 export interface GetInvitationListJson {
   hostName: string;
+  hostSlackId: string;
   inviteType: InviteType;
   chatRoomName: string;
   chatRoomType: RoomStatus;
-  gameType: GameMode;
+  gameMode: GameMode;
 }

@@ -29,7 +29,6 @@ const BlockList: React.FC = () => {
     const response = await sendRequest('get', '/block/getBlockList', router);
 
     setBlockList(response.data);
-    console.log('blockList', blockList);
   };
 
   const unblockUser = async (blockName: string) => {

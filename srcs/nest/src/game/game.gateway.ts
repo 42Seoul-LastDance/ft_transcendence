@@ -39,6 +39,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             // console.log('GAME SOCKET NEW CONNECTION WITH ', decodedToken.userName);
             await this.gameService.createPlayer(client, decodedToken.sub);
             this.logger.log(`NEW CONNECTION WITH ${decodedToken.userName}, ${client.id}`);
+            client.emit('connectSuccess');
         } catch (error) {
             this.logger.warn(`Handle Connection : ${error.message}`);
             if (error.message === 'jwt expired') {
@@ -75,21 +76,25 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     //* Friend Game ======================================
     @SubscribeMessage('inviteGame')
     async inviteGame(client: Socket, gameInfo: JSON) {
+        console.log('inviteGame 받음');
         await this.gameService.inviteGame(client.id, +gameInfo['gameMode'], gameInfo['friendName']);
     }
 
     @SubscribeMessage('quitInvite')
-    quitInvite(client: Socket) {
-        this.gameService.quitInvite(client.id);
+    async quitInvite(client: Socket) {
+        console.log('quitInvite 받음', client.id);
+        await this.gameService.quitInvite(client.id);
     }
 
     @SubscribeMessage('agreeInvite')
     async agreeInvite(client: Socket, gameInfo: JSON) {
+        console.log('agreeInvite 받음');
         await this.gameService.agreeInvite(client.id, gameInfo['friendName']);
     }
 
     @SubscribeMessage('denyInvite')
     denyInvite(client: Socket, gameInfo: JSON) {
+        console.log('denyInvite 받음');
         this.gameService.denyInvite(client.id, gameInfo['friendName']);
     }
 
@@ -131,6 +136,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('outGame')
     async outGame(client: Socket) {
+        // console.log('outGame called');
         await this.gameService.outGame(client.id);
     }
 }

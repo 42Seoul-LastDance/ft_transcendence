@@ -56,7 +56,7 @@ const UserProfile = (props: UserProfileProps) => {
     useState<boolean>(true);
   const [isBlocked, setIsBlocked] = useState<boolean>(true);
   const dispatch = useDispatch();
-
+  // dispatch(setViewProfile(true))
   const handleOpen = async () => {
     setClose(false);
 
@@ -114,6 +114,12 @@ const UserProfile = (props: UserProfileProps) => {
   useEffect(() => {
     if (viewProfile === true) handleOpen();
   }, [viewProfile]);
+
+  useEffect(() => {
+    if (viewProfile === false && myName) {
+      handleOpen();
+    }
+  }, []);
 
   useEffect(() => {
     if (close === true) dispatch(setViewProfile(false));
@@ -186,7 +192,7 @@ const UserProfile = (props: UserProfileProps) => {
             <br />
             Level : {level}
             <br />
-            Exp : {exp}({(exp / ((level + 1) * 500)) * 100}%)
+            Exp : {exp} ({((exp / ((level + 1) * 500)) * 100).toFixed(2)}%)
             <br />
             {/* <Divider /> */}
             Total Ranking Game : {normalWin + normalLose + hardWin + hardLose}

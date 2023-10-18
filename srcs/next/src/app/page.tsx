@@ -1,12 +1,12 @@
 'use client';
 
+// import logo from './logo.svg';
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Link from 'next/link';
 import { BACK_URL } from './globals';
-import { getCookie } from './Cookie';
 
 export default function Home() {
   const router = useRouter();
@@ -18,7 +18,9 @@ export default function Home() {
 
   return (
     <main>
+      {/* <img src={logo} width="300" height="300" /> */}
       <h1>42Login!</h1>
+      <img src="" />
       <Divider />
       <Link href={`${BACK_URL}/auth/42login`}>
         <Button variant="contained">42login</Button>

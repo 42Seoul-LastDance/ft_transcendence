@@ -60,14 +60,9 @@ export enum TokenType {
   Refresh = 1,
 }
 
-export enum UserStatus {
-  ONLINE = 'online',
-  OFFLINE = 'offline',
-  GAME = 'game',
-}
-
 export interface UserProfileProps {
   targetName: string;
+  // targetSlackId: string;
 }
 
 export interface ChattingPageProps {
@@ -101,4 +96,15 @@ export interface Events {
 export interface GetChatRoomListJSON {
   roomName: string;
   requirePassword: boolean;
+}
+export enum UserStatus {
+  ONLINE = 'online',
+  OFFLINE = 'offline',
+  GAME = 'game',
+}
+
+export interface FriendListJson {
+  userName: string;
+  slackId: string;
+  userStatus: UserStatus;
 }

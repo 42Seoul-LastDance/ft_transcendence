@@ -11,6 +11,7 @@ import { DateTime } from 'luxon';
 import { JwtService } from '@nestjs/jwt';
 import { UserStatus } from 'src/user/user-status.enum';
 import { Logger } from '@nestjs/common';
+import { User } from 'src/user/user.entity';
 export const TIMEZONE: string = 'Asia/Seoul';
 
 @WebSocketGateway({
@@ -84,9 +85,9 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
 
     @SubscribeMessage('getMyName')
     async getMyName(socket: Socket) {
-        const userName = await this.directMessageService.getuserNameBySocketId(socket.id);
-        this.logger.log(`getMyName : ${userName}`);
-        socket.emit('getMyName', userName);
+        const user: User = await this.directMessageService.getUserBySocketId(socket.id);
+        this.logger.log(`getMyName : ${user.userName}`);
+        socket.emit('getMyName', [user.userName, user.slackId]);
     }
 
     //* updateBlockUser

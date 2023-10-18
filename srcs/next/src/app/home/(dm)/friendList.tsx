@@ -5,9 +5,13 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { useSuperSocket } from '../../context/superSocketContext';
 import { useDispatch, useSelector } from 'react-redux';
-import { Events, JoinStatus, UserStatus } from '@/app/interface';
+import {
+  Events,
+  FriendListJson,
+  JoinStatus,
+  UserStatus,
+} from '@/app/interface';
 import { setJoin } from '@/app/redux/userSlice';
-import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import { Avatar, Grow, IconButton } from '@mui/material';
 import { setFriend } from '@/app/redux/dmSlice';
 import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
@@ -15,14 +19,18 @@ import { RootState } from '@/app/redux/store';
 import sendRequest from '@/app/api';
 import { useRouter } from 'next/navigation';
 import { myAlert } from '../alert';
-import { FriendListType, setFriendList } from '@/app/redux/friendSlice';
-
+import { setFriendList } from '@/app/redux/friendSlice';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import UserProfile from '../(profile)/userProfile';
+import { setViewProfile } from '@/app/redux/viewSlice';
 const FriendList: React.FC = () => {
   const superSocket = useSuperSocket();
   const dispatch = useDispatch();
   const friendList = useSelector((state: RootState) => state.friend.friendList);
   const myName = useSelector((state: RootState) => state.user.userName);
   const join = useSelector((state: RootState) => state.user.join);
+  const [targetUser, setTargetUser] = useState<string | null>(null); // [targetName, targetStatus
   const router = useRouter();
 
   useEffect(() => {
@@ -30,7 +38,7 @@ const FriendList: React.FC = () => {
     const e: Events[] = [
       {
         event: 'getFriendStateList',
-        callback: (data: string[][]) => {
+        callback: (data: FriendListJson[]) => {
           dispatch(setFriendList(data));
         },
       },
@@ -41,7 +49,6 @@ const FriendList: React.FC = () => {
         },
       },
     ];
-
     registerSocketEvent(superSocket!, e);
     return () => {
       clearSocketEvent(superSocket!, e);
@@ -75,6 +82,19 @@ const FriendList: React.FC = () => {
     } else if (response.status === 404) router.push('/404');
   };
 
+  const handleProfile = (
+    event: {
+      preventDefault: () => void;
+      stopPropagation: () => void;
+    },
+    selectFriend: string,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setTargetUser(selectFriend);
+    dispatch(setViewProfile(true));
+  };
+
   const handleStartDM = async (friendName: string) => {
     dispatch(setFriend(friendName));
     dispatch(setJoin(JoinStatus.DM));
@@ -83,43 +103,58 @@ const FriendList: React.FC = () => {
   return (
     <>
       {Array.isArray(friendList) ? (
-        friendList?.map((curFriend: string[], rowIdx: number) => (
+        friendList?.map((curFriend: FriendListJson, rowIdx: number) => (
           <Grow in={true} timeout={400 * (rowIdx + 1)} key={rowIdx}>
             <ListItem
               key={rowIdx}
               divider
               onClick={() => {
-                handleStartDM(curFriend[0]);
+                handleStartDM(curFriend.userName);
               }}
               className="list-item"
             >
-              <ListItemText primary={curFriend[0]} />
               <Avatar
                 sx={{
                   width: 15,
                   height: 15,
+                  margin: '15px',
                   bgcolor:
-                    curFriend[1] === UserStatus.ONLINE
+                    curFriend.userStatus === UserStatus.ONLINE
                       ? '#4caf50'
-                      : curFriend[1] === UserStatus.GAME
+                      : curFriend.userStatus === UserStatus.GAME
                       ? '#ffeb3b'
-                      : curFriend[1] === UserStatus.OFFLINE
+                      : curFriend.userStatus === UserStatus.OFFLINE
                       ? '#9e9e9e'
                       : 'transparent',
                 }}
               >
                 {' '}
               </Avatar>
+              <ListItemText
+                primary={curFriend.userName}
+                secondary={curFriend.slackId}
+              />
+              <IconButton
+                edge="start"
+                aria-label="account"
+                onClick={(event: {
+                  preventDefault: () => void;
+                  stopPropagation: () => void;
+                }) => handleProfile(event, curFriend.userName)}
+              >
+                <AccountCircleIcon />
+              </IconButton>
               <IconButton
                 edge="end"
                 aria-label="delete"
                 onClick={(event: {
                   preventDefault: () => void;
                   stopPropagation: () => void;
-                }) => deleteFriend(event, curFriend[0])}
+                }) => deleteFriend(event, curFriend.userName)}
               >
-                <PersonRemoveIcon />
+                <DeleteIcon />
               </IconButton>
+              {targetUser && <UserProfile targetName={targetUser} />}
             </ListItem>
           </Grow>
         ))

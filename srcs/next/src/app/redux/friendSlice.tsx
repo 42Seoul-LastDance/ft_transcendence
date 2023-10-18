@@ -1,7 +1,8 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
+import { FriendListJson } from '../interface';
 
 export interface FriendListType {
-  friendList: string[][];
+  friendList: FriendListJson[];
 }
 
 const initialState: FriendListType = {
@@ -14,7 +15,7 @@ const friendSlice = createSlice({
   reducers: {
     setFriendList: (
       state: FriendListType,
-      action: PayloadAction<string[][]>,
+      action: PayloadAction<FriendListJson[]>,
     ) => {
       state.friendList = action.payload;
     },

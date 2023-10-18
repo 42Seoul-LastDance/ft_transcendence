@@ -83,6 +83,7 @@ const RequestList: React.FC = () => {
     const response = await sendRequest(
       'put',
       `/friends/request/${friendRequestName}`,
+      {},
       router,
     );
     if (response.status === 200) {

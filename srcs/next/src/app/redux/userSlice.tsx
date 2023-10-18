@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ChatRoomDto, JoinStatus } from '../interface';
+import { GetInvitationListJson } from '../Enums';
 
 export interface userState {
   userImg: string | null;
@@ -7,7 +8,10 @@ export interface userState {
   token: string | null;
   chatRoom: ChatRoomDto | null;
   userName: string | null;
+  userSlackId: string | null;
   join: JoinStatus;
+  notiCount: number;
+  invitationList: GetInvitationListJson[];
 }
 
 const initialState: userState = {
@@ -16,7 +20,10 @@ const initialState: userState = {
   token: null,
   chatRoom: null,
   userName: null,
+  userSlackId: null,
   join: JoinStatus.NONE,
+  notiCount: 0,
+  invitationList: [],
 };
 
 const userSlice = createSlice({
@@ -35,6 +42,9 @@ const userSlice = createSlice({
     setName: (state: userState, action: PayloadAction<string>) => {
       state.userName = action.payload;
     },
+    setSlackId: (state: userState, action: PayloadAction<string>) => {
+      state.userSlackId = action.payload;
+    },
     setChatRoom: (
       state: userState,
       action: PayloadAction<ChatRoomDto | null>,
@@ -43,6 +53,15 @@ const userSlice = createSlice({
     },
     setJoin: (state: userState, action: PayloadAction<number>) => {
       state.join = action.payload;
+    },
+    setNotiCount: (state: userState, action: PayloadAction<number>) => {
+      state.notiCount = action.payload;
+    },
+    setInvitationList: (
+      state: userState,
+      action: PayloadAction<GetInvitationListJson[]>,
+    ) => {
+      state.invitationList = action.payload;
     },
   },
 });
@@ -54,5 +73,8 @@ export const {
   setAvailable,
   setChatRoom,
   setName,
+  setSlackId,
   setJoin,
+  setNotiCount,
+  setInvitationList,
 } = userSlice.actions;

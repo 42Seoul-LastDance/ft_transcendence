@@ -28,9 +28,9 @@ const CreateRoomForm = ({ onClose }: { onClose: () => void }) => {
       {
         event: 'createChatRoom',
         callback: (data: ChatRoomDto) => {
+          onClose();
           dispatch(setChatRoom(data));
           dispatch(setJoin(JoinStatus.CHAT));
-          onClose();
         },
       },
     ];

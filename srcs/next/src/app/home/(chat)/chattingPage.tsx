@@ -11,6 +11,7 @@ import {
   ListItemText,
   IconButton,
   Drawer,
+  Paper,
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings'; // 설정 아이콘 추가
 import ChatSetting from './chatSetting';
@@ -19,8 +20,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   ChatMessage,
   ChattingPageProps,
+  Events,
   JoinStatus,
-  SendMessageJson,
   receiveMessage,
 } from '../../interface';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
@@ -44,7 +45,6 @@ const ChattingPage = (props: ChattingPageProps) => {
   const router = useRouter();
   const friendName = useSelector((state: RootState) => state.dm.friendName);
   let target: string | undefined | null = undefined;
-  const [mount, setMount] = useState<boolean>(false);
 
   join === JoinStatus.CHAT
     ? (target = chatRoom?.roomName)
@@ -55,7 +55,7 @@ const ChattingPage = (props: ChattingPageProps) => {
     if (listRef.current)
       listRef.current.scrollTop = listRef.current.scrollHeight;
 
-    const e = [
+    const e: Events[] = [
       {
         event: 'sendMessage',
         once: true,
@@ -63,13 +63,10 @@ const ChattingPage = (props: ChattingPageProps) => {
           if (join === JoinStatus.CHAT)
             props.socket?.emit('receiveMessage', data);
           else if (
-            // dm일때 target이랑 받아온 username이랑 다르면 안그림 (방어)
             join === JoinStatus.DM &&
             (data.userName === friendName || data.userName === myName)
-          ) {
-            // setChatMessages((prevMessages) => [...prevMessages, data]);
+          )
             setChatMessages([...chatMessages, data]);
-          } else console.log('join이 CHAT도 아니고 DM도 아님.');
         },
       },
       {
@@ -83,7 +80,17 @@ const ChattingPage = (props: ChattingPageProps) => {
             content: data.content,
           };
           setChatMessages([...chatMessages, newMsg]);
-          // setChatMessages((prevMessages) => [...prevMessages, newMsg]);
+        },
+      },
+      {
+        event: 'serverMessage',
+        once: true,
+        callback: (data: string) => {
+          const serverMsg: ChatMessage = {
+            userName: 'server',
+            content: data,
+          };
+          setChatMessages([...chatMessages, serverMsg]);
         },
       },
       {
@@ -95,11 +102,11 @@ const ChattingPage = (props: ChattingPageProps) => {
     return () => {
       clearSocketEvent(props.socket!, e);
     };
-  }, [join, chatMessages, mount]);
+  }, [join, chatMessages, target]);
 
   useEffect(() => {
     if (join === JoinStatus.DM) prevDmMessages();
-    else if (join === JoinStatus.CHAT) setChatMessages([]);
+    else if (join === JoinStatus.CHAT) clearChatMessages();
     // TODO : 채팅방 입장 -> 퇴장 -> 다시 입장 시 메시지 안 옴!
   }, [target]);
 
@@ -107,6 +114,10 @@ const ChattingPage = (props: ChattingPageProps) => {
   const prevDmMessages = async () => {
     const response = await sendRequest('get', `/DM/with/${friendName}`, router); // ChatMessages[] 로 올 예정
     setChatMessages(response.data);
+  };
+
+  const clearChatMessages = () => {
+    setChatMessages([]);
   };
 
   // 메세지 보내기
@@ -145,6 +156,7 @@ const ChattingPage = (props: ChattingPageProps) => {
     props.socket?.emit('exitChatRoom');
     myAlert('success', '채팅방을 나갔습니다', dispatch);
     dispatch(setJoin(JoinStatus.NONE));
+    target = undefined;
   };
 
   return (
@@ -160,22 +172,32 @@ const ChattingPage = (props: ChattingPageProps) => {
     >
       {join === JoinStatus.CHAT && (
         <>
-          <IconButton
-            color="primary"
-            aria-label="settings"
-            sx={{ position: 'absolute', bottom: '16px', right: '20px' }}
-            onClick={toggleSettings}
+          <Paper
+            sx={{
+              position: 'absolute',
+              padding: '30px',
+              bgcolor: 'orange',
+              aliginItems: 'center',
+            }}
           >
-            <SettingsIcon />
-          </IconButton>
-          <IconButton
-            color="primary"
-            aria-label="quit"
-            sx={{ position: 'absolute', bottom: '16px', right: '60px' }}
-            onClick={handleExitRoom}
-          >
-            <DirectionsRunIcon />
-          </IconButton>
+            <p>채팅방 컨트롤러</p>
+            <IconButton
+              color="primary"
+              aria-label="settings"
+              sx={{ position: 'absolute', bottom: '0px', right: '20px' }}
+              onClick={toggleSettings}
+            >
+              <SettingsIcon />
+            </IconButton>
+            <IconButton
+              color="primary"
+              aria-label="quit"
+              sx={{ position: 'absolute', bottom: '0px', left: '20px' }}
+              onClick={handleExitRoom}
+            >
+              <DirectionsRunIcon />
+            </IconButton>
+          </Paper>
           <Drawer anchor="right" open={isSettingsOpen} onClose={toggleSettings}>
             <ChatSetting />
           </Drawer>
@@ -198,26 +220,39 @@ const ChattingPage = (props: ChattingPageProps) => {
             ref={listRef as React.RefObject<HTMLUListElement>}
             style={{ maxHeight: '550px', overflowY: 'auto' }}
           >
-            {chatMessages?.map((msg, index) => (
-              <ListItem key={index}>
-                <ListItemText
-                  primary={msg.userName} // undefined userName
-                  secondary={msg.content}
-                  style={{
-                    textAlign: myName === msg.userName ? 'right' : 'left', // 방 폭파되고 undefined되어있는 이슈
-                    paddingRight: '8px',
-                    paddingLeft: '8px',
-                  }}
-                />
-                <div
-                  style={{
-                    textAlign: myName === msg.userName ? 'left' : 'right',
-                    fontSize: '12px',
-                    color: 'gray',
-                  }}
-                ></div>
-              </ListItem>
-            ))}
+            {chatMessages?.map((msg, index) =>
+              msg.userName === 'server' ? (
+                <ListItem key={index}>
+                  <ListItemText
+                    secondary={`___ ${msg.content} ___`}
+                    style={{
+                      textAlign: 'center',
+                      paddingRight: '8px',
+                      paddingLeft: '8px',
+                    }}
+                  />
+                </ListItem>
+              ) : (
+                <ListItem key={index}>
+                  <ListItemText
+                    primary={msg.userName}
+                    secondary={msg.content}
+                    style={{
+                      textAlign: myName === msg.userName ? 'right' : 'left',
+                      paddingRight: '8px',
+                      paddingLeft: '8px',
+                    }}
+                  />
+                  <div
+                    style={{
+                      textAlign: myName === msg.userName ? 'left' : 'right',
+                      fontSize: '12px',
+                      color: 'gray',
+                    }}
+                  ></div>
+                </ListItem>
+              ),
+            )}
           </List>
         </CardContent>
         <div style={{ display: 'flex', alignItems: 'center', padding: '8px' }}>
@@ -229,6 +264,7 @@ const ChattingPage = (props: ChattingPageProps) => {
             value={inputMessage}
             onChange={handleInputChange}
             onKeyPress={handleKeyDown}
+            autoComplete="off"
           />
           <Button
             id="sendBtn"

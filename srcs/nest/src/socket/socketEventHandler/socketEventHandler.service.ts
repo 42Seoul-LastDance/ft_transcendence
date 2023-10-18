@@ -23,13 +23,12 @@ export class SocketEventHandlerSerivce {
             const friendSocket: Socket = this.socketUsersService.getDMSocketById(friend);
             const friendName: string = await this.socketUsersService.getUserNameByUserId(friend);
             if (friendSocket) {
-                const friendStateList: [string, UserStatus][] =
+                const friendStateList: { userName: string; slackId: string; userStatus: UserStatus }[] =
                     await this.socketUsersService.getFriendStateList(friendName);
                 friendSocket.emit('getFriendStateList', friendStateList);
             }
         }
     }
-
     //userName이 업데이트 된 경우 사용하는 함수
     //들어가있는 방에서 MemberList 업데이트 (getChatRoomInfo) : 들어가있는 방 순회
     //친구 리스트에서 업데이트 (getFriendStateList)  : 친구 순회

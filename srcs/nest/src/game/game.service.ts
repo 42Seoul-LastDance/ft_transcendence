@@ -1,5 +1,12 @@
 /* eslint-disable prettier/prettier */
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, forwardRef } from '@nestjs/common';
+import {
+    BadRequestException,
+    Inject,
+    Injectable,
+    InternalServerErrorException,
+    Logger,
+    forwardRef,
+} from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { GameType, GameMode, PlayerSide, GameStatus, GameEndStatus, Emoji } from './game.enum';
 import {
@@ -39,6 +46,7 @@ import { SocketUsersService } from '../socket/socketUsersService/socketUsers.ser
 
 @Injectable()
 export class GameService {
+    private logger = new Logger(GameService.name);
     constructor(
         @InjectRepository(Game)
         private gameRepository: GameRepository,
@@ -86,9 +94,7 @@ export class GameService {
                 if (player.gameType === GameType.MATCH) {
                     if (this.matchQueue[player.gameMode] === player.socket.id)
                         this.matchQueue[player.gameMode] = undefined;
-                } else {
-                    if (this.friendGameList.get(player.userName)) this.friendGameList.delete(player.userName);
-                }
+                } else this.quitInvite(playerId);
             } else {
                 //in room (waiting or game)
                 const gameRoom = this.gameRoomList.get(player.roomId);
@@ -147,10 +153,14 @@ export class GameService {
     //* Friend Game ======================================
     async inviteGame(playerId: string, gameMode: number, friendName: string) {
         try {
-            const hostName = this.socketUsersService.getPlayerBySocketId(playerId).userName;
+            const hostPlayer = this.socketUsersService.getPlayerBySocketId(playerId);
             const friendId = (await this.userService.getUserByUserName(friendName)).id;
+            if (hostPlayer.userId === friendId) {
+                hostPlayer.socket.emit('kickout');
+                return;
+            }
             this.updatePlayer(playerId, gameMode, GameType.FRIEND, friendId);
-            this.friendGameList.set(hostName, playerId);
+            this.friendGameList.set(hostPlayer.userName, playerId);
             // console.log('inviteGame:', hostName, 'waiting for', friendName);
         } catch (error) {
             console.log('error >> gameService >> inviteGame');
@@ -191,8 +201,18 @@ export class GameService {
     }
 
     quitInvite(playerId: string) {
-        const hostName = this.socketUsersService.getPlayerBySocketId(playerId).userName;
-        if (this.friendGameList.get(hostName)) this.friendGameList.delete(hostName);
+        const hostPlayer: Player = this.socketUsersService.getPlayerBySocketId(playerId);
+        if (hostPlayer && this.friendGameList.get(hostPlayer.userName)) {
+            const guestSocket: Socket = this.socketUsersService.getDMSocketById(hostPlayer.friendId);
+            if (guestSocket) {
+                guestSocket.emit('updateInvitation');
+                guestSocket.emit(
+                    'invitationSize',
+                    this.socketUsersService.getInviteListByUserId(hostPlayer.friendId).size,
+                );
+            }
+            this.friendGameList.delete(hostPlayer.userName);
+        }
     }
 
     denyInvite(playerId: string, friendName: string) {
@@ -594,7 +614,10 @@ export class GameService {
         try {
             const userId = (await this.userService.getUserByUserName(userName)).id;
             const gameRecords = await this.gameRepository.find({
-                where: [{ winnerId: userId }, { loserId: userId }, { gameType: GameType.MATCH }],
+                where: [
+                    { winnerId: userId, gameType: GameType.MATCH },
+                    { loserId: userId, gameType: GameType.MATCH },
+                ],
             });
 
             const gameData: GameData = {

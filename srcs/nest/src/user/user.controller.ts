@@ -153,10 +153,11 @@ export class UserController {
         }
     }
 
-    @Get('/username/:name')
+    @Post('/username/')
     @UseGuards(JwtAuthGuard)
-    async checkUniqueName(@Param('name') name: string, @Res() res: Response) {
+    async checkUniqueName(@Body() body: { name: string }, @Res() res: Response) {
         try {
+            const { name } = body;
             // console.log(`checking name : ${name}`);
             const user = await this.userService.getUserByUserName(name);
             if (user) throw new BadRequestException(`${name} already exist`);

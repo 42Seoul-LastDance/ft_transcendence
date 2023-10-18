@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserStatus } from 'src/user/user-status.enum';
 import { InviteType } from '../socketUsersService/socketUsers.enum';
 import { Invitation } from '../socketUsersService/socketUsers.interface';
+import { User } from 'src/user/user.entity';
 const TIMEZONE: string = 'Asia/Seoul';
 
 @Injectable()
@@ -41,10 +42,8 @@ export class DirectMessageService {
         this.socketUsersService.setInviteList(userId);
     }
 
-    async getuserNameBySocketId(socketId: string): Promise<string> {
-        return await this.socketUsersService.getUserNameByUserId(
-            this.socketUsersService.getUserIdByDMSocketId(socketId),
-        );
+    async getUserBySocketId(socketId: string): Promise<User> {
+        return await this.socketUsersService.getUserByUserId(this.socketUsersService.getUserIdByDMSocketId(socketId));
     }
 
     deleteUser(socket: Socket) {
@@ -135,13 +134,14 @@ export class DirectMessageService {
         return returnArray;
     }
 
-    async getFriendStateList(socket: Socket, userName: string): Promise<[string, UserStatus][]> {
+    async getFriendStateList(socket: Socket, userName: string): Promise<[string, string, UserStatus][]> {
         if (userName === undefined || userName === null) {
             this.logger.error('userName undefined');
             this.emitFailReason(socket, 'getFriendStateList', 'username error');
             return;
         }
-        const result: [string, UserStatus][] = await this.socketUsersService.getFriendStateList(userName);
+        const result: { userName: string; slackId: string; userStatus: UserStatus }[] =
+            await this.socketUsersService.getFriendStateList(userName);
         this.logger.debug(`GET FRIEND STATE LIST :: ${userName} with : ${result}`);
         socket.emit('getFriendStateList', result);
     }
@@ -167,13 +167,20 @@ export class DirectMessageService {
 
     async sendInvitation(socketId: string, payload: JSON) {
         const guestSocket = await this.socketUsersService.sendInvitation(socketId, payload);
+        if (guestSocket === undefined) {
+            console.log('guestSocket undefined');
+            return;
+        }
         const guestId: number = this.socketUsersService.getUserIdByDMSocketId(guestSocket.id);
         guestSocket.emit('updateInvitation');
         guestSocket.emit('invitationSize', this.socketUsersService.getInviteListByUserId(guestId).size);
     }
 
     async agreeInvite(socketId: string, payload: JSON) {
-        await this.socketUsersService.agreeInvite(socketId, payload['hostSlackId']);
+        const guestSocket = await this.socketUsersService.agreeInvite(socketId, payload['hostSlackId']);
+        const guestId: number = this.socketUsersService.getUserIdByDMSocketId(guestSocket.id);
+        guestSocket.emit('updateInvitation');
+        guestSocket.emit('invitationSize', this.socketUsersService.getInviteListByUserId(guestId).size);
     }
 
     async declineInvite(socketId: string, payload: JSON) {

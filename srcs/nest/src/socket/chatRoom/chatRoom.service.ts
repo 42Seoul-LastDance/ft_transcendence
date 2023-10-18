@@ -299,7 +299,7 @@ export class ChatRoomService {
             return;
         }
         const pastRoomStatus: RoomStatus = pastRoom?.status;
-        socket.to(pastRoomName).emit('sendMessage', userName + '님이 방을 나가셨습니다.');
+        socket.to(pastRoomName).emit('serverMessage', userName + '님이 방을 나가셨습니다.');
         if (userName === pastRoom?.ownerName) {
             // owner가 나갈 경우 방 폭파
             // socket.to(pastRoomName).emit('explodeChatRoom', '방 소유자가 나갔으므로 채팅방이 사라집니다.');
@@ -351,7 +351,7 @@ export class ChatRoomService {
         //user의 Channel 변경
         //ChannelList에서 user 추가
         targetRoom.memberList.add(userId);
-        socket.to(roomName).emit('receiveMessage', `"${userName}"님이 "${targetRoom.roomName}"방에 접속했습니다`);
+        socket.to(roomName).emit('serverMessage', `"${userName}"님이 "${targetRoom.roomName}"방에 접속했습니다`);
         this.emitSuccess(socket, 'joinPublicChatRoom');
     }
 
@@ -380,7 +380,7 @@ export class ChatRoomService {
         //ChannelList에서 user 추가
         targetRoom.memberList.add(userId);
         const userName = await this.socketUsersService.getUserNameByUserId(userId);
-        socket.to(roomName).emit('receiveMessage', `"${userName}"님이 "${targetRoom.roomName}"방에 접속했습니다`);
+        socket.to(roomName).emit('serverMessage', `"${userName}"님이 "${targetRoom.roomName}"방에 접속했습니다`);
         this.emitSuccess(socket, 'joinPrivateChatRoom');
     }
 
@@ -391,7 +391,7 @@ export class ChatRoomService {
         if (socket.rooms[0] != roomName)
             console.log('test failed. user 가 속해있는 room이 1개 이상이거나 맞지 않습니다.');
         const userName = await this.socketUsersService.getUserNameByUserId(userId);
-        socket.to(roomName).emit('kickUser', `"${userName}"님이 "${targetName}"님을 강퇴하였습니다.`);
+        socket.to(roomName).emit('serverMessage', `"${userName}"님이 "${targetName}"님을 강퇴하였습니다.`);
         const targetId = await this.socketUsersService.getUserIdByUserName(userName);
         const targetSocket = this.socketUsersService.getChatSocketById(targetId);
         if (targetSocket !== undefined) await this.leavePastRoom(socket, socket.rooms, io);

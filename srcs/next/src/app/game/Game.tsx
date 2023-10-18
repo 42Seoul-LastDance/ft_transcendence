@@ -10,8 +10,15 @@ import { ReactUnityEventParameter } from 'react-unity-webgl/distribution/types/r
 import { deflateSync } from 'zlib';
 import EmojiButtons from './EmojiButtons';
 import UserPannel from './UserPannel';
-import { PlayerSide, StartGameJson, SendEmojiJson, Emoji } from '../Enums';
+import {
+  PlayerSide,
+  StartGameJson,
+  SendEmojiJson,
+  Emoji,
+  GameJoinMode,
+} from '../Enums';
 import { setEmoji } from '../redux/matchSlice';
+import { useRouter } from 'next/navigation';
 
 const Game = () => {
   const { unityProvider, sendMessage, addEventListener, removeEventListener } =
@@ -22,12 +29,13 @@ const Game = () => {
       codeUrl: '/build/Pong.wasm.unityweb',
     });
 
-  const [gameOver, setGameOver] = useState<boolean>(false);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isReady, setIsReady] = useState<boolean>(true);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const dispatch = useDispatch();
-  // const isCustomGame = useSelector((state: RootState) => state.match.isCustom);
+  const customSet = useSelector((state: RootState) => state.match.customSet);
   const socket = useGameSocket();
+  const router = useRouter();
   var mySide: PlayerSide = PlayerSide.NONE;
 
   // react to unity
@@ -36,6 +44,7 @@ const Game = () => {
     if (!socket?.hasListeners('startGame')) {
       socket?.on('startGame', (json: StartGameJson) => {
         if (json.isFirst) mySide = json.side;
+        setIsPlaying(true);
         dispatch(
           setNames({
             leftName: json.leftName,
@@ -44,12 +53,6 @@ const Game = () => {
         );
         sendMessage('GameManager', 'StartGame', JSON.stringify(json));
         console.log('! startGame Event Detected : ', json);
-      });
-    }
-    if (!socket?.hasListeners('kickout')) {
-      socket?.on('kickout', () => {
-        alert('kickout Event Detected');
-        dispatch(setIsMatched({ isMatched: false }));
       });
     }
     if (!socket?.hasListeners('movePaddle')) {
@@ -72,10 +75,12 @@ const Game = () => {
       socket?.on('gameOver', (json: JSON) => {
         console.log('! gameOver Event Detected : ', json);
         sendMessage('GameManager', 'GameOver', JSON.stringify(json));
-        setGameOver(true);
-        // if (isCustomGame) setIsReady(false);
-        // else
-        // 	dispatch(setIsMatched({ isMatched: false }));
+        setIsPlaying(false);
+        if (
+          customSet.joinMode === GameJoinMode.CUSTOM_RECV ||
+          customSet.joinMode === GameJoinMode.CUSTOM_SEND
+        )
+          setIsReady(false);
       });
     }
     if (!socket?.hasListeners('ballHit')) {
@@ -84,6 +89,7 @@ const Game = () => {
         sendMessage('Ball', 'SynchronizeBallPos', JSON.stringify(json));
       });
     }
+    window.addEventListener('blur', handleBlur);
   };
 
   const handleUnityException = useCallback((data: ReactUnityEventParameter) => {
@@ -98,6 +104,9 @@ const Game = () => {
   const handleBallHit = useCallback((data: ReactUnityEventParameter) => {
     socket?.emit('ballHit', JSON.parse(data as string));
   }, []);
+  const handleBlur = () => {
+    socket?.emit('outGame');
+  };
 
   // unity to react
   useEffect(() => {
@@ -106,12 +115,15 @@ const Game = () => {
     addEventListener('ValidCheck', handleValidCheck);
     addEventListener('BallHit', handleBallHit);
     addEventListener('UnityException', handleUnityException);
+    // window.addEventListener('blur', handleBlur);
+
     return () => {
       removeEventListener('Init', Init);
       removeEventListener('MovePaddle', handleMovePaddle);
       removeEventListener('ValidCheck', handleValidCheck);
       removeEventListener('BallHit', handleBallHit);
       removeEventListener('UnityException', handleUnityException);
+      window.removeEventListener('blur', handleBlur);
     };
   }, [
     addEventListener,
@@ -122,6 +134,15 @@ const Game = () => {
     Init,
     handleBallHit,
   ]);
+
+  useEffect(() => {
+    dispatch(
+      setNames({
+        leftName: '???',
+        rightName: '???',
+      }),
+    );
+  }, []);
 
   if (!socket?.hasListeners('sendEmoji')) {
     socket?.on('sendEmoji', (json: SendEmojiJson) => {
@@ -171,8 +192,17 @@ const Game = () => {
         }}
         disabled={isReady}
       >
-        {' '}
         Get Ready
+      </button>
+      <button
+        onClick={() => {
+          dispatch(setIsMatched({ isMatched: false }));
+          socket?.disconnect();
+          router.push('/home');
+        }}
+        disabled={isPlaying}
+      >
+        Exit Room
       </button>
     </>
   );

@@ -1,15 +1,26 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { io, Socket } from 'socket.io-client';
 import {
   IoEventListener,
   IoEventOnce,
+  clearSocketEvent,
   createSocket,
   handleTryAuth,
+  registerSocketEvent,
 } from './socket';
 import { getCookie, removeCookie, setCookie } from '../Cookie';
 import { useRouter } from 'next/navigation';
 import { setName } from '../redux/userSlice';
+import { Events } from '../interface';
+import { RootState } from '../redux/store';
+import { GameJoinMode, HandShakeJson } from '../Enums';
+import {
+  setIsMatchInProgress,
+  setIsMatched,
+  setSide,
+} from '../redux/matchSlice';
+import { myAlert } from '../home/alert';
 
 // SocketContext 생성
 const GameSocketContext = createContext<Socket | undefined>(undefined);
@@ -22,17 +33,10 @@ export const useGameSocket = () => {
 
 // SocketProvider 컴포넌트 정의
 const GameSocketProvider = ({ children }: { children: React.ReactNode }) => {
-  const dispatch = useDispatch();
   const router = useRouter();
   const [gameSocket, setGameSocket] = useState<Socket | undefined>(undefined);
-
-  const handleConnectSuccess = () => {
-    console.log('[Connect] gameSocket Success');
-  };
-
-  const handleGetMyName = (data: string) => {
-    dispatch(setName(data));
-  };
+  const customSet = useSelector((state: RootState) => state.match.customSet);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const cookie = getCookie('access_token');
@@ -42,29 +46,68 @@ const GameSocketProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    const socket = createSocket('Game', getCookie('access_token'));
+    const socket = createSocket('Game', cookie);
+    socket.connect();
     setGameSocket(socket);
     return () => {
-      socket.disconnect();
+      socket?.disconnect();
     };
   }, []);
 
   useEffect(() => {
-    if (gameSocket?.connected) gameSocket?.disconnect();
-    if (gameSocket) {
-      IoEventOnce(gameSocket, 'expireToken', () => {
-        handleTryAuth(gameSocket, router);
-      });
-      IoEventListener(gameSocket, 'getMyName', handleGetMyName);
-      IoEventListener(gameSocket, 'connectSuccess', handleConnectSuccess);
-      console.log('[Handle] game socket info', gameSocket);
-      gameSocket?.connect();
-    }
-
+    //이벤트 관리
+    const e: Events[] = [
+      {
+        event: 'expireToken',
+        callback: async () => {
+          await handleTryAuth(gameSocket!, router);
+        },
+      },
+      {
+        event: 'connectSuccess',
+        callback: () => {
+          console.log('[Connect] gameSocket info', gameSocket);
+          if (customSet.joinMode === GameJoinMode.CUSTOM_SEND) {
+            gameSocket?.emit('inviteGame', {
+              gameMode: customSet.gameMode,
+              friendName: customSet.opponentName,
+            });
+          } else if (customSet.joinMode === GameJoinMode.CUSTOM_RECV) {
+            gameSocket?.emit('agreeInvite', {
+              friendName: customSet.opponentName,
+            });
+          }
+        },
+      },
+      {
+        event: 'kickout',
+        callback: () => {
+          myAlert('error', '상대방이 나갔습니다', dispatch);
+          dispatch(setIsMatched({ isMatched: false }));
+          dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
+        },
+      },
+      {
+        event: 'denyInvite',
+        callback: () => {
+          myAlert('error', '상대가 초대를 거절했습니다', dispatch);
+          dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
+        },
+      },
+      {
+        event: 'handShake',
+        callback: (json: HandShakeJson) => {
+          myAlert('success', '매칭이 완료되었습니다', dispatch);
+          dispatch(setSide({ side: json.side }));
+          dispatch(setIsMatched({ isMatched: true }));
+        },
+      },
+    ];
+    registerSocketEvent(gameSocket!, e);
     return () => {
-      gameSocket?.disconnect();
+      clearSocketEvent(gameSocket!, e);
     };
-  }, [gameSocket, dispatch]);
+  }, [gameSocket]);
 
   return (
     <GameSocketContext.Provider value={gameSocket}>

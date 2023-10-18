@@ -18,75 +18,209 @@ import ChatSocketProvider, {
   useChatSocket,
 } from '../context/chatSocketContext';
 import store, { RootState } from '../redux/store';
+import MenuItem from '@mui/material/MenuItem';
+import Menu from '@mui/material/Menu';
 import SettingsIcon from '@mui/icons-material/Settings';
-// import Notification from '../notification';
 import UserProfile from './(profile)/userProfile';
-import { setViewNoti, setViewProfile } from '../redux/viewSlice';
+import { setViewProfile } from '../redux/viewSlice';
 import { useRouter } from 'next/navigation';
+import { clearSocketEvent, registerSocketEvent } from '../context/socket';
+import { useEffect, useState } from 'react';
+import { Events, RoomStatus } from '../interface';
+import {
+  GameJoinMode,
+  GameMode,
+  GetInvitationListJson,
+  InviteType,
+} from '../Enums';
+import { Button } from '@mui/material';
+import { setCustomSet } from '../redux/matchSlice';
+import { setInvitationList, setNotiCount } from '../redux/userSlice';
 
 const HeaderNavigationBarContent = () => {
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const notiCount = useSelector((state: RootState) => state.user.notiCount);
+  const invitationList = useSelector(
+    (state: RootState) => state.user.invitationList,
+  );
   const myName = useSelector((state: RootState) => state.user.userName);
   const dispatch = useDispatch();
-  const viewProfile = useSelector((state: RootState) => state.view.viewProfile);
   const router = useRouter();
   const chatSocket = useChatSocket();
   const superSocket = useSuperSocket();
+  const isMenuOpen = Boolean(anchorEl);
+
+  useEffect(() => {
+    const e: Events[] = [
+      {
+        event: 'invitationSize',
+        callback: (data: number) => {
+          dispatch(setNotiCount(data));
+        },
+      },
+      {
+        event: 'getInvitationList',
+        callback: (data: GetInvitationListJson[]) =>
+          dispatch(setInvitationList(data)),
+      },
+    ];
+    registerSocketEvent(superSocket!, e);
+    superSocket?.emit('invitationSize');
+    return () => {
+      clearSocketEvent(superSocket!, e);
+    };
+  }, []);
+
+  useEffect(() => {
+    const e: Events[] = [
+      {
+        event: 'updateInvitation',
+        once: true,
+        callback: () => {
+          superSocket?.emit('getInvitationList');
+        },
+      },
+    ];
+    if (anchorEl) registerSocketEvent(superSocket!, e);
+    else clearSocketEvent(superSocket!, e);
+  }, [anchorEl, invitationList]);
 
   const handleProfileOpen = () => {
     dispatch(setViewProfile(true));
   };
 
-  const handleNotiOpen = () => {
-    dispatch(setViewNoti(true));
-  };
-
   const handleSettingOpen = () => {
     chatSocket?.disconnect();
     superSocket?.disconnect();
-    setTimeout(() => {
-      router.push('/setting');
-    }, 500);
+    router.push('/setting');
   };
-  //   dispatch();
-  // };
+
+  const handleNotiOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+    superSocket?.emit('getInvitationList');
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const declineInvitation = (hostSlackId: string) => {
+    console.log('--- 거절함 ---', hostSlackId);
+    superSocket?.emit('declineInvite', { hostSlackId: hostSlackId });
+  };
+
+  const acceptInvitation = (hostSlackId: string, hostName: string) => {
+    console.log('--- 수락함 ---', hostSlackId);
+    superSocket?.emit('agreeInvite', { hostSlackId: hostSlackId });
+    dispatch(
+      setCustomSet({
+        joinMode: GameJoinMode.CUSTOM_RECV,
+        gameMode: GameMode.NONE,
+        opponentName: hostName,
+      }),
+    );
+    router.push('/game');
+  };
+
+  const menuId = 'primary-search-account-menu';
+  const renderNoti = (
+    <Menu
+      anchorEl={anchorEl}
+      anchorOrigin={{
+        vertical: 'top',
+        horizontal: 'right',
+      }}
+      id={menuId}
+      keepMounted
+      transformOrigin={{
+        vertical: 'top',
+        horizontal: 'right',
+      }}
+      open={isMenuOpen}
+      onClose={handleMenuClose}
+    >
+      {invitationList.length === 0
+        ? '받은 초대가 없습니다'
+        : invitationList?.map(
+            (invitation: GetInvitationListJson, index: number) => (
+              <MenuItem key={index}>
+                {invitation.inviteType === InviteType.CHAT
+                  ? `${invitation.hostName}님이 ${invitation.chatRoomType} 방인 ${invitation.chatRoomName}에 초대하셨습니다 ! `
+                  : `${invitation.hostName}님이 ` +
+                    (invitation.gameMode === GameMode.NORMAL
+                      ? 'NORMAL'
+                      : 'HARD') +
+                    ` 모드로 게임을 초대하셨습니다 ! `}
+                <Button
+                  variant="contained"
+                  onClick={() =>
+                    acceptInvitation(
+                      invitation.hostSlackId,
+                      invitation.hostName,
+                    )
+                  }
+                >
+                  수락
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => declineInvitation(invitation.hostSlackId)}
+                >
+                  거절
+                </Button>
+              </MenuItem>
+            ),
+          )}
+    </Menu>
+  );
 
   return (
     <>
-      <Box sx={{ flexGrow: 1 }}>
-        <AppBar component="nav" position="static">
-          <Toolbar sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <IconButton
-              size="large"
-              aria-label="show 17 new notifications"
-              onClick={handleNotiOpen}
-              color="inherit"
-            >
-              <Badge badgeContent={1} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-            <IconButton
-              size="large"
-              edge="end"
-              aria-label="account of current user"
-              onClick={handleProfileOpen}
-              color="inherit"
-            >
-              <AccountCircle />
-              <UserProfile targetName={myName!} />
-            </IconButton>
-            <IconButton
-              size="large"
-              edge="end"
-              aria-label="setting page of current user"
-              onClick={handleSettingOpen}
-              color="inherit"
-              sx={{ paddingLeft: '3px' }}
-            >
-              <SettingsIcon />
-            </IconButton>
+      <Box sx={{ display: 'flex' }}>
+        <AppBar component="nav" position="static" sx={{ flexGrow: 1 }}>
+          <Toolbar>
+            <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+              <Typography align="left" variant="h6" noWrap component="div">
+                Home
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <IconButton
+                aria-label="Notification Menu"
+                size="large"
+                edge="end"
+                onClick={handleNotiOpen}
+                color="inherit"
+              >
+                <Badge badgeContent={notiCount} color="secondary" showZero>
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+              <IconButton
+                aria-label="Profile modal"
+                size="large"
+                edge="end"
+                onClick={handleProfileOpen}
+                color="inherit"
+              >
+                <Badge badgeContent={myName} color="secondary">
+                  <AccountCircle />
+                </Badge>
+                <UserProfile targetName={myName!} />
+              </IconButton>
+              <IconButton
+                aria-label="Setting page"
+                size="large"
+                edge="end"
+                onClick={handleSettingOpen}
+                color="inherit"
+              >
+                <SettingsIcon />
+              </IconButton>
+            </Box>
           </Toolbar>
         </AppBar>
+        {renderNoti}
       </Box>
       <MainHome />
     </>

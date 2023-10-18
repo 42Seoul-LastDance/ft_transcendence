@@ -9,7 +9,7 @@ import {
 import { getCookie } from '../Cookie';
 import { useRouter } from 'next/navigation';
 import { Events } from '../interface';
-import { setName } from '../redux/userSlice';
+import { setName, setSlackId } from '../redux/userSlice';
 import { useDispatch } from 'react-redux';
 
 // SocketContext 생성
@@ -46,7 +46,10 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
       },
       {
         event: 'getMyName',
-        callback: (data: string) => dispatch(setName(data)),
+        callback: (data: string[]) => {
+          dispatch(setName(data[0]));
+          dispatch(setSlackId(data[1]));
+        },
       },
     ];
     superSocket.connect();

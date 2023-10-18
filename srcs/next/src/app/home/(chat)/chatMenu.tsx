@@ -14,6 +14,8 @@ import Link from 'next/link';
 import { Events, UserPermission } from '@/app/interface';
 import { setMyPermission } from '@/app/redux/roomSlice';
 import { setCustomSet } from '@/app/redux/matchSlice';
+import { TextField } from '@mui/material';
+import { setViewProfile } from '@/app/redux/viewSlice';
 
 const ChatMenu = () => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
@@ -84,10 +86,10 @@ const ChatMenu = () => {
         opponentName: selectedMember?.userName,
       }),
     );
+    console.log('--mode 뭔디', mode);
   };
 
-  const handleKickClick = () => {
-    console.log('selectMember.userName', selectedMember?.userName);
+  const handleKick = () => {
     isSuper();
     chatSocket?.emit('kickUser', {
       roomname: chatRoom?.roomName,
@@ -95,24 +97,41 @@ const ChatMenu = () => {
     });
   };
 
-  const handleBanClick = () => {
-    console.log('ban');
+  const handleBan = () => {
     isSuper();
+    chatSocket?.emit('banUser', {
+      roomName: chatRoom?.roomName,
+      roomStatus: chatRoom?.status,
+      targetName: selectedMember?.userName,
+    });
+    myAlert(
+      'info',
+      `${selectedMember?.userName} banned from this room`,
+      dispatch,
+    );
   };
 
-  const handleMuteClick = () => {
-    console.log('mute');
+  const handleMute = () => {
     isSuper();
     chatSocket?.emit('muteUser', {
       status: chatRoom?.status,
       roomName: chatRoom?.roomName,
       targetName: selectedMember?.userName,
-      time: 60,
+      time: 5,
     });
+    myAlert(
+      'info',
+      `${selectedMember?.userName} is muted for 60 seconds`,
+      dispatch,
+    );
   };
 
-  const handleMakeOperatorClick = () => {
-    console.log('make operator');
+  const handleMakeAdmin = () => {
+    chatSocket?.emit('grantUser', {
+      roomName: chatRoom?.roomName,
+      roomStatus: chatRoom?.status,
+      targetName: selectedMember?.userName,
+    });
   };
 
   return (
@@ -140,7 +159,7 @@ const ChatMenu = () => {
               handleGameClick(GameMode.NORMAL);
             }}
           >
-            Invite Game Normal
+            Invite Game Nor
           </Button>
         </Link>
         <Link href={'/game'}>
@@ -157,19 +176,19 @@ const ChatMenu = () => {
         {myPermission <= UserPermission.ADMIN &&
         myPermission < selectedMember!.permission ? (
           <>
-            <Button key="kick" onClick={handleKickClick}>
+            <Button key="kick" onClick={handleKick}>
               Kick
             </Button>
-            <Button key="ban" onClick={handleBanClick}>
+            <Button key="ban" onClick={handleBan}>
               Ban
             </Button>
-            <Button key="mute" onClick={handleMuteClick}>
+            <Button key="mute" onClick={handleMute}>
               Mute
             </Button>
           </>
         ) : null}
         {myPermission === UserPermission.OWNER ? (
-          <Button key="makeOperator" onClick={handleMakeOperatorClick}>
+          <Button key="makeOperator" onClick={handleMakeAdmin}>
             Make Operator
           </Button>
         ) : null}

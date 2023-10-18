@@ -5,7 +5,7 @@ import { BACK_URL } from './globals';
 export const reGenerateToken = async (router: any): Promise<AxiosResponse> => {
   const refreshToken = getCookie('refresh_token');
   if (!refreshToken) {
-    console.log('refresh token is not exist');
+    console.log('refresh token is not exist. login again!');
     router.push('/');
     return new Promise(() => {});
   }
