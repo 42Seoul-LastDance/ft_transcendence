@@ -80,6 +80,7 @@ export class SocketUsersService {
                 this.inviteList.get(guest).delete(userId);
                 const guestSocket: Socket = this.dmUserList.get(guest);
                 guestSocket.emit('updateInvitation');
+                guestSocket.emit('invitationSize', this.inviteList.get(guest).size);
             }
         }
         //받은 초대 리스트 삭제

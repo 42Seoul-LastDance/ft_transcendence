@@ -159,7 +159,9 @@ export class DirectMessageService {
 
     async sendInvitation(socketId: string, payload: JSON) {
         const guestSocket = await this.socketUsersService.sendInvitation(socketId, payload);
+        const guestId: number = this.socketUsersService.getUserIdByDMSocketId(guestSocket.id);
         guestSocket.emit('updateInvitation');
+        guestSocket.emit('invitationSize', this.socketUsersService.getInviteListByUserId(guestId).size);
     }
 
     async agreeInvite(socketId: string, payload: JSON) {
@@ -168,7 +170,9 @@ export class DirectMessageService {
 
     async declineInvite(socketId: string, payload: JSON) {
         const guestSocket = await this.socketUsersService.declineInvite(socketId, payload['hostName']);
+        const guestId: number = this.socketUsersService.getUserIdByDMSocketId(guestSocket.id);
         guestSocket.emit('updateInvitation');
+        guestSocket.emit('invitationSize', this.socketUsersService.getInviteListByUserId(guestId).size);
     }
 
     async deleteFriend(socket: Socket, payload: JSON) {

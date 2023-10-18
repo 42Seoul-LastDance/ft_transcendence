@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Put, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Param, ParseIntPipe, Put, Req, Res, UseGuards } from '@nestjs/common';
 import { DirectMessageService } from './directMessage.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { UserService } from 'src/user/user.service';
@@ -6,6 +6,7 @@ import { DirectMessageInfoDto } from './dto/directMessageInfo.dto';
 
 @Controller('DM')
 export class DirectMessageController {
+    private logger = new Logger(DirectMessageController.name);
     constructor(
         private readonly directMessageService: DirectMessageService,
         private readonly userService: UserService,
@@ -14,6 +15,7 @@ export class DirectMessageController {
     @Get('/with/:userName')
     @UseGuards(JwtAuthGuard)
     async getLoggedDMs(@Param('userName') userName: string, @Req() req, @Res() res) {
+        this.logger.log('request user:', userName);
         const loggedDMs: DirectMessageInfoDto[] = await this.directMessageService.findRecentDMs(
             req.user.sub,
             userName,
