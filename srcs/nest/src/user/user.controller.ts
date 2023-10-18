@@ -80,7 +80,7 @@ export class UserController {
 
     //TODO user info update 하나로 합치기 => 테스트 필요
     //* user info update ===============================================================
-    @Patch('/update/')
+    @Patch('/update')
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(FileInterceptor('profileImage'))
     async updateUserInfo(
@@ -133,6 +133,7 @@ export class UserController {
     async getProfile(@Param('username') username: string, @Res() res) {
         //누구의 profile을 보고 싶은지 id로 조회.
         // * 무조건 있는 유저를 조회하긴 할텐데, userProfile도 검사 한 번 하는게 좋지 않을까요?
+        //TODO 존재하는 유저인지 확인 필요
         const userProfile: UserProfileDto = await this.userService.getUserProfile(username);
         return res.status(200).json(userProfile);
     }
@@ -141,6 +142,7 @@ export class UserController {
     @UseGuards(JwtAuthGuard)
     async getProfileImage(@Res() res: Response, @Param('username') username: string) {
         try {
+            //TODO 존재하는 유저인지 확인 필요
             const { image, mimeType } = await this.userService.getUserProfileImage(username);
             res.setHeader('Content-Type', mimeType); // 이미지의 MIME 타입 설정
             res.send(image); // 이미지 파일을 클라이언트로 전송

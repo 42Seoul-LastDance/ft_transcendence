@@ -22,14 +22,14 @@ export class FriendController {
     private logger = new Logger(FriendController.name);
     constructor(private readonly friendService: FriendService) {}
 
-    @Get('/getFriendList')
-    @UseGuards(JwtAuthGuard)
-    async getFriendList(@Req() req, @Res() res: Response) {
-        console.log(req.user);
-        const friendList = await this.friendService.getFriendNameList(+req.user.sub);
-        console.log(friendList);
-        return res.status(200).send(friendList);
-    }
+    // @Get('/getFriendList')
+    // @UseGuards(JwtAuthGuard)
+    // async getFriendList(@Req() req, @Res() res: Response) {
+    //     console.log(req.user);
+    //     const friendList = await this.friendService.getFriendNameAndSlackIdList(+req.user.sub);
+    //     this.logger.log(friendList);
+    //     return res.status(200).send(friendList);
+    // }
 
     @Get('/isFriend/:friendName')
     @UseGuards(JwtAuthGuard)
@@ -57,7 +57,9 @@ export class FriendController {
     @UseGuards(JwtAuthGuard)
     async getInvitation(@Req() req, @Res() res: Response) {
         this.logger.log('getinviteList called');
-        const invitations = await this.friendService.getInvitation(+req.user.sub);
+        const invitations: Array<{ userName: string; slackId: string }> = await this.friendService.getInvitation(
+            +req.user.sub,
+        );
         return res.send(invitations);
     }
 

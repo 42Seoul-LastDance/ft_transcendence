@@ -152,7 +152,15 @@ export class DirectMessageService {
         const guestId: number = this.socketUsersService.getDMsocketList().get(socketId);
         const invitations: Map<number, Invitation> = this.socketUsersService.getInviteListByUserId(guestId);
         for (const hostId of invitations.keys()) {
-            invitationList.push(invitations.get(hostId));
+            const invitation = {
+                hostName: invitations.get(hostId).hostName,
+                hostSlackId: invitations.get(hostId).hostSlackId,
+                inviteType: invitations.get(hostId).inviteType,
+                chatRoomName: invitations.get(hostId).chatRoomName,
+                chatRoomType: invitations.get(hostId).chatRoomType,
+                gameMode: invitations.get(hostId).gameMode,
+            };
+            invitationList.push(invitation);
         }
         return invitationList;
     }
@@ -165,11 +173,11 @@ export class DirectMessageService {
     }
 
     async agreeInvite(socketId: string, payload: JSON) {
-        await this.socketUsersService.agreeInvite(socketId, payload['hostName']);
+        await this.socketUsersService.agreeInvite(socketId, payload['hostSlackId']);
     }
 
     async declineInvite(socketId: string, payload: JSON) {
-        const guestSocket = await this.socketUsersService.declineInvite(socketId, payload['hostName']);
+        const guestSocket = await this.socketUsersService.declineInvite(socketId, payload['hostSlackId']);
         const guestId: number = this.socketUsersService.getUserIdByDMSocketId(guestSocket.id);
         guestSocket.emit('updateInvitation');
         guestSocket.emit('invitationSize', this.socketUsersService.getInviteListByUserId(guestId).size);
@@ -178,7 +186,6 @@ export class DirectMessageService {
     async deleteFriend(socket: Socket, payload: JSON) {
         // 친구 삭제 이벤트가 일어날 때 친구 리스트 실시간 업데이트
         // 프론트로 다시 getFriendStateList 날려주기
-        // TODO : socketUsersService->friendList 업데이트
         const userName = payload['userName'];
         const targetName = payload['targetName'];
         const userId = this.socketUsersService.getUserIdByDMSocketId(socket.id);
@@ -201,11 +208,5 @@ export class DirectMessageService {
         await this.getFriendStateList(socket, userName);
         if (targetSocket != undefined && targetSocket !== null) await this.getFriendStateList(targetSocket, targetName);
         else this.logger.error('targetSocket does not exist');
-    }
-
-    async updateUserName(socket: Socket) {
-        //TODO 1. friendList에서 friend 에게 getFriendStateList 날리기
-        //TODO 2. 속해있는 방이 있다면 getMemberList 날리기
-        //TODO 3.
     }
 }

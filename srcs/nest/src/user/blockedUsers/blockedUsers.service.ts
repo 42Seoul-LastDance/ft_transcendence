@@ -3,6 +3,7 @@ import { BlockedUsersRepository } from './blockedUsers.repository';
 import { BlockedUsers } from './blockedUsers.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from '../user.service';
+import { User } from '../user.entity';
 @Injectable()
 export class BlockedUsersService {
     private logger = new Logger(BlockedUsersService.name);
@@ -54,16 +55,15 @@ export class BlockedUsersService {
     }
 
     //*REST API
-    async getBlockUsernameListById(id: number): Promise<Array<string>> {
-        const blockList: Array<string> = [];
-        const blockListId = await this.getBlockUserListById(id);
-        const foundBlockUsers: BlockedUsers[] = await this.blockedUsersRepository.find({
-            where: { requestUserId: id },
-        });
-        for (const blockUser of blockListId) {
-            console.log('found Blocked user:', blockListId);
-            const blockUserName = (await this.userSerivce.findUserById(blockUser)).userName;
-            blockList.push(blockUserName);
+    async getBlockUsernameAndSlackIdListById(id: number): Promise<Array<{ userName: string; slackId: string }>> {
+        const blockList: Array<{ userName: string; slackId: string }> = [];
+        const blockListId: number[] = await this.getBlockUserListById(id);
+
+        for (const blockUserId of blockListId) {
+            const blockUser: User = await this.userSerivce.findUserById(blockUserId);
+            const blockUserName = blockUser.userName;
+            const blockSlackId = blockUser.slackId;
+            blockList.push({ userName: blockUserName, slackId: blockSlackId });
         }
         this.logger.debug('GET BLOCK USER NAME LIST : ', blockList);
         return blockList;

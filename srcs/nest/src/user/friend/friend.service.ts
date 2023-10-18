@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from '../user.service';
 import { UserStatus } from '../user-status.enum';
 import { FriendStatus } from './friend.enum';
+import { User } from '../user.entity';
 
 @Injectable()
 export class FriendService {
@@ -52,10 +53,9 @@ export class FriendService {
         return result;
     }
 
-    async getFriendNameList(userId: number): Promise<Array<string>> {
-        const friendList: Array<string> = [];
+    async getFriendNameAndSlackIdList(userId: number): Promise<Array<{ userName: string; slackId: string }>> {
+        const friendList: Array<{ userName: string; slackId: string }> = [];
 
-        console.log('userid', userId);
         try {
             const foundFriend: Friend[] = await this.friendRepository.find({
                 where: [
@@ -64,19 +64,17 @@ export class FriendService {
                 ],
             });
             for (const friend of foundFriend) {
-                let friendData;
+                let friendData: User;
                 if (userId === friend.requestUserId)
                     friendData = await this.userService.findUserById(friend.targetUserId);
                 else friendData = await this.userService.findUserById(friend.requestUserId);
-                // console.log('{username, status:}', friendData);
-                friendList.push(friendData.userName);
-                // console.log('ppushed~~~~~~~~~');
+
+                friendList.push({ userName: friendData.userName, slackId: friendData.slackId });
             }
         } catch (error) {
             console.log(error);
             throw new InternalServerErrorException('friendService >> getFriendNameList');
         }
-        // console.log('friend list: ', friendList);
         return friendList;
     }
 
@@ -138,19 +136,20 @@ export class FriendService {
         }
     }
 
-    async getInvitation(userId: number) {
+    async getInvitation(userId: number): Promise<Array<{ userName: string; slackId: string }>> {
         try {
-            const invitations: Array<string> = [];
+            const invitations: Array<{ userName: string; slackId: string }> = [];
             const requestUsers = await this.friendRepository
                 .createQueryBuilder('friend')
                 .where('friend.targetUserId = :userId', { userId })
                 .andWhere('friend.status = :status', { status: FriendStatus.REQUESTED })
                 .distinct(true)
                 .getRawMany();
+
             if (!requestUsers) return [];
             for (const requestUser of requestUsers) {
-                const friendName = (await this.userService.findUserById(requestUser.friend_requestUserId)).userName;
-                invitations.push(friendName);
+                const friend: User = await this.userService.findUserById(requestUser.friend_requestUserId);
+                invitations.push({ userName: friend.userName, slackId: friend.slackId });
             }
             return invitations;
         } catch (error) {

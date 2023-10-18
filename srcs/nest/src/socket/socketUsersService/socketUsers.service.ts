@@ -7,12 +7,14 @@ import { FriendService } from 'src/user/friend/friend.service';
 import { UserStatus } from 'src/user/user-status.enum';
 import { Invitation } from './socketUsers.interface';
 import { InviteType } from './socketUsers.enum';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class SocketUsersService {
     private logger = new Logger(SocketUsersService.name);
     constructor(
         private blockedUsersService: BlockedUsersService,
+        @Inject(forwardRef(() => UserService))
         private userService: UserService,
         private friendService: FriendService,
     ) {}
@@ -91,15 +93,18 @@ export class SocketUsersService {
         } catch (error) {
             this.logger.error('[ERRRRRR] clearServerData');
         }
+
+        //TODO blockuser 삭제
     }
 
     async sendInvitation(socketId: string, payload: JSON): Promise<Socket> {
         const hostId: number = this.dmSocketList.get(socketId);
-        const hostName: string = await this.getUserNameByUserId(hostId);
+        const host: User = await this.userService.findUserById(hostId);
         const guestId: number = (await this.userService.getUserByUserName(payload['guestName'])).id;
 
         const invitation: Invitation = {
-            hostName: hostName,
+            hostName: host.userName,
+            hostSlackId: host.slackId,
             inviteType: payload['inviteType'],
             chatRoomName: payload['chatRoomName'] ? payload['chatRoomName'] : undefined,
             chatRoomType: payload['chatRoomType'] ? payload['chatRoomType'] : undefined,
@@ -120,8 +125,8 @@ export class SocketUsersService {
         return false;
     }
 
-    async agreeInvite(socketId: string, hostName: string) {
-        const hostId: number = (await this.userService.getUserByUserName(hostName)).id;
+    async agreeInvite(socketId: string, hostSlackId: string) {
+        const hostId: number = (await this.userService.getUserBySlackId(hostSlackId)).id;
         const guestId: number = this.dmSocketList.get(socketId);
         const invitation: Invitation = this.inviteList.get(guestId).get(hostId);
         if (invitation === undefined) return;
@@ -129,8 +134,8 @@ export class SocketUsersService {
         this.inviteList.get(guestId).delete(hostId);
     }
 
-    async declineInvite(socketId: string, hostName: string): Promise<Socket> {
-        const hostId: number = (await this.userService.getUserByUserName(hostName)).id;
+    async declineInvite(socketId: string, hostSlackId: string): Promise<Socket> {
+        const hostId: number = (await this.userService.getUserBySlackId(hostSlackId)).id;
         const guestId: number = this.dmSocketList.get(socketId);
         const invitation: Invitation = this.inviteList.get(guestId).get(hostId);
         if (invitation === undefined) return;

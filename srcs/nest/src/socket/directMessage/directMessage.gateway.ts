@@ -93,7 +93,7 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
     @SubscribeMessage('blockUser')
     blockUser(socket: Socket, payload: JSON) {
         this.logger.log('blockUser called - DM');
-        this.directMessageService.blockUser(socket, payload['userId'], payload['targetId']);
+        this.directMessageService.blockUser(socket, payload['userId'], payload['targetId']); //왜 Id로 되어있지...?
     }
 
     @SubscribeMessage('unBlockUser')

@@ -21,6 +21,8 @@ import { UserProfileDto } from './dto/userProfile.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserStatus } from './user-status.enum';
 import { POINT, LEVELUP } from 'src/game/game.constants';
+import { DirectMessageService } from 'src/socket/directMessage/directMessage.service';
+import { SocketEventHandlerSerivce } from 'src/socket/socketEventHandler/socketEventHandler.service';
 
 @Injectable()
 export class UserService {
@@ -107,12 +109,20 @@ export class UserService {
             user.profileurl = profileImage ? profileImage.filename : user.profileurl;
             await this.userRepository.update(userId, user);
             if (userName) {
-                //TODO 유저네임 업데이트되었으면 친구들에게 emit 처리 필요-> 친구 목록, 친구 요청, blockUser
-                //-> 프론트에서 updateUserName 이벤트 받을 예정
             }
         } catch (error) {
             this.logger.error('[ERRRRRR] userService: updateUserInfo');
         }
+    }
+
+    async userBySlackId(slackId: string): Promise<User> {
+        const user = await this.userRepository.findOne({
+            where: { slackId: slackId },
+        });
+        if (!user) {
+            throw new NotFoundException();
+        }
+        return user;
     }
 
     // async updateUserNameBySlackId(slackId: string, userName: string): Promise<User> {
