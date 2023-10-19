@@ -287,10 +287,8 @@ export class ChatRoomService {
             roomDto.password = createRoomDto.password;
         }
 
-        if (createRoomDto.status === RoomStatus.PUBLIC) this.publicRoomList.set(createRoomDto.roomName, roomDto);
-        else if (createRoomDto.status === RoomStatus.PRIVATE) {
-            this.privateRoomList.set(createRoomDto.roomName, roomDto);
-        }
+        if (createRoomDto.status === RoomStatus.PRIVATE) this.privateRoomList.set(createRoomDto.roomName, roomDto);
+        else if (createRoomDto.status === RoomStatus.PUBLIC) this.publicRoomList.set(createRoomDto.roomName, roomDto);
 
         console.log('room created. check privateRoomList:', this.privateRoomList);
         if (createRoomDto.status === RoomStatus.PRIVATE) {
