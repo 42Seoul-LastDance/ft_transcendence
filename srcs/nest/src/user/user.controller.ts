@@ -128,43 +128,62 @@ export class UserController {
         }
     }
 
-    @Get('/profile/:username')
+    @Get('/profile/:slackId')
     @UseGuards(JwtAuthGuard)
-    async getProfile(@Param('username') username: string, @Res() res) {
+    async getProfile(@Param('slackId') slackId: string, @Res() res) {
         //누구의 profile을 보고 싶은지 id로 조회.
         // * 무조건 있는 유저를 조회하긴 할텐데, userProfile도 검사 한 번 하는게 좋지 않을까요?
         //TODO 존재하는 유저인지 확인 필요
-        const userProfile: UserProfileDto = await this.userService.getUserProfile(username);
+        const userProfile: UserProfileDto = await this.userService.getUserProfile(slackId);
         return res.status(200).json(userProfile);
     }
 
-    @Get('/profileImg/:username')
+    @Get('/profileImg/:slackId')
     @UseGuards(JwtAuthGuard)
-    async getProfileImage(@Res() res: Response, @Param('username') username: string) {
+    async getProfileImage(@Res() res: Response, @Param('slackId') slackId: string) {
         try {
             //TODO 존재하는 유저인지 확인 필요
-            const { image, mimeType } = await this.userService.getUserProfileImage(username);
+            const { image, mimeType } = await this.userService.getUserProfileImage(slackId);
+            if (image === undefined || mimeType === undefined) return;
             res.setHeader('Content-Type', mimeType); // 이미지의 MIME 타입 설정
             res.send(image); // 이미지 파일을 클라이언트로 전송
         } catch (error) {
             this.logger.error(`Failed to send profile image : ${error}`);
             if (error.status === 404) throw new NotFoundException();
-            else throw new InternalServerErrorException();
+            else throw new BadRequestException();
+        }
+    }
+
+    @Get('/exist/:slackId')
+    @UseGuards(JwtAuthGuard)
+    async checkIfExists(@Res() res: Response, @Param('slackId') slackId: string) {
+        try {
+            await this.userService.getUserBySlackId(slackId);
+            res.status(200);
+            res.send();
+        } catch (error) {
+            this.logger.log(`error status: ${error.status}`);
+            if (error.status === 404) {
+                this.logger.debug('check');
+                res.status(400);
+                res.send();
+                return;
+            } else throw new BadRequestException();
+            return;
         }
     }
 
     @Post('/username/')
     @UseGuards(JwtAuthGuard)
-    async checkUniqueName(@Body() body: { name: string }, @Res() res: Response) {
+    async checkUniqueName(@Body() body, @Res() res: Response) {
         try {
-            const { name } = body;
-            // console.log(`checking name : ${name}`);
-            const user = await this.userService.getUserByUserName(name);
-            if (user) throw new BadRequestException(`${name} already exist`);
+            // console.log(`checking name : ${body.name}`);
+            const user = await this.userService.getUserByUserName(body.name);
+            if (user) throw new BadRequestException(`${body.name} already exist`);
             res.sendStatus(200);
         } catch (error) {
             if (error.getStatus() == 404) res.sendStatus(200);
-            else throw new InternalServerErrorException();
+            else throw new BadRequestException();
         }
     }
 }

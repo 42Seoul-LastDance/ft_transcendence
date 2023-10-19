@@ -292,11 +292,11 @@ export class GameService {
         if (
             //ball
             BALL_SPEED[player.gameMode] !== gameInfo['ballSpeed'] ||
-            BALL_POS_X_MIN - BALL_PADDING > gameInfo['ballPosX'] ||
-            BALL_POS_X_MAX + BALL_PADDING < gameInfo['ballPosX'] ||
+            // BALL_POS_X_MIN - BALL_PADDING > gameInfo['ballPosX'] ||
+            // BALL_POS_X_MAX + BALL_PADDING < gameInfo['ballPosX'] ||
             !this.equals(gameInfo['ballPosY'], BALL_POS_Y) ||
-            BALL_POS_Z_MIN - BALL_PADDING > gameInfo['ballPosZ'] ||
-            BALL_POS_Z_MAX + BALL_PADDING < gameInfo['ballPosZ'] ||
+            // BALL_POS_Z_MIN - BALL_PADDING > gameInfo['ballPosZ'] ||
+            // BALL_POS_Z_MAX + BALL_PADDING < gameInfo['ballPosZ'] ||
             BALL_SCALE_X !== gameInfo['ballScaleX'] ||
             BALL_SCALE_Y !== gameInfo['ballScaleY'] ||
             BALL_SCALE_Z !== gameInfo['ballScaleZ'] ||
@@ -610,9 +610,9 @@ export class GameService {
     }
 
     //*API용: 프로필 게임 정보
-    async getGameData(userName: string) {
+    async getGameData(slackId: string) {
         try {
-            const userId = (await this.userService.getUserByUserName(userName)).id;
+            const userId = (await this.userService.getUserBySlackId(slackId)).id;
             const gameRecords = await this.gameRepository.find({
                 where: [
                     { winnerId: userId, gameType: GameType.MATCH },
@@ -643,9 +643,9 @@ export class GameService {
         }
     }
 
-    async getFriendGameData(userId: number, friendName: string) {
+    async getFriendGameData(userId: number, friendSlackId: string) {
         try {
-            const friendId = (await this.userService.getUserByUserName(friendName)).id;
+            const friendId = (await this.userService.getUserBySlackId(friendSlackId)).id;
             const gameRecords = await this.gameRepository.find({
                 where: [
                     {

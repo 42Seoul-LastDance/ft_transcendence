@@ -95,8 +95,7 @@ export class SocketUsersService {
         } catch (error) {
             this.logger.error('[ERRRRRR] clearServerData');
         }
-
-        //TODO blockuser 삭제
+        //* blocklist, friendlist는 이건 DM소켓 끊기면 disconnect에서 처리됩니다 (juhoh)
     }
 
     async sendInvitation(socketId: string, payload: JSON): Promise<Socket> {
@@ -236,8 +235,17 @@ export class SocketUsersService {
     }
 
     //* getter
+
+    async getSlackIdById(userId: number): Promise<string> {
+        return (await this.userService.findUserById(userId)).slackId;
+    }
+
     async getUserByUserId(userId: number): Promise<User> {
         return await this.userService.findUserById(userId);
+    }
+
+    async getUserBySlackId(slackId: string): Promise<User> {
+        return await this.userService.getUserBySlackId(slackId);
     }
 
     async getUserNameByUserId(userId: number): Promise<string> {
@@ -378,12 +386,12 @@ export class SocketUsersService {
     }
 
     async getFriendStateList(
-        userName: string,
+        userSlackId: string,
     ): Promise<{ userName: string; slackId: string; userStatus: UserStatus }[]> {
-        const userId = await this.getUserIdByUserName(userName);
+        const userId = (await this.userService.getUserBySlackId(userSlackId)).id;
         const friendStateList: { userName: string; slackId: string; userStatus: UserStatus }[] = [];
 
-        const friendIdList: Array<number> = this.friendList.get(userId);
+        const friendIdList: Array<number> = await this.friendService.getFriendList(userId);
         for (const friendId of friendIdList) {
             const friend: User = await this.getUserByUserId(friendId);
             const friendInfo = {

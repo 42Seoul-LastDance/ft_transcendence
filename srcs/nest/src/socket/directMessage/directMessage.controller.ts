@@ -12,13 +12,13 @@ export class DirectMessageController {
         private readonly userService: UserService,
     ) {}
 
-    @Get('/with/:userName')
+    @Get('/with/:friendSlackId')
     @UseGuards(JwtAuthGuard)
-    async getLoggedDMs(@Param('userName') userName: string, @Req() req, @Res() res) {
-        this.logger.log('request user:', userName);
+    async getLoggedDMs(@Param('friendSlackId') friendSlackId: string, @Req() req, @Res() res) {
+        this.logger.log('request user:', friendSlackId);
         const loggedDMs: DirectMessageInfoDto[] = await this.directMessageService.findRecentDMs(
             req.user.sub,
-            userName,
+            friendSlackId,
             3000000, // <-- 이거 그냥 다 보내세요 ㅡ,ㅡ
         );
         return res.status(200).json(loggedDMs);

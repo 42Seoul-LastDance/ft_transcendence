@@ -22,7 +22,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserStatus } from './user-status.enum';
 import { POINT, LEVELUP } from 'src/game/game.constants';
 import { DirectMessageService } from 'src/socket/directMessage/directMessage.service';
-import { SocketEventHandlerSerivce } from 'src/socket/socketEventHandler/socketEventHandler.service';
+// import { SocketEventHandlerSerivce } from 'src/socket/socketEventHandler/socketEventHandler.service';
 
 @Injectable()
 export class UserService {
@@ -108,8 +108,6 @@ export class UserService {
             user.require2fa = require2fa;
             user.profileurl = profileImage ? profileImage.filename : user.profileurl;
             await this.userRepository.update(userId, user);
-            if (userName) {
-            }
         } catch (error) {
             this.logger.error('[ERRRRRR] userService: updateUserInfo');
         }
@@ -125,51 +123,10 @@ export class UserService {
         return user;
     }
 
-    // async updateUserNameBySlackId(slackId: string, userName: string): Promise<User> {
-    //     try {
-    //         const user = await this.getUserBySlackId(slackId);
-    //         user.userName = userName;
-    //         await this.userRepository.save(user);
-    //         return user;
-    //     } catch (error) {
-    //         if (error.code == '23505') throw new ConflictException('Existing userName');
-    //         else throw new InternalServerErrorException('from updateuserName');
-    //     }
-    // }
-
-    // async update2faConfBySlackId(slackId: string, is2fa: boolean): Promise<User> {
-    //     try {
-    //         const user = await this.getUserBySlackId(slackId);
-    //         user.require2fa = is2fa;
-    //         await this.userRepository.save(user);
-    //         return user;
-    //     } catch (error) {
-    //         throw new InternalServerErrorException('from update2fa');
-    //     }
-    // }
-
-    // async updateProfileImageBySlackId(slackId: string, img: string): Promise<User> {
-    //     try {
-    //         const user = await this.getUserBySlackId(slackId);
-    //         //* default 이미지가 아니었을 경우 기존 이미지 삭제
-    //         if (user.profileurl != 'default.png') {
-    //             const filePath = __dirname + '/../../profile/' + user.profileurl;
-    //             if (existsSync(filePath)) unlinkSync(__dirname + '/../../profile/' + user.profileurl);
-    //         }
-    //         user.profileurl = img;
-    //         await this.userRepository.save(user);
-    //         return user;
-    //     } catch (error) {
-    //         throw new InternalServerErrorException('from updateProfileImage');
-    //     }
-    // }
-
     async saveUserCurrentRefreshToken(userId: number, refreshToken: string) {
-        const salt = await bcrypt.genSalt(10);
-        const hashedRefreshToken = await bcrypt.hash(refreshToken, salt);
-
+        this.logger.debug('userID', userId);
         await this.userRepository.update(userId, {
-            refreshToken: hashedRefreshToken,
+            refreshToken: refreshToken,
         });
     }
 
@@ -194,9 +151,9 @@ export class UserService {
         });
 
         if (!found) {
+            this.logger.error(`Cannot find ${slackId} in DB!`);
             throw new NotFoundException('from getUserBySlackId');
         }
-
         return found;
     }
 
@@ -220,23 +177,24 @@ export class UserService {
     로그아웃 용
      **/
     async removeRefreshToken(user): Promise<any> {
-        // TODO: 프론트 쿠키 관리 로직이 추가되면 수정해야 함
         // TODO: 함수 명이랑 로직 다시 정리필요해보입니다!
         const found = await this.findUserById(user.sub); //안에서 에러처리 됨
-
-        return await this.userRepository.update(found.id, {
-            refreshToken: null,
-        });
+        found.refreshToken = null;
+        return await this.userRepository.save(found);
     }
 
     async saveUser2faCode(userId: number, code: string): Promise<void> {
-        await this.userRepository.update(userId, { code2fa: code });
+        try {
+            await this.userRepository.update(userId, { code2fa: code });
+        } catch {
+            this.logger.debug(`code , id : ${code} ${userId} ${typeof code}`);
+        }
     }
 
     async verifyUser2faCode(userId: number, code: string): Promise<boolean> {
         const storedCode: string = (await this.findUserById(userId)).code2fa;
-        // console.log('stored = ', storedCode);
-        // console.log('input = ', code);
+        console.log('stored = ', storedCode);
+        console.log('input = ', code);
         if (storedCode === code) return true;
         else return false;
     }
@@ -254,8 +212,12 @@ export class UserService {
         return {};
     }
 
-    async getUserProfile(username: string): Promise<UserProfileDto> {
-        const user = await this.getUserByUserName(username);
+    async getUserProfile(slackId: string): Promise<UserProfileDto> {
+        const user: User = await this.getUserBySlackId(slackId);
+        if (user === undefined || user === null) {
+            console.log(slackId, user);
+            return null;
+        }
         const userProfileDto: UserProfileDto = {
             userName: user.userName,
             slackId: user.slackId,
@@ -265,9 +227,13 @@ export class UserService {
         return userProfileDto;
     }
 
-    async getUserProfileImage(username: string): Promise<{ image: Buffer; mimeType: string }> {
+    async getUserProfileImage(slackId: string): Promise<{ image: Buffer; mimeType: string }> {
         try {
-            const user = await this.getUserByUserName(username);
+            const user: User = await this.getUserBySlackId(slackId);
+            if (user === undefined || user === null) {
+                console.log(slackId, user);
+                return null;
+            }
             const profileImgTarget = user.profileurl ? user.profileurl : 'default.png';
             const imagePath = '/usr/app/srcs/profile/' + profileImgTarget;
             const image = readFileSync(imagePath); // 이미지 파일을 읽어옴

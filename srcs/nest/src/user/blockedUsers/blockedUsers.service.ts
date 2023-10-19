@@ -14,7 +14,8 @@ export class BlockedUsersService {
     ) {}
 
     async blockUserById(userId: number, targetId: number): Promise<void> {
-        // if ((await this.isBlocked(userId, targetId)) === true) return;
+        if (userId === targetId) return;
+        if ((await this.isBlocked(userId, targetId)) === true) return;
         const blockInfo = this.blockedUsersRepository.create({
             requestUserId: userId,
             targetUserId: targetId,

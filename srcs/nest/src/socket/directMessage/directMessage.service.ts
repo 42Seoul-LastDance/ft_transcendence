@@ -99,9 +99,9 @@ export class DirectMessageService {
         }
 
         let hasReceived: boolean = false; //(전제 조건)만약 차단되었으면 false
-        const isBlocked = await this.socketUsersService.isBlocked(userId, targetId);
+        const isBlocked = await this.socketUsersService.isBlocked(targetId, userId);
         if (isBlocked === false) {
-            //차단되지 않았으므로 hasReceived = true, emit
+            //내가 차단되지 않았으므로 hasReceived = true, emit
             hasReceived = true;
             if (targetSocket) targetSocket.emit('sendMessage', { userName: userName, content: content });
         }
@@ -109,8 +109,8 @@ export class DirectMessageService {
         socket.emit('sendMessage', { userName: userName, content: content }); //sender
     }
 
-    async findRecentDMs(target1Id: number, userName: string, count: number): Promise<DirectMessageInfoDto[]> {
-        const target2Id = await this.socketUsersService.getUserIdByUserName(userName);
+    async findRecentDMs(target1Id: number, friendSlackId: string, count: number): Promise<DirectMessageInfoDto[]> {
+        const target2Id: number = (await this.socketUsersService.getUserBySlackId(friendSlackId)).id;
         const DMList: DirectMessage[] = await this.directMessageRepository.find({
             where: [
                 { senderId: target1Id, receiverId: target2Id },
@@ -134,15 +134,15 @@ export class DirectMessageService {
         return returnArray;
     }
 
-    async getFriendStateList(socket: Socket, userName: string): Promise<[string, string, UserStatus][]> {
-        if (userName === undefined || userName === null) {
-            this.logger.error('userName undefined');
-            this.emitFailReason(socket, 'getFriendStateList', 'username error');
+    async getFriendStateList(socket: Socket, userSlackId: string): Promise<[string, string, UserStatus][]> {
+        if (userSlackId === undefined || userSlackId === null) {
+            this.logger.error('userSlackId undefined');
+            this.emitFailReason(socket, 'getFriendStateList', 'userSlackId error');
             return;
         }
         const result: { userName: string; slackId: string; userStatus: UserStatus }[] =
-            await this.socketUsersService.getFriendStateList(userName);
-        this.logger.debug(`GET FRIEND STATE LIST :: ${userName} with : ${result}`);
+            await this.socketUsersService.getFriendStateList(userSlackId);
+        // this.logger.debug(`GET FRIEND STATE LIST :: ${userSlackId} with : `, result);
         socket.emit('getFriendStateList', result);
     }
 
@@ -193,27 +193,28 @@ export class DirectMessageService {
     async deleteFriend(socket: Socket, payload: JSON) {
         // 친구 삭제 이벤트가 일어날 때 친구 리스트 실시간 업데이트
         // 프론트로 다시 getFriendStateList 날려주기
-        const userName = payload['userName'];
-        const targetName = payload['targetName'];
-        const userId = this.socketUsersService.getUserIdByDMSocketId(socket.id);
-        const targetId = await this.socketUsersService.getUserIdByUserName(targetName);
+        const userSlackId: string = payload['userSlackId'];
+        const targetSlackId: string = payload['targetSlackId'];
+        const user: User = await this.socketUsersService.getUserBySlackId(userSlackId);
+        const target: User = await this.socketUsersService.getUserBySlackId(targetSlackId);
 
-        this.socketUsersService.deleteFriend(userId, targetId);
-        const targetSocket = this.socketUsersService.getDMSocketById(targetId);
-        await this.getFriendStateList(socket, userName);
-        if (targetSocket) await this.getFriendStateList(targetSocket, targetName);
+        this.socketUsersService.deleteFriend(user.id, target.id);
+        const targetSocket = this.socketUsersService.getDMSocketById(target.id);
+        await this.getFriendStateList(socket, userSlackId);
+        if (targetSocket) await this.getFriendStateList(targetSocket, targetSlackId);
     }
 
     async addFriend(socket: Socket, payload: JSON) {
-        const userName = payload['userName'];
-        const targetName = payload['targetName'];
-        const userId = this.socketUsersService.getUserIdByDMSocketId(socket.id);
-        const targetId = await this.socketUsersService.getUserIdByUserName(targetName);
+        const userSlackId: string = payload['userSlackId'];
+        const targetSlackId: string = payload['targetSlackId'];
+        const user: User = await this.socketUsersService.getUserBySlackId(userSlackId);
+        const target: User = await this.socketUsersService.getUserBySlackId(targetSlackId);
 
-        this.socketUsersService.addFriend(userId, targetId);
-        const targetSocket = this.socketUsersService.getDMSocketById(targetId);
-        await this.getFriendStateList(socket, userName);
-        if (targetSocket != undefined && targetSocket !== null) await this.getFriendStateList(targetSocket, targetName);
+        this.socketUsersService.addFriend(user.id, target.id);
+        const targetSocket = this.socketUsersService.getDMSocketById(target.id);
+        await this.getFriendStateList(socket, userSlackId);
+        if (targetSocket != undefined && targetSocket !== null)
+            await this.getFriendStateList(targetSocket, targetSlackId);
         else this.logger.error('targetSocket does not exist');
     }
 }

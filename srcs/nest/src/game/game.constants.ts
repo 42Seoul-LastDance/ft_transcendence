@@ -14,7 +14,7 @@ export const EPSILON = 0.1;
 //Game: Ball
 export const BALL_PADDING: number = 2;
 export const SCORE_PADDING: number = 0.5;
-export const BALL_SPEED: [number, number] = [1000, 1500]; //[NORMAL, HARD]
+export const BALL_SPEED: [number, number] = [1100, 1500]; //[NORMAL, HARD]
 export const BALL_POS_X_MIN: number = -19.3;
 export const BALL_POS_X_MAX: number = 19.3;
 export const BALL_POS_Y: number = 0.8;

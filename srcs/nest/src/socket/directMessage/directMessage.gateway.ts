@@ -86,8 +86,12 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
     @SubscribeMessage('getMyName')
     async getMyName(socket: Socket) {
         const user: User = await this.directMessageService.getUserBySocketId(socket.id);
+        const userInfo = {
+            userName: user.userName,
+            slackId: user.slackId,
+        };
         this.logger.log(`getMyName : ${user.userName}`);
-        socket.emit('getMyName', [user.userName, user.slackId]);
+        socket.emit('getMyName', userInfo);
     }
 
     //* updateBlockUser
@@ -105,9 +109,9 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
 
     // * friendList
     @SubscribeMessage('getFriendStateList')
-    async getFriendStateList(socket: Socket, userName: string): Promise<void> {
+    async getFriendStateList(socket: Socket, userSlackId: string): Promise<void> {
         this.logger.log('** DM - GET FRIEND STATE LIST**');
-        await this.directMessageService.getFriendStateList(socket, userName);
+        await this.directMessageService.getFriendStateList(socket, userSlackId);
     }
 
     // * invite
