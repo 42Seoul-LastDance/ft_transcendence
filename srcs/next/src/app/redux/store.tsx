@@ -1,5 +1,4 @@
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
-import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
 import { matchSlice } from './matchSlice';
 import userSlice from './userSlice';
 import roomSlice from './roomSlice';

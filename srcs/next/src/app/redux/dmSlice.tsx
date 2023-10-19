@@ -1,37 +1,36 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-// import { JoinStatus } from '../interface';
 
 export interface DMState {
-  userName: string | null;
+  //   userName: string | null;
   friendName: string | null;
-  // join: JoinStatus;
+  friendSlackId: string | null;
 }
 
 const initialState: DMState = {
-  userName: null,
+  //   userName: null,
   friendName: null,
-  // join: JoinStatus.NONE,
+  friendSlackId: null,
 };
 
 const dmSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    setName: (state: DMState, action: PayloadAction<string>) => {
-      state.userName = action.payload;
-    },
+    // setName: (state: DMState, action: PayloadAction<string>) => {
+    //   state.userName = action.payload;
+    // },
     setFriend: (state: DMState, action: PayloadAction<string>) => {
       state.friendName = action.payload;
     },
-    // setJoin: (state: DMState, action: PayloadAction<number>) => {
-    //   state.join = action.payload;
-    // },
+    setFriendSlackId: (state: DMState, action: PayloadAction<string>) => {
+      state.friendSlackId = action.payload;
+    },
   },
 });
 
 export default dmSlice;
 export const {
-  setName,
+  // setName,
   setFriend,
-  // setJoin,
+  setFriendSlackId,
 } = dmSlice.actions;

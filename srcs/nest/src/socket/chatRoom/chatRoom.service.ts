@@ -214,14 +214,16 @@ export class ChatRoomService {
         }
 
         if (roomStatus === RoomStatus.PUBLIC) room = this.publicRoomList.get(roomName);
-        else if (roomStatus === RoomStatus.PRIVATE) room = this.privateRoomList.get(roomName);
-        else return;
+        else if (roomStatus === RoomStatus.PRIVATE) {
+            room = this.privateRoomList.get(roomName);
+            console.log('aaaa'); //찍힘
+        } else return;
 
         if (room === undefined || room.memberList === undefined) {
             this.emitFailReason(socket, 'getMemberStateList', 'room or memberList does not exist');
             return;
         }
-
+        console.log('aaaa:', room.memberList.size);
         for (const member of room.memberList) {
             const name: string = await this.socketUsersService.getUserNameByUserId(member);
             const slackId: string = await this.socketUsersService.getSlackIdById(member);
@@ -272,7 +274,7 @@ export class ChatRoomService {
         }
 
         const roomDto: ChatRoomDto = new ChatRoomDto();
-        // console.log('chat room dto created🥪.'); //귀여워 🥹
+        // console.log('chat room dto created🥪.'); //귀여워 🥹 `w`
 
         roomDto.roomName = createRoomDto.roomName;
         roomDto.ownerName = await this.socketUsersService.getUserNameByUserId(
@@ -285,11 +287,15 @@ export class ChatRoomService {
             roomDto.password = createRoomDto.password;
         }
 
-        if (createRoomDto.status === RoomStatus.PRIVATE) this.privateRoomList.set(createRoomDto.roomName, roomDto);
-        else if (createRoomDto.status === RoomStatus.PUBLIC) this.publicRoomList.set(createRoomDto.roomName, roomDto);
+        if (createRoomDto.status === RoomStatus.PUBLIC) this.publicRoomList.set(createRoomDto.roomName, roomDto);
+        else if (createRoomDto.status === RoomStatus.PRIVATE) {
+            this.privateRoomList.set(createRoomDto.roomName, roomDto);
+        }
 
-        if (createRoomDto.status === RoomStatus.PRIVATE) await this.joinPrivateChatRoom(socket, roomDto.roomName, io);
-        else if (createRoomDto.status === RoomStatus.PUBLIC)
+        console.log('room created. check privateRoomList:', this.privateRoomList);
+        if (createRoomDto.status === RoomStatus.PRIVATE) {
+            this.joinPrivateChatRoom(socket, roomDto.roomName, io);
+        } else if (createRoomDto.status === RoomStatus.PUBLIC)
             await this.joinPublicChatRoom(socket, roomDto.roomName, roomDto.password, io);
         //.to('' + roomDto.id) => 글쓴 사람을 제외한 다른 사람들한테만 보이는지 확인
     }
@@ -387,8 +393,10 @@ export class ChatRoomService {
 
     async joinPrivateChatRoom(socket: Socket, roomName: string, io: Server): Promise<boolean> {
         const targetRoom = this.privateRoomList.get(roomName);
-        const userId = this.socketUsersService.getUserIdByDMSocketId(socket.id);
+        const userId = this.socketUsersService.getUserIdByChatSocketId(socket.id);
         const userName = await this.socketUsersService.getUserNameByUserId(userId);
+        this.logger.log('JOIN PRIVATE CHAT ROOM called.');
+
         if (targetRoom == undefined) {
             this.logger.warn(`JOIN PRIVATE CHAT ROOM : ${targetRoom.roomName} does not exist.`);
             this.emitFailReason(socket, 'joinPrivateChatRoom', 'Room does not exists.');
@@ -400,7 +408,7 @@ export class ChatRoomService {
             return false;
         }
 
-        if (!this.socketUsersService.isInvited(socket.id, roomName)) {
+        if (targetRoom.memberList.size !== 0 && !this.socketUsersService.isInvited(socket.id, roomName)) {
             this.emitFailReason(socket, 'joinPrivateChatRoom', 'is not invited.');
             return false;
         }
@@ -410,10 +418,12 @@ export class ChatRoomService {
         socket.join(roomName);
         //ChannelList에서 user 추가
         targetRoom.memberList.add(userId);
-        console.log('targetroom in PRIVATE ROM', targetRoom);
+        this.logger.debug('target room added memberList: ', targetRoom.memberList);
+
+        console.log('targetroom in PRIVATE ROOM', targetRoom);
         socket.emit('serverMessage', `"${userName}"님이 "${targetRoom.roomName}"방에 접속했습니다`);
         socket.to(roomName).emit('serverMessage', `"${userName}"님이 "${targetRoom.roomName}"방에 접속했습니다`);
-        this.logger.log('memberList');
+
         this.emitSuccess(socket, 'joinPrivateChatRoom');
         return true;
     }

@@ -10,12 +10,16 @@ import { myAlert } from '../alert';
 import { useRouter } from 'next/navigation';
 import { GameJoinMode, GameMode } from '@/app/Enums';
 import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
-import Link from 'next/link';
-import { Events, UserPermission } from '@/app/interface';
+import {
+  EmitResult,
+  Events,
+  JoinStatus,
+  UserPermission,
+} from '@/app/interface';
 import { setMyPermission } from '@/app/redux/roomSlice';
 import { setCustomSet } from '@/app/redux/matchSlice';
-import { TextField } from '@mui/material';
 import { setViewProfile } from '@/app/redux/viewSlice';
+import { setChatRoom, setJoin } from '@/app/redux/userSlice';
 
 const ChatMenu = () => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
@@ -28,7 +32,8 @@ const ChatMenu = () => {
   const myPermission = useSelector(
     (state: RootState) => state.room.myPermission,
   );
-  const [isUserProfileOpen, setUserProfileOpen] = useState(false);
+  const mySlackId = useSelector((state: RootState) => state.user.userSlackId);
+  const [isUserProfileOpen, setUserProfileOpen] = useState<boolean>(false);
   const chatSocket = useChatSocket();
   const dispatch = useDispatch();
   const router = useRouter();
@@ -39,6 +44,16 @@ const ChatMenu = () => {
         event: 'getMyPermission',
         callback: (data: UserPermission) => {
           dispatch(setMyPermission(data));
+        },
+      },
+      {
+        event: 'kickUser',
+        callback: (data: EmitResult) => {
+          if (data.result === true) {
+            dispatch(setChatRoom(null));
+            dispatch(setJoin(JoinStatus.NONE));
+            myAlert('success', '채팅방에서 쫓겨났습니다', dispatch);
+          }
         },
       },
     ];
@@ -52,30 +67,34 @@ const ChatMenu = () => {
     };
   }, []);
 
-  // getMyPermission
-  // roomName, roomStatus
-
   // 프로필 버튼 클릭 핸들러
   const handleProfileClick = () => {
     setUserProfileOpen(true);
+    dispatch(
+      setViewProfile({
+        viewProfile: true,
+        targetSlackId: selectedMember?.slackId,
+      }),
+    );
   };
 
   // 모달 닫기 핸들러
   const handleCloseProfileModal = () => {
     setUserProfileOpen(false);
+    dispatch(setViewProfile({ viewProfile: false, targetSlackId: null }));
   };
 
   const isSuper = () => {
-    if (selectedMember?.userName === 'jaejkim') {
-      myAlert(
-        'error',
-        `${selectedMember?.userName}: 하 하 ~ 어림도 없죠? `,
-        dispatch,
-      );
-      setTimeout(() => {
-        router.push('/');
-      }, 3000);
-    }
+    // if (selectedMember?.userName === 'jaejkim') {
+    //   myAlert(
+    //     'error',
+    //     `${selectedMember?.userName}: 하 하 ~ 어림도 없죠? `,
+    //     dispatch,
+    //   );
+    //   setTimeout(() => {
+    //     router.push('/');
+    //   }, 3000);
+    // }
   };
 
   const handleGameClick = (mode: GameMode) => {
@@ -84,16 +103,17 @@ const ChatMenu = () => {
         joinMode: GameJoinMode.CUSTOM_SEND,
         gameMode: mode,
         opponentName: selectedMember?.userName,
+        opponentSlackId: selectedMember?.slackId,
       }),
     );
-    console.log('--mode 뭔디', mode);
+    router.push('/game');
   };
 
   const handleKick = () => {
     isSuper();
     chatSocket?.emit('kickUser', {
-      roomname: chatRoom?.roomName,
-      targetname: selectedMember?.userName,
+      roomName: chatRoom?.roomName,
+      targetName: selectedMember?.userName,
     });
   };
 
@@ -102,7 +122,7 @@ const ChatMenu = () => {
     chatSocket?.emit('banUser', {
       roomName: chatRoom?.roomName,
       roomStatus: chatRoom?.status,
-      targetName: selectedMember?.userName,
+      targetSlackId: selectedMember?.slackId,
     });
     myAlert(
       'info',
@@ -113,25 +133,34 @@ const ChatMenu = () => {
 
   const handleMute = () => {
     isSuper();
+    const time = 5;
     chatSocket?.emit('muteUser', {
       status: chatRoom?.status,
       roomName: chatRoom?.roomName,
       targetName: selectedMember?.userName,
-      time: 5,
+      time: time,
     });
     myAlert(
       'info',
-      `${selectedMember?.userName} is muted for 60 seconds`,
+      `${selectedMember?.userName} is muted for ${time} seconds`,
       dispatch,
     );
   };
 
-  const handleMakeAdmin = () => {
-    chatSocket?.emit('grantUser', {
-      roomName: chatRoom?.roomName,
-      roomStatus: chatRoom?.status,
-      targetName: selectedMember?.userName,
-    });
+  const handleToggleMakeAdmin = async () => {
+    if (selectedMember?.permission === UserPermission.ADMIN) {
+      chatSocket?.emit('ungrantUser', {
+        roomName: chatRoom?.roomName,
+        roomStatus: chatRoom?.status,
+        targetName: selectedMember?.userName,
+      });
+    } else {
+      chatSocket?.emit('grantUser', {
+        roomName: chatRoom?.roomName,
+        roomStatus: chatRoom?.status,
+        targetName: selectedMember?.userName,
+      });
+    }
   };
 
   return (
@@ -152,50 +181,47 @@ const ChatMenu = () => {
           Profile
         </Button>
 
-        <Link href={'/game'}>
-          <Button
-            key="gameNormal"
-            onClick={() => {
-              handleGameClick(GameMode.NORMAL);
-            }}
-          >
-            Invite Game Nor
-          </Button>
-        </Link>
-        <Link href={'/game'}>
-          <Button
-            key="gameHard"
-            onClick={() => {
-              handleGameClick(GameMode.HARD);
-            }}
-          >
-            Invite Game Hard
-          </Button>
-        </Link>
-
-        {myPermission <= UserPermission.ADMIN &&
-        myPermission < selectedMember!.permission ? (
+        {mySlackId !== selectedMember?.slackId ? (
           <>
-            <Button key="kick" onClick={handleKick}>
-              Kick
+            <Button
+              key="gameNormal"
+              onClick={() => {
+                handleGameClick(GameMode.NORMAL);
+              }}
+            >
+              Invite Game Normal
             </Button>
-            <Button key="ban" onClick={handleBan}>
-              Ban
+            <Button
+              key="gameHard"
+              onClick={() => {
+                handleGameClick(GameMode.HARD);
+              }}
+            >
+              Invite Game Hard
             </Button>
-            <Button key="mute" onClick={handleMute}>
-              Mute
-            </Button>
+            {myPermission <= UserPermission.ADMIN &&
+            myPermission < selectedMember!.permission ? (
+              <>
+                <Button key="kick" onClick={handleKick}>
+                  Kick
+                </Button>
+                <Button key="ban" onClick={handleBan}>
+                  Ban
+                </Button>
+                <Button key="mute" onClick={handleMute}>
+                  Mute
+                </Button>
+              </>
+            ) : null}
+            {myPermission === UserPermission.OWNER ? (
+              <Button key="makeOperator" onClick={handleToggleMakeAdmin}>
+                관리자 만들기
+              </Button>
+            ) : null}
           </>
         ) : null}
-        {myPermission === UserPermission.OWNER ? (
-          <Button key="makeOperator" onClick={handleMakeAdmin}>
-            Make Operator
-          </Button>
-        ) : null}
       </ButtonGroup>
-      {isUserProfileOpen && (
-        <UserProfile targetName={selectedMember!.userName} />
-      )}
+      {isUserProfileOpen && <UserProfile />}
     </Box>
   );
 };

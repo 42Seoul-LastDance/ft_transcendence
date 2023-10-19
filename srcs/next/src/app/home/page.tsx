@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import { JoinStatus, RoomStatus } from '../interface';
 import { setIsMatched } from '../redux/matchSlice';
 import HeaderAlert from './alert';
-import { Button, LinearProgress } from '@mui/material';
+import { Button, Grid, LinearProgress } from '@mui/material';
 import { setJoin } from '../redux/userSlice';
 import { useGameSocket } from '../context/gameSocketContext';
 
@@ -44,12 +44,14 @@ const HomeContent = () => {
       <>
         <br />
         <Link href="/game">
-          <Button variant="outlined" color="secondary">
-            Play Game!
-          </Button>
+          <Grid container justifyContent="center">
+            <Button variant="outlined" color="secondary">
+              버튼
+            </Button>
+          </Grid>
         </Link>
         <br />
-        <div style={{ display: 'flex' }}>
+        <div>
           <ChattingTabs />
         </div>
       </>

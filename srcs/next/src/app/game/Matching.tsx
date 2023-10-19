@@ -58,29 +58,34 @@ const Matching = () => {
       ) : (
         <>
           <div>
-            <h1> Matching... </h1>
             {/* 연습게임 넣을 예정 */}
             <CircularProgress />
           </div>
           {customSet.joinMode === GameJoinMode.CUSTOM_RECV ||
           customSet.joinMode === GameJoinMode.CUSTOM_SEND ? (
-            <Button
-              onClick={() => {
-                dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
-                gameSocket?.emit('quitInvite');
-              }}
-            >
-              Cancel Invite
-            </Button>
+            <>
+              <h1> Waiting... </h1>
+              <Button
+                onClick={() => {
+                  dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
+                  gameSocket?.emit('quitInvite');
+                }}
+              >
+                Cancel Invite
+              </Button>
+            </>
           ) : (
-            <Button
-              onClick={() => {
-                dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
-                gameSocket?.emit('popQueue');
-              }}
-            >
-              Cancel Matching
-            </Button>
+            <>
+              <h1> Matching... </h1>
+              <Button
+                onClick={() => {
+                  dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
+                  gameSocket?.emit('popQueue');
+                }}
+              >
+                Cancel Matching
+              </Button>
+            </>
           )}
         </>
       )}

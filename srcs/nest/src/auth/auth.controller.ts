@@ -93,21 +93,27 @@ export class AuthController {
 
         const { jwt, refreshToken } = await this.authService.generateAuthToken(user.id, user.userName);
         res.status(HttpStatus.OK);
-        res.cookie('access_token', jwt, {
-            // maxAge: +process.env.ACCESS_COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-            // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-            // secure: false,
-        });
-        res.cookie('refresh_token', refreshToken, {
-            // maxAge: +process.env.REFRESH_COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-            // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-            // secure: false,
-        });
+
+        // res.cookie('access_token', jwt, {
+        //     // maxAge: +process.env.ACCESS_COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+        //     // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+        //     // secure: false,
+        // });
+        // res.cookie('refresh_token', refreshToken, {
+        //     // maxAge: +process.env.REFRESH_COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+        //     // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+        //     // secure: false,
+        // });
 
         // return res.status(200).json({
         //     message: 'success',
         // });
-        return res.redirect(process.env.FRONT_URL + '/home'); //TODO : 로직 변경
+
+        res.send({
+            access_token: jwt,
+            refresh_token: refreshToken,
+        });
+        return res.redirect(process.env.FRONT_URL + '/home');
     }
 
     @Patch('verify2fa/')
@@ -121,10 +127,11 @@ export class AuthController {
             // res.clearCookie('2fa_token');
             const { jwt, refreshToken } = await this.authService.generateAuthToken(req.user.sub, req.user.userName);
             res.status(HttpStatus.OK);
-            return res.send({
+            res.send({
                 access_token: jwt,
                 refresh_token: refreshToken,
             });
+            return res.redirect(process.env.FRONT_URL + '/home');
         } else {
             this.logger.debug('verify failed');
             throw new UnauthorizedException('verify failed');

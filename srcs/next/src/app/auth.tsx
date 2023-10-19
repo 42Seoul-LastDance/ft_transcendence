@@ -9,16 +9,22 @@ export const reGenerateToken = async (router: any): Promise<AxiosResponse> => {
     router.push('/');
     return new Promise(() => {});
   }
-  const response = await axios.get(`${BACK_URL}/auth/regenerateToken`, {
-    headers: { Authorization: `Bearer ${refreshToken}` },
-  });
 
-  if (response.status === 200) {
+  try {
+    const response = await axios.get(`${BACK_URL}/auth/regenerateToken`, {
+      headers: { Authorization: `Bearer ${refreshToken}` },
+    });
     const xAccessToken = response.data['token'];
     setCookie('access_token', xAccessToken);
     console.log('reGenerateToken Success');
-  } else console.log('reGenerateToken Failure');
-  return response;
+    return response;
+  } catch (error: any) {
+    console.log('reGenerateToken Failure', error);
+    return new Promise(() => {});
+  }
 };
 
 export default reGenerateToken;
+
+// localStorage.setItem('myData', 'Hello, Local Storage!');
+// const data = localStorage.getItem('myData');

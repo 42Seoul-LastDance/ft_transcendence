@@ -9,11 +9,12 @@ import { useRouter } from 'next/navigation';
 import sendRequest from '@/app/api';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/app/redux/store';
-import { UserProfileProps, FriendStatus } from '@/app/interface';
+import { UserProfileProps, FriendStatus, JoinStatus } from '@/app/interface';
 import { setViewProfile } from '@/app/redux/viewSlice';
 import { useSuperSocket } from '@/app/context/superSocketContext';
-import { removeCookie } from '@/app/Cookie';
-
+// import { removeCookie } from '@/app/Cookie';
+import { CircularProgress, Divider } from '@mui/material';
+import { setJoin } from '@/app/redux/userSlice';
 const style = {
   position: 'absolute' as 'absolute',
   top: '50%',
@@ -26,16 +27,18 @@ const style = {
   p: 4,
 };
 
-const UserProfile = (props: UserProfileProps) => {
-  const chatSocket = useChatSocket();
+const UserProfile = () => {
   const superSocket = useSuperSocket();
   const router = useRouter();
-  const myName = useSelector((state: RootState) => state.user.userName);
+  const mySlackId = useSelector((state: RootState) => state.user.userSlackId);
   const viewProfile = useSelector((state: RootState) => state.view.viewProfile);
+  const targetSlackId = useSelector(
+    (state: RootState) => state.view.targetSlackId,
+  );
   const [close, setClose] = useState<boolean>(false);
   const [level, setLevel] = useState<number>(0);
   const [exp, setExp] = useState<number>(0);
-  // const [userName, setUserName] = useState<string>(''); <-- 이거 안 보내주셔도요돼이 /user/profile/<name>의 username
+  const [targetName, setTargetName] = useState<string>('');
   const [slackId, setSlackId] = useState<string>('');
   const [normalWin, setNormalWin] = useState<number>(0);
   const [normalLose, setNormalLose] = useState<number>(0);
@@ -55,32 +58,45 @@ const UserProfile = (props: UserProfileProps) => {
   const [friendRequestAvailable, setFriendRequestAvailable] =
     useState<boolean>(true);
   const [isBlocked, setIsBlocked] = useState<boolean>(true);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const join = useSelector((state: RootState) => state.user.join);
+
   const dispatch = useDispatch();
-  // dispatch(setViewProfile(true))
+
+  const requestIsFriend = async () => {
+    const friendResp = await sendRequest(
+      'get',
+      `/friends/isFriend/${targetSlackId}`,
+      router,
+    );
+    setFriendStatus(friendResp.data['status']);
+    if (
+      friendResp.data['status'] === FriendStatus.LAGGING ||
+      friendResp.data['status'] === FriendStatus.REQUESTED
+    )
+      setFriendRequestAvailable(false);
+    console.log('친구니?', friendResp.data['status']);
+  };
+
+  const requestIsBlocked = async () => {
+    const blockedResp = await sendRequest(
+      'get',
+      `/block/isBlocked/${targetSlackId}`,
+      router,
+    );
+    setIsBlocked(blockedResp.data['isBlocked']);
+    console.log('블락이니?', blockedResp.data['isBlocked']);
+  };
+
   const handleOpen = async () => {
     setClose(false);
+    if (mySlackId !== targetSlackId) {
+      await requestIsFriend();
+      await requestIsBlocked();
 
-    if (myName !== props.targetName) {
-      const friendResp = await sendRequest(
-        'get',
-        `/friends/isFriend/${props.targetName}`,
-        router,
-      );
-      setFriendStatus(friendResp.data['status']);
-      if (
-        friendResp.data['status'] === FriendStatus.LAGGING ||
-        friendResp.data['status'] === FriendStatus.REQUESTED
-      )
-        setFriendRequestAvailable(false);
-      const blockedResp = await sendRequest(
-        'get',
-        `/block/isBlocked/${props.targetName}`,
-        router,
-      );
-      setIsBlocked(blockedResp.data['isBlocked']);
       const friendGameData = await sendRequest(
         'get',
-        `games/getFriendGameData/${props.targetName}`,
+        `games/getFriendGameData/${targetSlackId}`,
         router,
       );
       setfNormalWin(friendGameData.data['normalWin']);
@@ -92,37 +108,41 @@ const UserProfile = (props: UserProfileProps) => {
       setfLeftWin(friendGameData.data['leftWin']);
       setfLeftLose(friendGameData.data['leftLose']);
     }
+
     const response = await sendRequest(
       'get',
-      `/users/profile/${props.targetName}`,
+      `/users/profile/${targetSlackId}`,
       router,
     );
+    setTargetName(response.data['userName']);
     setLevel(response.data['level']);
     setExp(response.data['exp']);
     setSlackId(response.data['slackId']);
+
     const gameData = await sendRequest(
       'get',
-      `/games/getGameData/${props.targetName}`,
+      `/games/getGameData/${targetSlackId}`,
       router,
     );
     setNormalWin(gameData.data['normalWin']);
     setNormalLose(gameData.data['normalLose']);
     setHardWin(gameData.data['hardWin']);
     setHardLose(gameData.data['hardLose']);
+
+    setTimeout(() => {
+      setIsLoaded(true), 500;
+    });
   };
 
   useEffect(() => {
+    setIsLoaded(false);
     if (viewProfile === true) handleOpen();
-  }, [viewProfile]);
+  }, [viewProfile, targetSlackId]);
 
   useEffect(() => {
-    if (viewProfile === false && myName) {
-      handleOpen();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (close === true) dispatch(setViewProfile(false));
+    setIsLoaded(false);
+    if (close === true)
+      dispatch(setViewProfile({ viewProfile: false, targetSlackId: null }));
   }, [close]);
 
   const handleClose = () => {
@@ -130,144 +150,160 @@ const UserProfile = (props: UserProfileProps) => {
   };
 
   const requestBeFriend = async () => {
-    const response = await sendRequest(
-      'put',
-      `/friends/request/${props.targetName}`,
-      router,
-    );
+    await sendRequest('put', `/friends/request/`, router, {
+      friendSlackId: targetSlackId,
+    });
+    requestIsFriend();
   };
 
   const removeFriend = async () => {
-    const response = await sendRequest(
-      'delete',
-      `/friends/delete/${props.targetName}`,
-      router,
-    );
+    await sendRequest('delete', `/friends/delete/${targetSlackId}`, router);
+    superSocket?.emit('deleteFriend', {
+      userSlackId: mySlackId,
+      targetSlackId: targetSlackId,
+    });
+    requestIsFriend();
+    if (join === JoinStatus.DM) dispatch(setJoin(JoinStatus.NONE));
+    setClose(true);
   };
 
   const block = async () => {
-    const response = await sendRequest(
-      'patch',
-      `/block/blockUser/${props.targetName}`,
-      router,
-    );
+    await sendRequest('patch', `/block/blockUser/${targetSlackId}`, router);
+    requestIsBlocked();
   };
 
   const unBlock = async () => {
-    const response = await sendRequest(
-      'delete',
-      `/block/unblockUser/${props.targetName}`,
-      router,
-    );
+    await sendRequest('delete', `/block/unblockUser/${targetSlackId}`, router);
+    requestIsBlocked();
   };
 
-  const logout = async () => {
-    const response = await sendRequest('post', `/auth/logout`, router);
-    if (response.status === 201) {
-      superSocket?.disconnect();
-      chatSocket?.disconnect();
-      removeCookie('access_token');
-      removeCookie('refresh_token');
-      setTimeout(() => {
-        router.push('/');
-      }, 1000);
-    }
-  };
+  // const logout = async () => {
+  //   const response = await sendRequest('post', `/auth/logout`, router);
+  //   if (response.status === 201) {
+  //     superSocket?.disconnect();
+  //     chatSocket?.disconnect();
+  //     removeCookie('access_token');
+  //     removeCookie('refresh_token');
+  //     setTimeout(() => {
+  //       router.push('/');
+  //     }, 1000);
+  //   }
+  // };
 
   return (
     <>
-      {/* <Button onClick={handleOpen}></Button> */}
       <Modal
         open={viewProfile}
         onClose={handleClose}
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
       >
-        <Box sx={style}>
-          <Typography id="modal-modal-title" variant="h6" component="h2">
-            {props.targetName}'s Profile
-          </Typography>
-          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-            slackId : {slackId}
-            <br />
-            Level : {level}
-            <br />
-            Exp : {exp} ({((exp / ((level + 1) * 500)) * 100).toFixed(2)}%)
-            <br />
-            {/* <Divider /> */}
-            Total Ranking Game : {normalWin + normalLose + hardWin + hardLose}
-            <br />
-            {normalWin + normalLose > 0 && (
-              <span>
-                Normal Ranking Game Winning Rate:{' '}
-                {((normalWin / (normalWin + normalLose)) * 100).toFixed(2)}%
-              </span>
-            )}
-            <br />
-            {hardWin + hardLose > 0 && (
-              <span>
-                Hard Ranking Game Winning Rate:{' '}
-                {((hardWin / (hardWin + hardLose)) * 100).toFixed(2)}%
-              </span>
-            )}
-            <br />
-          </Typography>
-          {myName !== props.targetName ? (
-            <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-              {/* <Divider /> */}
-              Total Friend Game :{' '}
-              {fNormalWin + fNormalLose + fHardWin + fNormalLose}
+        {isLoaded ? (
+          <Box sx={style}>
+            <Typography
+              id="modal-modal-title"
+              variant="h6"
+              component="h1"
+              color="CadetBlue"
+            >
+              {targetName}'s Profile
+            </Typography>
+            <Divider />
+            <Typography
+              id="modal-modal-description"
+              component="h6"
+              color="Grey"
+              sx={{ mt: 2 }}
+            >
+              slackId: {slackId}
               <br />
-              {fNormalWin + fNormalLose > 0 && (
-                <span>
-                  Normal Friend Game Winning Rate:{' '}
-                  {((fNormalWin / (fNormalWin + fNormalLose)) * 100).toFixed(2)}
-                  %
-                </span>
-              )}
+              Level: {level}
               <br />
-              {fHardWin + fHardLose > 0 && (
-                <span>
-                  Hard Friend Game Winning Rate:{' '}
-                  {((fHardWin / (fHardWin + fHardLose)) * 100).toFixed(2)}%
-                </span>
-              )}
+              Exp: {exp} ({((exp / ((level + 1) * 500)) * 100).toFixed(2)}%)
               <br />
-              {fLeftWin + fLeftLose > 0 && (
-                <span>
-                  Left Side Winning Rate:{' '}
-                  {((fLeftWin / (fLeftWin + fLeftLose)) * 100).toFixed(2)}%
-                </span>
-              )}
-              <br />
-              {fRightWin + fRightLose > 0 && (
-                <span>
-                  Right Side Winning Rate:{' '}
-                  {((fRightWin / (fRightWin + fRightLose)) * 100).toFixed(2)}%
-                </span>
+              <Divider />
+            </Typography>
+            <Typography
+              id="modal-modal-description"
+              component="h6"
+              sx={{ mt: 2 }}
+            >
+              {mySlackId !== targetSlackId && (
+                <>
+                  친선전 횟수:{' '}
+                  {fNormalWin + fNormalLose + fHardWin + fNormalLose}
+                  <br />
+                  {fNormalWin + fNormalLose > 0 && (
+                    <span>
+                      NORMAL 모드 승률:{' '}
+                      {(
+                        (fNormalWin / (fNormalWin + fNormalLose)) *
+                        100
+                      ).toFixed(2)}
+                      %<br />
+                    </span>
+                  )}
+                  {fHardWin + fHardLose > 0 && (
+                    <span>
+                      HARD 모드 승률:{' '}
+                      {((fHardWin / (fHardWin + fHardLose)) * 100).toFixed(2)}%
+                      <br />
+                    </span>
+                  )}
+                  {fLeftWin + fLeftLose > 0 && (
+                    <span>
+                      왼쪽에 있을 때 승률:{' '}
+                      {((fLeftWin / (fLeftWin + fLeftLose)) * 100).toFixed(2)}%
+                      <br />
+                    </span>
+                  )}
+                  {fRightWin + fRightLose > 0 && (
+                    <span>
+                      오른쪽에 있을 때 승률:{' '}
+                      {((fRightWin / (fRightWin + fRightLose)) * 100).toFixed(
+                        2,
+                      )}
+                      %<br />
+                    </span>
+                  )}
+                </>
               )}
             </Typography>
-          ) : null}
-          {myName !== props.targetName &&
-            (friendStatus === FriendStatus.FRIEND ? (
-              <Button onClick={removeFriend}> 친구 해제 </Button>
-            ) : (
-              <Button
-                onClick={requestBeFriend}
-                disabled={friendRequestAvailable}
-              >
-                친구 추가
-              </Button>
-            )) &&
-            (isBlocked === true ? (
-              <Button onClick={unBlock}> 차단 해제 </Button>
-            ) : (
-              <Button onClick={block}>차단 하기</Button>
-            ))}
-          {/* {myName === props.targetName && (
-            <Button onClick={logout}> 로그아웃 </Button>
-          )} */}
-        </Box>
+            <br />
+            <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+              {mySlackId !== targetSlackId && (
+                <>
+                  {friendStatus === FriendStatus.FRIEND ? (
+                    <Button onClick={removeFriend} color="error">
+                      [ 친구 해제 ]
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={requestBeFriend}
+                      disabled={!friendRequestAvailable}
+                      color="success"
+                    >
+                      [ 친구 추가 ]
+                    </Button>
+                  )}
+                  {isBlocked === true ? (
+                    <Button onClick={unBlock} color="success">
+                      [ 차단 해제 ]
+                    </Button>
+                  ) : (
+                    <Button onClick={block} color="error">
+                      [ 차단 하기 ]
+                    </Button>
+                  )}
+                </>
+              )}
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={style}>
+            <CircularProgress />
+          </Box>
+        )}
       </Modal>
     </>
   );

@@ -8,12 +8,11 @@ import Divider from '@mui/material/Divider';
 import Link from 'next/link';
 import { BACK_URL } from './globals';
 
-export default function Home() {
+const Home = () => {
   const router = useRouter();
 
   useEffect(() => {
     // TODO: 토큰이 있다면 홈으로 푸쉬
-    // if (getCookie('access_token')) router.push('/home');
   }, []);
 
   return (
@@ -27,4 +26,6 @@ export default function Home() {
       </Link>
     </main>
   );
-}
+};
+
+export default Home;

@@ -17,6 +17,7 @@ const initialState: MatchState = {
     joinMode: GameJoinMode.NONE,
     gameMode: GameMode.NONE,
     opponentName: '',
+    opponentSlackId: '',
   },
   isMatched: undefined,
   isMatchInProgress: false,
@@ -37,11 +38,13 @@ export const matchSlice = createSlice({
         joinMode: GameJoinMode;
         gameMode: GameMode;
         opponentName: string | undefined;
+        opponentSlackId: string | undefined;
       }>,
     ) => {
       state.customSet.joinMode = action.payload.joinMode;
       state.customSet.gameMode = action.payload.gameMode;
       state.customSet.opponentName = action.payload.opponentName;
+      state.customSet.opponentSlackId = action.payload.opponentSlackId;
     },
     setIsMatched: (
       state: MatchState,

@@ -25,8 +25,8 @@ import UserProfile from './(profile)/userProfile';
 import { setViewProfile } from '../redux/viewSlice';
 import { useRouter } from 'next/navigation';
 import { clearSocketEvent, registerSocketEvent } from '../context/socket';
-import { useEffect, useState } from 'react';
-import { Events, RoomStatus } from '../interface';
+import { useEffect } from 'react';
+import { Events } from '../interface';
 import {
   GameJoinMode,
   GameMode,
@@ -36,6 +36,7 @@ import {
 import { Button } from '@mui/material';
 import { setCustomSet } from '../redux/matchSlice';
 import { setInvitationList, setNotiCount } from '../redux/userSlice';
+import HomeIcon from '@mui/icons-material/Home';
 
 const HeaderNavigationBarContent = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -43,7 +44,7 @@ const HeaderNavigationBarContent = () => {
   const invitationList = useSelector(
     (state: RootState) => state.user.invitationList,
   );
-  const myName = useSelector((state: RootState) => state.user.userName);
+  const mySlackId = useSelector((state: RootState) => state.user.userSlackId);
   const dispatch = useDispatch();
   const router = useRouter();
   const chatSocket = useChatSocket();
@@ -86,7 +87,7 @@ const HeaderNavigationBarContent = () => {
   }, [anchorEl, invitationList]);
 
   const handleProfileOpen = () => {
-    dispatch(setViewProfile(true));
+    dispatch(setViewProfile({ viewProfile: true, targetSlackId: mySlackId }));
   };
 
   const handleSettingOpen = () => {
@@ -117,6 +118,7 @@ const HeaderNavigationBarContent = () => {
         joinMode: GameJoinMode.CUSTOM_RECV,
         gameMode: GameMode.NONE,
         opponentName: hostName,
+        opponentSlackId: hostSlackId,
       }),
     );
     router.push('/game');
@@ -180,6 +182,12 @@ const HeaderNavigationBarContent = () => {
         <AppBar component="nav" position="static" sx={{ flexGrow: 1 }}>
           <Toolbar>
             <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+              <HomeIcon
+                sx={{ marginRight: '5px' }}
+                onClick={() => {
+                  window.location.reload();
+                }}
+              />
               <Typography align="left" variant="h6" noWrap component="div">
                 Home
               </Typography>
@@ -192,7 +200,7 @@ const HeaderNavigationBarContent = () => {
                 onClick={handleNotiOpen}
                 color="inherit"
               >
-                <Badge badgeContent={notiCount} color="secondary" showZero>
+                <Badge badgeContent={notiCount} color="secondary">
                   <NotificationsIcon />
                 </Badge>
               </IconButton>
@@ -203,10 +211,8 @@ const HeaderNavigationBarContent = () => {
                 onClick={handleProfileOpen}
                 color="inherit"
               >
-                <Badge badgeContent={myName} color="secondary">
-                  <AccountCircle />
-                </Badge>
-                <UserProfile targetName={myName!} />
+                <AccountCircle />
+                <UserProfile />
               </IconButton>
               <IconButton
                 aria-label="Setting page"

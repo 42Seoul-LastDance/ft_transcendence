@@ -12,23 +12,21 @@ import {
   UserStatus,
 } from '@/app/interface';
 import { setJoin } from '@/app/redux/userSlice';
-import { Avatar, Grow, IconButton } from '@mui/material';
-import { setFriend } from '@/app/redux/dmSlice';
+import { Avatar, ButtonGroup, Grow, IconButton } from '@mui/material';
+import { setFriend, setFriendSlackId } from '@/app/redux/dmSlice';
 import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
 import { RootState } from '@/app/redux/store';
-import sendRequest from '@/app/api';
 import { useRouter } from 'next/navigation';
-import { myAlert } from '../alert';
 import { setFriendList } from '@/app/redux/friendSlice';
-import DeleteIcon from '@mui/icons-material/Delete';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import UserProfile from '../(profile)/userProfile';
 import { setViewProfile } from '@/app/redux/viewSlice';
+import MessageIcon from '@mui/icons-material/Message';
 const FriendList: React.FC = () => {
   const superSocket = useSuperSocket();
   const dispatch = useDispatch();
   const friendList = useSelector((state: RootState) => state.friend.friendList);
-  const myName = useSelector((state: RootState) => state.user.userName);
+  const mySlackId = useSelector((state: RootState) => state.user.userSlackId);
   const join = useSelector((state: RootState) => state.user.join);
   const [targetUser, setTargetUser] = useState<string | null>(null); // [targetName, targetStatus
   const router = useRouter();
@@ -45,7 +43,7 @@ const FriendList: React.FC = () => {
       {
         event: 'updateFriendList',
         callback: () => {
-          superSocket?.emit('getFriendStateList', myName);
+          superSocket?.emit('getFriendStateList', mySlackId);
         },
       },
     ];
@@ -56,47 +54,19 @@ const FriendList: React.FC = () => {
   }, [join]);
 
   useEffect(() => {
-    superSocket?.emit('getFriendStateList', myName);
+    superSocket?.emit('getFriendStateList', mySlackId);
   }, []);
 
-  const deleteFriend = async (
-    event: {
-      preventDefault: () => void;
-      stopPropagation: () => void;
-    },
-    selectFriend: string,
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const response = await sendRequest(
-      'delete',
-      `/friends/delete/${selectFriend}`,
-      router,
+  const handleProfile = (selectFriendSlackId: string) => {
+    setTargetUser(selectFriendSlackId);
+    dispatch(
+      setViewProfile({ viewProfile: true, targetSlackId: selectFriendSlackId }),
     );
-    if (response.status === 200) {
-      myAlert('info', `${selectFriend} 삭제 완료`, dispatch);
-      superSocket?.emit('deleteFriend', {
-        userName: myName,
-        targetName: selectFriend,
-      });
-    } else if (response.status === 404) router.push('/404');
   };
 
-  const handleProfile = (
-    event: {
-      preventDefault: () => void;
-      stopPropagation: () => void;
-    },
-    selectFriend: string,
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setTargetUser(selectFriend);
-    dispatch(setViewProfile(true));
-  };
-
-  const handleStartDM = async (friendName: string) => {
+  const handleStartDM = async (friendName: string, friendSlackId: string) => {
     dispatch(setFriend(friendName));
+    dispatch(setFriendSlackId(friendSlackId));
     dispatch(setJoin(JoinStatus.DM));
   };
 
@@ -108,10 +78,10 @@ const FriendList: React.FC = () => {
             <ListItem
               key={rowIdx}
               divider
-              onClick={() => {
-                handleStartDM(curFriend.userName);
-              }}
               className="list-item"
+              sx={{
+                width: 450,
+              }}
             >
               <Avatar
                 sx={{
@@ -134,27 +104,25 @@ const FriendList: React.FC = () => {
                 primary={curFriend.userName}
                 secondary={curFriend.slackId}
               />
-              <IconButton
-                edge="start"
-                aria-label="account"
-                onClick={(event: {
-                  preventDefault: () => void;
-                  stopPropagation: () => void;
-                }) => handleProfile(event, curFriend.userName)}
-              >
-                <AccountCircleIcon />
-              </IconButton>
-              <IconButton
-                edge="end"
-                aria-label="delete"
-                onClick={(event: {
-                  preventDefault: () => void;
-                  stopPropagation: () => void;
-                }) => deleteFriend(event, curFriend.userName)}
-              >
-                <DeleteIcon />
-              </IconButton>
-              {targetUser && <UserProfile targetName={targetUser} />}
+              <ButtonGroup sx={{ gap: 2 }}>
+                <IconButton
+                  edge="start"
+                  aria-label="chat"
+                  onClick={() =>
+                    handleStartDM(curFriend.userName, curFriend.slackId)
+                  }
+                >
+                  <MessageIcon />
+                </IconButton>
+                <IconButton
+                  edge="start"
+                  aria-label="account"
+                  onClick={() => handleProfile(curFriend.slackId)}
+                >
+                  <AccountCircleIcon />
+                </IconButton>
+              </ButtonGroup>
+              {targetUser && <UserProfile />}
             </ListItem>
           </Grow>
         ))

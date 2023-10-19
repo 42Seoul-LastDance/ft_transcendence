@@ -21,10 +21,9 @@ import { isValid } from '../valid';
 import { myAlert } from '../alert';
 import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
 import { useEffect, useState } from 'react';
-import { setRoomList } from '@/app/redux/roomSlice';
-import { Grow } from '@mui/material';
+import { Grow, ListItemIcon } from '@mui/material';
 import { maxPasswordLength } from '@/app/globals';
-
+import LockIcon from '@mui/icons-material/Lock';
 const ChatRoomList: React.FC = () => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const chatSocket = useChatSocket();
@@ -42,10 +41,6 @@ const ChatRoomList: React.FC = () => {
         },
       },
       {
-        event: 'getChatRoomList',
-        callback: (data: GetChatRoomListJSON[]) => dispatch(setRoomList(data)),
-      },
-      {
         event: 'joinPublicChatRoom',
         once: true,
         callback: (data: EmitResult) => {
@@ -54,8 +49,8 @@ const ChatRoomList: React.FC = () => {
             dispatch(setJoin(JoinStatus.CHAT));
             myAlert('success', data.reason, dispatch);
           } else {
-            // dispatch(setChatRoom(null));
-            dispatch(setJoin(JoinStatus.NONE));
+            // 밴 당했을 때, 비밀번호 틀렸을 때, (서버 자료구조에 이상이 있을 때, 서버한테 데이터 잘 못 보냈을 때)
+            // if (join !== JoinStatus.CHAT) dispatch(setJoin(JoinStatus.NONE));
             myAlert('error', data.reason, dispatch);
           }
         },
@@ -92,8 +87,12 @@ const ChatRoomList: React.FC = () => {
                 onClick={() => joinRoom(room)}
                 className="list-item"
               >
-                room.requirePassWord ? (<></>):(null)
-                <ListItemText primary={`방 이름: ${room.roomName}`} />
+                <ListItemText primary={`${room.roomName}`} />
+                {room.requirePassword ? (
+                  <ListItemIcon>
+                    <LockIcon />
+                  </ListItemIcon>
+                ) : null}
               </ListItem>
             </Grow>
           ) : null;

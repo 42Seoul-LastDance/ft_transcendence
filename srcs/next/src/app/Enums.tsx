@@ -33,6 +33,7 @@ export interface CustomGameSet {
   joinMode: GameJoinMode;
   gameMode: GameMode;
   opponentName: string | undefined;
+  opponentSlackId: string | undefined;
 }
 
 export interface StartGameJson {

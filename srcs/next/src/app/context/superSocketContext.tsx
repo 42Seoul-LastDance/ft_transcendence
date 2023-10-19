@@ -8,7 +8,7 @@ import {
 } from './socket';
 import { getCookie } from '../Cookie';
 import { useRouter } from 'next/navigation';
-import { Events } from '../interface';
+import { Events, UserInfoJson } from '../interface';
 import { setName, setSlackId } from '../redux/userSlice';
 import { useDispatch } from 'react-redux';
 
@@ -46,9 +46,9 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
       },
       {
         event: 'getMyName',
-        callback: (data: string[]) => {
-          dispatch(setName(data[0]));
-          dispatch(setSlackId(data[1]));
+        callback: (data: UserInfoJson) => {
+          dispatch(setName(data.userName));
+          dispatch(setSlackId(data.slackId));
         },
       },
     ];

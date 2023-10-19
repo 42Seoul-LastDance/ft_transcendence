@@ -21,6 +21,7 @@ import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { UserProfileDto } from './dto/userProfile.dto';
+import { User } from './user.entity';
 
 @Controller('users')
 export class UserController {
@@ -154,20 +155,20 @@ export class UserController {
         }
     }
 
-    @Get('/exist/:slackId')
+    @Get('/exist/')
     @UseGuards(JwtAuthGuard)
-    async checkIfExists(@Res() res: Response, @Param('slackId') slackId: string) {
+    async checkIfExists(@Res() res: Response, @Body('slackId') slackId: string) {
         try {
-            await this.userService.getUserBySlackId(slackId);
-            res.status(200);
-            res.send();
+            const user: User = await this.userService.getUserBySlackId(slackId);
+            if (user) {
+                res.status(200);
+                return res.send();
+            }
         } catch (error) {
-            this.logger.log(`error status: ${error.status}`);
+            this.logger.log(`error status:`, error.status);
             if (error.status === 404) {
-                this.logger.debug('check');
                 res.status(400);
-                res.send();
-                return;
+                return res.send();
             } else throw new BadRequestException();
             return;
         }

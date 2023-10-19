@@ -13,10 +13,6 @@ import {
   Drawer,
   Paper,
 } from '@mui/material';
-import SettingsIcon from '@mui/icons-material/Settings'; // 설정 아이콘 추가
-import ChatSetting from './chatSetting';
-import { RootState } from '../../redux/store';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   ChatMessage,
   ChattingPageProps,
@@ -24,6 +20,9 @@ import {
   JoinStatus,
   receiveMessage,
 } from '../../interface';
+import ChatSetting from './chatSetting';
+import { RootState } from '../../redux/store';
+import { useDispatch, useSelector } from 'react-redux';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 import { setChatRoom, setJoin } from '@/app/redux/userSlice';
 import { myAlert } from '../alert';
@@ -32,6 +31,7 @@ import sendRequest from '@/app/api';
 import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
 import { isValid } from '../valid';
 import { maxTypeLength } from '@/app/globals';
+import TableRowsIcon from '@mui/icons-material/TableRows';
 
 const ChattingPage = (props: ChattingPageProps) => {
   const [inputMessage, setInputMessage] = useState('');
@@ -44,6 +44,9 @@ const ChattingPage = (props: ChattingPageProps) => {
   const join = useSelector((state: RootState) => state.user.join);
   const router = useRouter();
   const friendName = useSelector((state: RootState) => state.dm.friendName);
+  const friendSlackId = useSelector(
+    (state: RootState) => state.dm.friendSlackId,
+  );
   let target: string | undefined | null = undefined;
 
   join === JoinStatus.CHAT
@@ -97,11 +100,13 @@ const ChattingPage = (props: ChattingPageProps) => {
         event: 'explodeRoom',
         callback: handleExitRoom,
       },
+      {
+        event: 'kickUser',
+        callback: handleExitRoom,
+      },
     ];
     registerSocketEvent(props.socket!, e);
-    return () => {
-      clearSocketEvent(props.socket!, e);
-    };
+    return () => clearSocketEvent(props.socket!, e);
   }, [join, chatMessages, target]);
 
   useEffect(() => {
@@ -112,7 +117,11 @@ const ChattingPage = (props: ChattingPageProps) => {
 
   // 기존 DM메시지 가져오기
   const prevDmMessages = async () => {
-    const response = await sendRequest('get', `/DM/with/${friendName}`, router); // ChatMessages[] 로 올 예정
+    const response = await sendRequest(
+      'get',
+      `/DM/with/${friendSlackId}`,
+      router,
+    ); // ChatMessages[] 로 올 예정
     setChatMessages(response.data);
   };
 
@@ -139,10 +148,6 @@ const ChattingPage = (props: ChattingPageProps) => {
   };
 
   const toggleSettings = () => {
-    props.socket?.emit('getMemberStateList', {
-      roomName: chatRoom?.roomName,
-      status: chatRoom?.status,
-    });
     setIsSettingsOpen(!isSettingsOpen);
   };
 
@@ -174,20 +179,22 @@ const ChattingPage = (props: ChattingPageProps) => {
         <>
           <Paper
             sx={{
+              fontFamily: 'sans-serif',
+              fontWeight: 'normal',
               position: 'absolute',
               padding: '30px',
-              bgcolor: 'orange',
+              bgcolor: 'Cadetblue',
               aliginItems: 'center',
             }}
           >
             <p>채팅방 컨트롤러</p>
             <IconButton
-              color="primary"
+              color="info"
               aria-label="settings"
               sx={{ position: 'absolute', bottom: '0px', right: '20px' }}
               onClick={toggleSettings}
             >
-              <SettingsIcon />
+              <TableRowsIcon />
             </IconButton>
             <IconButton
               color="primary"

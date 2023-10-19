@@ -30,10 +30,10 @@ const GameHomeContent = () => {
   useEffect(() => {
     if (customSet.joinMode === GameJoinMode.CUSTOM_SEND) {
       dispatch(setIsMatched({ isMatched: false }));
-      dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
+      dispatch(setIsMatchInProgress({ isMatchInProgress: true }));
 
       superSocket?.emit('sendInvitation', {
-        guestName: customSet.opponentName,
+        slackId: customSet.opponentSlackId,
         inviteType: InviteType.GAME,
         chatRoomName: undefined,
         chatRoomType: undefined,

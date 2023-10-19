@@ -98,10 +98,14 @@ export class SocketUsersService {
         //* blocklist, friendlist는 이건 DM소켓 끊기면 disconnect에서 처리됩니다 (juhoh)
     }
 
-    async sendInvitation(socketId: string, payload: JSON): Promise<Socket> {
+    async sendInvitation(socketId: string, payload: JSON): Promise<Socket | undefined> {
         const hostId: number = this.dmSocketList.get(socketId);
         const host: User = await this.userService.findUserById(hostId);
-        const guestId: number = (await this.userService.getUserByUserName(payload['guestName'])).id;
+        const guest: User = await this.userService.getUserBySlackId(payload['slackId']);
+        if (!guest) return undefined;
+
+        const guestSocket: Socket = this.dmUserList.get(guest.id);
+        if (!guestSocket) return undefined;
 
         const invitation: Invitation = {
             hostName: host.userName,
@@ -115,8 +119,8 @@ export class SocketUsersService {
                 : undefined,
             gameMode: payload['gameMode'] ? GameMode.HARD : GameMode.NORMAL,
         };
-        this.inviteList.get(guestId).set(hostId, invitation);
-        return this.dmUserList.get(guestId);
+        this.inviteList.get(guest.id).set(hostId, invitation);
+        return guestSocket;
     }
 
     isInvited(socketId: string, roomName: string): Boolean {

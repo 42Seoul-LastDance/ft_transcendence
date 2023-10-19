@@ -37,7 +37,7 @@ const sendRequest = async (
   } catch (error: any) {
     switch (error.response?.status) {
       case 404:
-        router.push('/404');
+        router.push('/notFound');
         break;
       case 401:
         await reGenerateToken(router);
@@ -57,7 +57,7 @@ const sendRequest = async (
           console.log('두 번째 요청 실패! (토큰 재발급)', secondResponse);
           switch (error.response?.status) {
             case 404:
-              router.push('/404');
+              router.push('/notFound');
               break;
             case 401:
               console.log('ERR : 말이 안 됨', secondResponse);

@@ -1,23 +1,9 @@
 import { Socket } from 'socket.io-client';
 
-// RoomInfoInnerDto
 export interface ChatRoomDto {
-  banList: string[];
-  muteList: string[];
   roomName: string;
   ownerName: string;
   status: RoomStatus; // 또는 RoomStatus 타입으로 정의
-  requirePassword: boolean;
-
-  // myPermission : number??;
-}
-
-//createRoomDto
-export interface RoomInfoDto {
-  roomName: string;
-  password: string | null;
-  requirePassword: boolean;
-  status: RoomStatus;
 }
 
 export enum RoomStatus {
@@ -84,6 +70,7 @@ export enum JoinStatus {
 
 export interface Member {
   userName: string;
+  slackId: string;
   permission: UserPermission;
 }
 
@@ -107,4 +94,14 @@ export interface FriendListJson {
   userName: string;
   slackId: string;
   userStatus: UserStatus;
+}
+
+export interface UserInfoJson {
+  userName: string;
+  slackId: string;
+}
+
+export enum InviteType {
+  CHAT = 0,
+  GAME = 1,
 }

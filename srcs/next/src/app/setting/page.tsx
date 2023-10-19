@@ -19,8 +19,10 @@ import { setName, setUserImg } from '../redux/userSlice';
 import { styled } from '@mui/material/styles';
 import { maxUniqueNameLength } from '../globals';
 import { isValid } from '../home/valid';
+import { removeCookie } from '@/app/Cookie';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-
+import { ButtonGroup, IconButton } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 const SettingInfo = () => {
   const [userName, setUserName] = useState<string>('');
   const [require2fa, setRequire2fa] = useState<boolean>(false);
@@ -29,10 +31,11 @@ const SettingInfo = () => {
   const userImg = useSelector((state: RootState) => state.user.userImg);
   const dispatch = useDispatch();
   const myName = useSelector((state: RootState) => state.user.userName);
+  const mySlackId = useSelector((state: RootState) => state.user.userSlackId);
   const router = useRouter();
 
   useEffect(() => {
-    if (myName) {
+    if (mySlackId) {
       getUserInfo();
       getUserProfileImg();
     } else {
@@ -49,7 +52,7 @@ const SettingInfo = () => {
   const getUserProfileImg = async () => {
     const response = await sendRequest(
       'get',
-      `users/profileImg/${myName}`,
+      `users/profileImg/${mySlackId}`,
       router,
     );
     const imageBlob = new Blob([response.data.profileImage], {
@@ -61,16 +64,12 @@ const SettingInfo = () => {
   };
 
   const checkDuplicate = async (): Promise<boolean> => {
-    const response = await sendRequest(
-      'post',
-      `/users/username/`,
-      {
-        name: inputName,
-      },
-      router,
-    );
+    console.log('보내는 이름', inputName);
+    const response = await sendRequest('post', `/users/username/`, router, {
+      name: inputName,
+    });
     if (response.status < 300) return true;
-    else if (response.status === 404) router.push('/404');
+    else if (response.status === 404) router.push('/notFound');
     return false;
   };
 
@@ -127,8 +126,26 @@ const SettingInfo = () => {
     }
   };
 
+  const logout = async () => {
+    try {
+      const response = await sendRequest('post', `/auth/logout`, router);
+      removeCookie('access_token');
+      removeCookie('refresh_token');
+      router.push('/');
+    } catch (error) {
+      console.log('로그아웃 실패!', error);
+    }
+  };
+
   return (
     <>
+      <IconButton
+        onClick={() => {
+          router.push('/home');
+        }}
+      >
+        <ArrowBackIcon />
+      </IconButton>
       <List>
         <ListItem key="userName" divider>
           <ListItemText primary={`유저 이름: ${myName ? myName : ''}`} />
@@ -160,9 +177,25 @@ const SettingInfo = () => {
           </Button>
         </ListItem>
       </List>
-      <Button variant="contained" onClick={async () => await updateUserInfo()}>
-        변경하기
-      </Button>
+      <ButtonGroup sx={{ gap: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          variant="contained"
+          onClick={async () => await updateUserInfo()}
+        >
+          변경하기
+        </Button>
+        <Button
+          variant="contained"
+          onClick={() => {
+            router.push('/home');
+          }}
+        >
+          돌아가기
+        </Button>
+        <Button variant="contained" onClick={logout}>
+          로그아웃
+        </Button>
+      </ButtonGroup>
     </>
   );
 };

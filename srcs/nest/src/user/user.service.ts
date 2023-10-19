@@ -145,11 +145,8 @@ export class UserService {
 
     async getUserBySlackId(slackId: string): Promise<User> {
         const found = await this.userRepository.findOne({
-            where: {
-                slackId: slackId,
-            },
+            where: { slackId: slackId },
         });
-
         if (!found) {
             this.logger.error(`Cannot find ${slackId} in DB!`);
             throw new NotFoundException('from getUserBySlackId');

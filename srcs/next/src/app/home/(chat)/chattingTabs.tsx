@@ -9,7 +9,7 @@ import RequestList from '../(friendRequest)/requestList';
 import { useSuperSocket } from '@/app/context/superSocketContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { JoinStatus } from '@/app/interface';
-import { setJoin } from '@/app/redux/userSlice';
+import { setChatRoom, setJoin } from '@/app/redux/userSlice';
 import ChattingPage from './chattingPage';
 import { RootState } from '@/app/redux/store';
 import { useChatSocket } from '@/app/context/chatSocketContext';
@@ -23,6 +23,8 @@ const ChattingTabs: React.FC = () => {
 
   const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
     dispatch(setJoin(JoinStatus.NONE));
+    dispatch(setChatRoom(null));
+    chatSocket?.emit('exitChatRoom');
     setValue(newValue);
   };
 
@@ -36,20 +38,24 @@ const ChattingTabs: React.FC = () => {
       </Tabs>
       <div>
         {value === 0 && (
-          <>
-            <ChatRoomList />
-            {joinStatus === JoinStatus.CHAT && (
-              <ChattingPage socket={chatSocket} />
-            )}
-          </>
+          <div>
+            <div>
+              <ChatRoomList />
+            </div>
+            <div>
+              {joinStatus === JoinStatus.CHAT && (
+                <ChattingPage socket={chatSocket} />
+              )}
+            </div>
+          </div>
         )}
         {value === 1 && (
-          <>
+          <div>
             <FriendList />
             {joinStatus === JoinStatus.DM && (
               <ChattingPage socket={superSocket} />
             )}
-          </>
+          </div>
         )}
         {value === 2 && <RequestList />}
         {value === 3 && <BlockList />}

@@ -5,21 +5,30 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
-import { Divider } from '@mui/material';
+import { Badge, Divider } from '@mui/material';
+import { UserPermission } from '@/app/interface';
 
 interface CommonListItemProps {
-  text: string | undefined;
+  primaryText: string | undefined;
+  secondText: string | undefined;
+  permission: UserPermission;
   onClick: (event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
-const CommonListItem: React.FC<CommonListItemProps> = ({ text, onClick }) => {
+const CommonListItem: React.FC<CommonListItemProps> = ({
+  primaryText,
+  secondText,
+  permission,
+  onClick,
+}) => {
+  if (permission === UserPermission.OWNER) primaryText = '👑 ' + primaryText;
   return (
     <div onClick={onClick}>
       <ListItem alignItems="flex-start">
         <ListItemAvatar>
-          <Avatar alt={text} src="/static/images/avatar/1.jpg" />
+          <Avatar alt={primaryText} src="/static/images/avatar/1.jpg" />
         </ListItemAvatar>
-        <ListItemText primary={text} secondary="introduce" />
+        <ListItemText primary={primaryText} secondary={secondText} />
       </ListItem>
       <Divider />
     </div>

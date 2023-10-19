@@ -141,6 +141,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
             payload['roomName'],
             payload['status'],
         );
+        console.log(memberList);
         socket.emit('getMemberStateList', memberList);
     }
 
@@ -237,7 +238,7 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // getMyPermission
     @SubscribeMessage('getMyPermission')
     async getMyPermission(socket: Socket, payload: JSON) {
-        console.log('payload:', payload);
+        this.logger.log('GET MY PERMISSION');
         const userPermission: UserPermission = await this.chatroomService.getUserPermission(
             socket,
             payload['roomStatus'],

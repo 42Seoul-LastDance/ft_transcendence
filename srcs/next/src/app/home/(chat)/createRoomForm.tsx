@@ -11,7 +11,7 @@ import { ChatRoomDto, JoinStatus, RoomStatus } from '../../interface';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
 import { isValid } from '../valid';
-import { maxNameLength, maxPasswordLength, maxTypeLength } from '@/app/globals';
+import { maxNameLength, maxPasswordLength } from '@/app/globals';
 
 const CreateRoomForm = ({ onClose }: { onClose: () => void }) => {
   const chatSocket = useChatSocket();
@@ -35,9 +35,7 @@ const CreateRoomForm = ({ onClose }: { onClose: () => void }) => {
       },
     ];
     registerSocketEvent(chatSocket!, e);
-    return () => {
-      clearSocketEvent(chatSocket!, e);
-    };
+    return () => clearSocketEvent(chatSocket!, e);
   }, []);
 
   const handleRoomNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {

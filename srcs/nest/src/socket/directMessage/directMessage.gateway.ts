@@ -111,6 +111,7 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
     @SubscribeMessage('getFriendStateList')
     async getFriendStateList(socket: Socket, userSlackId: string): Promise<void> {
         this.logger.log('** DM - GET FRIEND STATE LIST**');
+        // console.log('slackId', userSlackId);
         await this.directMessageService.getFriendStateList(socket, userSlackId);
     }
 
