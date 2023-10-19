@@ -4,10 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { Unity, useUnityContext } from 'react-unity-webgl';
 import { RootState } from '../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
-import { setIsMatched, setSide, setNames } from '../redux/matchSlice';
+import { setIsMatched, setNames } from '../redux/matchSlice';
 import { useGameSocket } from '../context/gameSocketContext';
 import { ReactUnityEventParameter } from 'react-unity-webgl/distribution/types/react-unity-event-parameters';
-import { deflateSync } from 'zlib';
 import EmojiButtons from './EmojiButtons';
 import UserPannel from './UserPannel';
 import {

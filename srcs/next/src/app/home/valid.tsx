@@ -27,7 +27,7 @@ export const isValid = (
   };
 
   const isRegexInput = (): boolean => {
-    const invalidCharacters: RegExp = /['"\/\+=<> \n]/g;
+    const invalidCharacters: RegExp = /["'\n=+<>]/g;
     if (input && invalidCharacters.test(input)) {
       const alertMessage = `${comment} 유효하지 않은 특수문자입니다. : ${input}`;
       myAlert('error', alertMessage, dispatch);

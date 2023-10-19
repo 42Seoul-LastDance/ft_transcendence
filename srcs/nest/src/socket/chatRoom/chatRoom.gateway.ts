@@ -238,11 +238,6 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     // getMyPermission
     @SubscribeMessage('getMyPermission')
     async getMyPermission(socket: Socket, payload: JSON) {
-<<<<<<< HEAD
-        this.logger.log('GET MY PERMISSION');
-=======
-        console.log('payload:', payload);
->>>>>>> 9344256164f06f7296d58b2f2608d8297786524e
         const userPermission: UserPermission = await this.chatroomService.getUserPermission(
             socket,
             payload['roomStatus'],

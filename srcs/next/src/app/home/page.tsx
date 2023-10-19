@@ -32,32 +32,30 @@ const HomeContent = () => {
     chatSocket?.emit('getChatRoomList', {
       roomStatus: RoomStatus.PUBLIC,
     });
+    setRender(true);
+    return () => setRender(false);
   }, []);
-
-  // useEffect(() => {
-  //   setRender(superSocket?.connected);
-  // }, [superSocket]);
 
   return (
     <>
-      {/* {render ? ( */}
-      <>
-        <br />
-        <Link href="/game">
-          <Grid container justifyContent="center">
-            <Button variant="outlined" color="secondary">
-              Start Game !
-            </Button>
-          </Grid>
-        </Link>
-        <br />
-        <div>
-          <ChattingTabs />
-        </div>
-      </>
-      {/* ) : (
+      {render ? (
+        <>
+          <br />
+          <Link href="/game">
+            <Grid container justifyContent="center">
+              <Button variant="contained" color="secondary">
+                Start Game !
+              </Button>
+            </Grid>
+          </Link>
+          <br />
+          <div>
+            <ChattingTabs />
+          </div>
+        </>
+      ) : (
         <LinearProgress />
-      )} */}
+      )}
     </>
   );
 };

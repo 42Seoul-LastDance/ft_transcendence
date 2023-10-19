@@ -11,7 +11,6 @@ import {
   Events,
   GetChatRoomListJSON,
   JoinStatus,
-  RoomStatus,
 } from '../../interface';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
@@ -24,6 +23,7 @@ import { useEffect, useState } from 'react';
 import { Grow, ListItemIcon } from '@mui/material';
 import { maxPasswordLength } from '@/app/globals';
 import LockIcon from '@mui/icons-material/Lock';
+import CreateRoomForm from './createRoomForm';
 const ChatRoomList: React.FC = () => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const chatSocket = useChatSocket();
@@ -98,7 +98,7 @@ const ChatRoomList: React.FC = () => {
           ) : null;
         })}
       </List>
-      <CreateRoomButton />
+      <CreateRoomForm />
     </>
   );
 };

@@ -32,11 +32,13 @@ import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
 import { isValid } from '../valid';
 import { maxTypeLength } from '@/app/globals';
 import TableRowsIcon from '@mui/icons-material/TableRows';
+import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 
 const ChattingPage = (props: ChattingPageProps) => {
   const [inputMessage, setInputMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // 설정 아이콘 클릭 시 설정창 표시 여부
+  const [isMouseOver, setIsMouseOver] = useState(false);
   const dispatch = useDispatch();
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const myName = useSelector((state: RootState) => state.user.userName);
@@ -147,8 +149,12 @@ const ChattingPage = (props: ChattingPageProps) => {
     if (event.key === 'Enter') SendMessage();
   };
 
+  const handleMouseOver = () => {
+    setIsMouseOver(true);
+  };
+
   const toggleSettings = () => {
-    setIsSettingsOpen(!isSettingsOpen);
+    setIsMouseOver(!isMouseOver);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,6 +168,18 @@ const ChattingPage = (props: ChattingPageProps) => {
     myAlert('success', '채팅방을 나갔습니다', dispatch);
     dispatch(setJoin(JoinStatus.NONE));
     target = undefined;
+  };
+
+  const settingsBarStyle = {
+    position: 'fixed' as 'fixed', // 문자열을 'fixed' 타입으로 캐스팅
+    top: '50%',
+    right: '20px',
+    width: '10px',
+    height: isMouseOver ? '0px' : '200px',
+    backgroundColor: 'silver',
+    borderRadius: '4px',
+    transition: 'height 0.3s',
+    transform: 'translateY(-50%)',
   };
 
   return (
@@ -192,9 +210,10 @@ const ChattingPage = (props: ChattingPageProps) => {
               color="info"
               aria-label="settings"
               sx={{ position: 'absolute', bottom: '0px', right: '20px' }}
+              onMouseOver={handleMouseOver}
               onClick={toggleSettings}
             >
-              <TableRowsIcon />
+              <div style={settingsBarStyle}></div>
             </IconButton>
             <IconButton
               color="primary"
@@ -205,7 +224,7 @@ const ChattingPage = (props: ChattingPageProps) => {
               <DirectionsRunIcon />
             </IconButton>
           </Paper>
-          <Drawer anchor="right" open={isSettingsOpen} onClose={toggleSettings}>
+          <Drawer anchor="right" open={isMouseOver} onClose={toggleSettings}>
             <ChatSetting />
           </Drawer>
         </>
@@ -222,11 +241,11 @@ const ChattingPage = (props: ChattingPageProps) => {
         <CardContent
           style={{ overflowY: 'auto', height: 'calc(100% - 105px)' }}
         >
-          {target}
           <List
             ref={listRef as React.RefObject<HTMLUListElement>}
             style={{ maxHeight: '550px', overflowY: 'auto' }}
           >
+            <ListItemText>{target}</ListItemText>
             {chatMessages?.map((msg, index) =>
               msg.userName === 'server' ? (
                 <ListItem key={index}>
@@ -270,7 +289,7 @@ const ChattingPage = (props: ChattingPageProps) => {
             label="Message"
             value={inputMessage}
             onChange={handleInputChange}
-            onKeyPress={handleKeyDown}
+            onKeyUp={handleKeyDown}
             autoComplete="off"
           />
           <Button

@@ -121,7 +121,14 @@ const RequestList: React.FC = () => {
     <>
       <Typography id="modal-modal-description" sx={{ mt: 3 }}>
         친구 요청 보내기
-        <div style={{ display: 'flex', alignItems: 'center', padding: '8px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '8px',
+            width: '400px',
+          }}
+        >
           <TextField
             fullWidth
             id="friendRequest"
