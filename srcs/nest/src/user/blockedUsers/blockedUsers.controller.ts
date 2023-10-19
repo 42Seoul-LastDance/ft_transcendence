@@ -29,21 +29,22 @@ export class BlockedUsersController {
         return res.sendStatus(200);
     }
 
-    @Patch('/blockUser/:userName')
+    @Patch('/blockUser/:slackId')
     @UseGuards(JwtAuthGuard)
-    async blockUser(@Req() req, @Res() res: Response, @Param('userName') userName: string) {
-        const targetId = (await this.userService.getUserByUserName(userName)).id;
-        console.log('request sub in BLOCK USER', req.user.sub);
+    async blockUser(@Req() req, @Res() res: Response, @Param('slackId') slackId: string) {
+        const targetId = (await this.userService.getUserBySlackId(slackId)).id;
+        this.logger.debug(`request sub in BLOCK USER ${req.user.sub}`);
         this.blockedUsersService.blockUserById(req.user.sub, targetId);
         return res.sendStatus(200);
     }
 
-    @Get('/isBlocked/:userName') //?slackId로 받아야 할텐데 요청은 어디서 하지
+    @Get('/isBlocked/:slackId')
     @UseGuards(JwtAuthGuard)
-    async isBlocked(@Req() req, @Param('userName') userName: string, @Res() res: Response): Promise<void> {
-        const targetId: number = (await this.userService.getUserByUserName(userName)).id;
-        console.log('request sub in isBLOCKEd', req.user.sub);
+    async isBlocked(@Req() req, @Param('slackId') slackId: string, @Res() res: Response): Promise<any> {
+        const targetId: number = (await this.userService.getUserBySlackId(slackId)).id;
+        this.logger.debug(`request sub in isBlocked ${req.user.sub}`);
         const isBlocked: boolean = await this.blockedUsersService.isBlocked(req.user.sub, targetId);
-        res.send(isBlocked);
+        if (isBlocked) return res.send({ isBlocked: true });
+        return res.send({ isBlocked: false });
     }
 }

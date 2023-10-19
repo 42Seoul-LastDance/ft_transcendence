@@ -17,16 +17,16 @@ export class FriendService {
     ) {}
 
     async getFriendData(userId: number, friendId: number): Promise<Friend | null> {
-        const query: Friend = await this.friendRepository
-            .createQueryBuilder('friend')
-            .where('(friend.requestUserId = :userId AND friend.targetUserId = :friendId)', { userId, friendId })
-            .getOne();
+        const query: Friend = await this.friendRepository.findOne({
+            where: [{ requestUserId: userId, targetUserId: friendId }],
+        });
+        // this.logger.debug(`query1 : ${query}`);
         if (query) return query;
 
-        const query2: Friend = await this.friendRepository
-            .createQueryBuilder('friend')
-            .where('(friend.requestUserId = :friendId AND friend.targetUserId = :userId)', { userId, friendId })
-            .getOne();
+        const query2: Friend = await this.friendRepository.findOne({
+            where: [{ requestUserId: friendId, targetUserId: userId }],
+        });
+        // this.logger.debug(`query2: ${query2}`);
         if (!query2) return null; // No matching friend record found
         return query2;
     }
@@ -78,23 +78,33 @@ export class FriendService {
         return friendList;
     }
 
-    async getFriendStatus(userId: number, friendName: string): Promise<FriendStatus> {
+    async getFriendStatus(userId: number, friendSlackId: string): Promise<FriendStatus> {
         try {
-            const friendId = (await this.userService.getUserByUserName(friendName)).id;
-            const data = await this.getFriendData(userId, friendId);
-            if (!data) return FriendStatus.UNKNOWN;
-            if (data.requestUserId === friendId && data.status === FriendStatus.REQUESTED) return FriendStatus.LAGGING;
-            return data.status; //FRIEND, REQUESTED
+            this.logger.debug(friendSlackId);
+            const friendId: number = (await this.userService.getUserBySlackId(friendSlackId)).id;
+            const data: Friend = await this.getFriendData(userId, friendId);
+            this.logger.debug(data);
+            let friendStatus: FriendStatus = FriendStatus.FRIEND;
+            if (!data) friendStatus = FriendStatus.UNKNOWN;
+            else if (data.requestUserId === friendId && data.status === FriendStatus.REQUESTED)
+                friendStatus = FriendStatus.LAGGING;
+            else if (data.requestUserId === userId && data.status === FriendStatus.REQUESTED)
+                friendStatus = FriendStatus.REQUESTED;
+            this.logger.log(`getFriendStatus ${userId} and ${friendSlackId} : ${friendStatus}`);
+            return friendStatus;
         } catch (error) {
-            console.log(error);
+            this.logger.error(error);
             throw new BadRequestException('friendService >> getFriendStatus');
         }
     }
 
-    async requestFriend(userId: number, friendName: string): Promise<string> {
+    async requestFriend(userId: number, friendSlackId: string): Promise<void> {
         try {
+            //본인인지 확인
+            const friendId: number = (await this.userService.getUserBySlackId(friendSlackId)).id;
+            if (userId === friendId) return;
             //친구 상태 확인
-            const status = await this.getFriendStatus(userId, friendName);
+            const status = await this.getFriendStatus(userId, friendSlackId);
             switch (status) {
                 //요청한 적이 있거나 이미 친구이면 무시
                 case FriendStatus.FRIEND:
@@ -102,11 +112,11 @@ export class FriendService {
                     return;
                 //상대방에게 요청 받은 적이 있으면 친구 수락
                 case FriendStatus.LAGGING:
-                    await this.acceptRequest(userId, friendName);
+                    await this.acceptRequest(userId, friendSlackId); //
                     return;
                 //기록 없을 경우 DB처리 진행
                 case FriendStatus.UNKNOWN:
-                    const friendId = (await this.userService.getUserByUserName(friendName)).id;
+                    const friendId = (await this.userService.getUserBySlackId(friendSlackId)).id;
                     const newData = this.friendRepository.create({
                         requestUserId: userId,
                         targetUserId: friendId,
@@ -123,10 +133,10 @@ export class FriendService {
         }
     }
 
-    async deleteFriend(userId: number, friendName: string) {
+    async deleteFriend(userId: number, slackId: string) {
         //TODO : socketUserService의 friendList 업데이트
         try {
-            const friendId = (await this.userService.getUserByUserName(friendName)).id;
+            const friendId = (await this.userService.getUserBySlackId(slackId)).id;
             const data = await this.getFriendData(userId, friendId);
             if (!data || data.status !== FriendStatus.FRIEND) return;
             await this.friendRepository.delete(data.id);
@@ -158,13 +168,13 @@ export class FriendService {
         }
     }
 
-    async acceptRequest(userId: number, friendName: string) {
+    async acceptRequest(userId: number, friendSlackId: string) {
         //TODO : socketUserService의 friendList 업데이트
         try {
-            const status = await this.getFriendStatus(userId, friendName);
+            const status: FriendStatus = await this.getFriendStatus(userId, friendSlackId);
             if (status !== FriendStatus.LAGGING) return;
 
-            const friendId = (await this.userService.getUserByUserName(friendName)).id;
+            const friendId = (await this.userService.getUserBySlackId(friendSlackId)).id;
             await this.friendRepository.update(
                 { requestUserId: friendId, targetUserId: userId },
                 { status: FriendStatus.FRIEND },
@@ -175,12 +185,12 @@ export class FriendService {
         }
     }
 
-    async declineRequest(userId: number, friendName: string) {
+    async declineRequest(userId: number, friendSlackId: string) {
         try {
-            const status = await this.getFriendStatus(userId, friendName);
+            const status: FriendStatus = await this.getFriendStatus(userId, friendSlackId);
             if (status !== FriendStatus.LAGGING) return;
 
-            const friendId = (await this.userService.getUserByUserName(friendName)).id;
+            const friendId = (await this.userService.getUserBySlackId(friendSlackId)).id;
             const data = await this.getFriendData(userId, friendId);
             await this.friendRepository.delete(data.id);
         } catch (error) {

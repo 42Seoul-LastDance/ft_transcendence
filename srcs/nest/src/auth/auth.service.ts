@@ -105,7 +105,7 @@ export class AuthService {
             userName: userName,
         });
         const refreshToken = await this.generateRefreshTokenBySecret({ id: id });
-        this.userService.saveUserCurrentRefreshToken(id, refreshToken);
+        await this.userService.saveUserCurrentRefreshToken(id, refreshToken);
 
         const returnObject: { jwt: string; refreshToken: string } = {
             jwt,
@@ -137,10 +137,9 @@ export class AuthService {
         }
     }
 
-    async sendMail(@Res() res: Response, id: number): Promise<void> {
+    async sendMail(id: number): Promise<void> {
         try {
             this.mailService.sendMail(id);
-            res.status(HttpStatus.OK);
         } catch (error) {
             throw new BadRequestException('error from twofactorAuthentication');
         }

@@ -12,7 +12,6 @@ import { GameModule } from 'src/game/game.module';
 import { GameService } from 'src/game/game.service';
 import { SocketUsersModule } from '../socket/socketUsersService/socketUsers.module';
 import { DirectMessageModule } from 'src/socket/directMessage/directMessage.module';
-import { SocketEventHandlerModule } from 'src/socket/socketEventHandler/socketEventHandler.module';
 
 @Module({
     imports: [

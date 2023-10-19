@@ -10,6 +10,9 @@ import {
     Query,
     InternalServerErrorException,
     Logger,
+    Param,
+    Body,
+    Patch,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -62,23 +65,31 @@ export class AuthController {
         const user = await this.authService.signUser(req.user);
 
         //TODO : 2fa logic 잠시 막아둠(0912)
-        // if (user.require2fa === true) {
-        //     res.status(HttpStatus.OK);
-        //     const token = this.authService.generate2faToken(user.id, user.userName);
-        //     res.cookie('2fa_token', token, {
-        //         maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-        //         // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-        //         // secure: false,
-        //     });
+        if (user.require2fa === true) {
+            res.status(HttpStatus.OK);
+            const token = await this.authService.generate2faToken(user.id, user.userName);
+            // console.log('2fa token', token);
+            res.cookie('2fa_token', token, {
+                // maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+                // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+                // secure: false,
+            });
+            try {
+                this.logger.debug(`${user.id} id `);
+                await this.authService.sendMail(user.id);
+            } catch (error) {
+                this.logger.debug('sendMail fail T.T');
+                return;
+            }
 
-        //     //mail 보내기
-        //     // return res.status(200).json({
-        //     //     message: '2fa',
-        //     // });
+            //mail 보내기
+            // return res.status(200).json({
+            //     message: '2fa',
+            // });
 
-        //     //임시로 막아놓으ㅡㅁ
-        //     return res.redirect(process.env.FRONT_URL + '/home'); //TODO : 로직 변경
-        // }
+            //임시로 막아놓으ㅡㅁ
+            return res.redirect(process.env.FRONT_URL + '/tfa'); //TODO : 로직 변경
+        }
 
         const { jwt, refreshToken } = await this.authService.generateAuthToken(user.id, user.userName);
         res.status(HttpStatus.OK);
@@ -99,31 +110,25 @@ export class AuthController {
         return res.redirect(process.env.FRONT_URL + '/home'); //TODO : 로직 변경
     }
 
-    @Get('verify2fa')
+    @Patch('verify2fa/')
     @UseGuards(Jwt2faGuard)
-    async verify2fa(@Req() req, @Query('code') code: string, @Res() res: Response) {
-        const isAuthenticated = await this.userService.verifyUser2faCode(req.authDto.sub, code);
+    async verify2fa(@Req() req, @Body('code') code: string, @Res() res: Response) {
+        this.logger.debug('code : ', code);
+        const isAuthenticated = await this.userService.verifyUser2faCode(req.user.sub, code);
+
         if (isAuthenticated) {
             //jwt 발급
-            res.clearCookie('2fa_token');
-            const { jwt, refreshToken } = await this.authService.generateAuthToken(
-                req.authDto.id,
-                req.authDto.userName,
-            );
-            res.cookie('access_token', jwt, {
-                maxAge: +process.env.ACCESS_COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-                expires: new Date(Date.now() + 3600000),
-                // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                // secure: false,
-            });
-            res.cookie('refresh_token', refreshToken, {
-                maxAge: +process.env.REFRESH_COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-                // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                // secure: false,
-            });
+            // res.clearCookie('2fa_token');
+            const { jwt, refreshToken } = await this.authService.generateAuthToken(req.user.sub, req.user.userName);
             res.status(HttpStatus.OK);
-            res.send();
-        } else throw new UnauthorizedException('verify failed');
+            return res.send({
+                access_token: jwt,
+                refresh_token: refreshToken,
+            });
+        } else {
+            this.logger.debug('verify failed');
+            throw new UnauthorizedException('verify failed');
+        }
     }
 
     @Get('/regenerateToken')
@@ -132,18 +137,6 @@ export class AuthController {
         this.logger.log('regenerateToken called');
         const newToken = await this.authService.regenerateJwt(req);
         return res.header({ 'x-access-token': newToken }).json({ token: newToken });
-        // res.clearCookie('access_token', { domain: process.env.FRONT_URL, path: '/' });
-
-        // res.status(HttpStatus.OK);
-        // res.cookie('access_token', newToken, {
-        //     maxAge: +process.env.ACCESS_COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-        //     // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-        //     // secure: false,
-        //     expires: new Date(Date.now() + 3600000),
-        //     path: '/',
-        // });
-        // console.log('res.cookie', res.cookie);
-        // return res.send();
     }
 
     @Post('/logout')

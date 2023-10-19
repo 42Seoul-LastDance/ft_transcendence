@@ -23,9 +23,6 @@ export class ChatRoomDto {
     @IsArray()
     memberList: Set<number> = new Set();
 
-    // @IsArray()
-    // inviteList: Set<number> = new Set();
-
     @IsArray()
     banList: Set<number> = new Set();
 

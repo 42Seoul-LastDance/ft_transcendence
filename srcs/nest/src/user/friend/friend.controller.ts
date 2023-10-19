@@ -9,6 +9,7 @@ import {
     Res,
     UseGuards,
     Logger,
+    Body,
     // NotFoundException,
     // InternalServerErrorException,
     // BadRequestException,
@@ -16,31 +17,32 @@ import {
 import { FriendService } from './friend.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { Response } from 'express';
+import { FriendStatus } from './friend.enum';
 
 @Controller('friends')
 export class FriendController {
     private logger = new Logger(FriendController.name);
     constructor(private readonly friendService: FriendService) {}
 
-    @Get('/isFriend/:friendName')
-    @UseGuards(JwtAuthGuard)
-    async getFriendStatus(@Req() req, @Res() res: Response, @Param('friendName') friendName: string) {
-        const status = await this.friendService.getFriendStatus(+req.user.sub, friendName);
+    @Get('/isFriend/:friendSlackId')
+    @UseGuards(JwtAuthGuard) //slackId 작업 완료
+    async getFriendStatus(@Req() req, @Res() res: Response, @Param('friendSlackId') friendSlackId: string) {
+        const status: FriendStatus = await this.friendService.getFriendStatus(+req.user.sub, friendSlackId);
         //TODO res에 status JSON으로 담아서 보내기
         return res.send({ status: status });
     }
 
-    @Put('/request/:friendName')
+    @Put('/request/')
     @UseGuards(JwtAuthGuard)
-    async requestFriend(@Req() req, @Res() res: Response, @Param('friendName') friendName: string) {
-        await this.friendService.requestFriend(+req.user.sub, friendName);
+    async requestFriend(@Req() req, @Body() body, @Res() res: Response) {
+        await this.friendService.requestFriend(+req.user.sub, body.friendSlackId);
         return res.sendStatus(200);
     }
 
-    @Delete('/delete/:slackId')
+    @Delete('/delete/:friendSlackId')
     @UseGuards(JwtAuthGuard)
-    async deleteFriend(@Req() req, @Res() res: Response, @Param('slackId') slackId: string) {
-        await this.friendService.deleteFriend(+req.user.sub, slackId);
+    async deleteFriend(@Req() req, @Res() res: Response, @Param('friendSlackId') friendSlackId: string) {
+        await this.friendService.deleteFriend(+req.user.sub, friendSlackId);
         return res.sendStatus(200);
     }
 
@@ -54,17 +56,17 @@ export class FriendController {
         return res.send(invitations);
     }
 
-    @Patch('/saYes/:friendName')
+    @Patch('/saYes/:friendSlackId')
     @UseGuards(JwtAuthGuard)
-    async acceptRequest(@Req() req, @Res() res: Response, @Param('friendName') friendName: string) {
-        await this.friendService.acceptRequest(+req.user.sub, friendName);
+    async acceptRequest(@Req() req, @Res() res: Response, @Param('friendSlackId') friendSlackId: string) {
+        await this.friendService.acceptRequest(+req.user.sub, friendSlackId);
         return res.sendStatus(200);
     }
 
-    @Delete('/decline/:friendName')
+    @Delete('/decline/:friendSlackId')
     @UseGuards(JwtAuthGuard)
-    async declineRequest(@Req() req, @Res() res: Response, @Param('friendName') friendName: string) {
-        await this.friendService.declineRequest(+req.user.sub, friendName);
+    async declineRequest(@Req() req, @Res() res: Response, @Param('friendSlackId') friendSlackId: string) {
+        await this.friendService.declineRequest(+req.user.sub, friendSlackId);
         return res.sendStatus(200);
     }
 }

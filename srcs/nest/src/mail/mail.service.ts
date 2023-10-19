@@ -62,8 +62,9 @@ export class MailService {
             text: code,
             html: mailContent,
         };
-        console.log(`mail sent! code is ${code}`);
+        this.logger.log(`mail sent! code is ${code} and id is ${id}`);
         await transporter.sendMail(mailOptions);
+        this.logger.debug(`id, code : ${code}`);
         await this.userService.saveUser2faCode(id, code);
         return code;
     }
