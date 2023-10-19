@@ -85,8 +85,8 @@ export class AuthService {
                 secret: process.env.JWT_SECRET_KEY,
             });
             await this.userService.verifyRefreshToken(payload, token);
-        } catch {
-            this.logger.error('not verified token');
+        } catch (error) {
+            this.logger.error('not verified token', error);
             throw new UnauthorizedException('not verified token');
         }
 

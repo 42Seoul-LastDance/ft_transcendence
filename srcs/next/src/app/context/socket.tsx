@@ -60,23 +60,14 @@ export const createSocket = (
 };
 
 export const handleTryAuth = async (socket: Socket, router: any) => {
-  const response = await reGenerateToken(router);
+  await reGenerateToken(router);
 
-  switch (response.status) {
-    case 200:
-      const xAccessToken = getCookie('access_token');
-      if (socket?.connected) socket?.disconnect();
-      socket.auth = {
-        token: xAccessToken,
-      };
-      socket.connect();
-      break;
-    case 401:
-      router.push('/');
-      break;
-    default:
-      console.log('refresh token: ', response.status);
-  }
+  const xAccessToken = getCookie('access_token');
+  if (socket?.connected) socket?.disconnect();
+  socket.auth = {
+    token: xAccessToken,
+  };
+  socket.connect();
 };
 
 export const registerSocketEvent = (socket: Socket, e: Events[]): void => {

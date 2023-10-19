@@ -46,7 +46,7 @@ const HomeContent = () => {
         <Link href="/game">
           <Grid container justifyContent="center">
             <Button variant="outlined" color="secondary">
-              버튼
+              Start Game !
             </Button>
           </Grid>
         </Link>

@@ -134,7 +134,7 @@ export class UserService {
         //userRepository 에서 payload.id (userid) 에 해당하는 refresh token 꺼내서 같은 지 비교.
         try {
             const storedToken = (await this.findUserById(payload.id)).refreshToken;
-            if (!(storedToken && (await bcrypt.compare(token, storedToken)))) {
+            if (!(storedToken && token === storedToken)) {
                 throw new UnauthorizedException();
             }
         } catch (error) {

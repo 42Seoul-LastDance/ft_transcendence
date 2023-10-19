@@ -19,7 +19,10 @@ export const reGenerateToken = async (router: any): Promise<AxiosResponse> => {
     console.log('reGenerateToken Success');
     return response;
   } catch (error: any) {
-    console.log('reGenerateToken Failure', error);
+    if (error.status === 401) {
+      console.log('reGenerateToken Failure (Invalid refresh_token)', error);
+      router.push('/');
+    } else console.log('reGenerateToken Failure (What err??)', error.status);
     return new Promise(() => {});
   }
 };
