@@ -87,7 +87,7 @@ export class UserController {
     async updateUserInfo(
         @Req() req,
         @Res() res: Response,
-        @Body('profileImage') @UploadedFile() profileImage: Express.Multer.File | undefined,
+        @UploadedFile() profileImage: Express.Multer.File | undefined,
         @Body('userName') userName: string | undefined,
         @Body('require2fa') require2fa: boolean | undefined,
         @Body() body,
