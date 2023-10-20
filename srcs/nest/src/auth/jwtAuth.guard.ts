@@ -4,12 +4,13 @@
 // @Injectable()
 // export class JwtAuthGuard extends AuthGuard('jwt') {}
 
-import { Injectable, CanActivate, UnauthorizedException, ExecutionContext, NotFoundException } from '@nestjs/common';
+import { Injectable, CanActivate, UnauthorizedException, ExecutionContext, NotFoundException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
+    private logger = new Logger(JwtAuthGuard.name);
     constructor(private jwtService: JwtService) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -24,6 +25,7 @@ export class JwtAuthGuard implements CanActivate {
             });
             request['user'] = payload;
         } catch (error) {
+            this.logger.error('token error:', error.message);
             if (error.message === 'jwt expired') throw new UnauthorizedException("can't verify token");
             else throw new NotFoundException('jwt is invalid');
         }

@@ -26,15 +26,17 @@ import { setViewProfile } from '../redux/viewSlice';
 import { useRouter } from 'next/navigation';
 import { clearSocketEvent, registerSocketEvent } from '../contexts/socket';
 import { useEffect } from 'react';
-import { Events, GetInvitationListJson } from '../interfaces';
+import { EmitResult, Events, GetInvitationListJson } from '../interfaces';
 import {
   GameJoinMode,
   GameMode,
   InviteType,
+  JoinStatus,
+  RoomStatus,
 } from '../enums';
 import { Button } from '@mui/material';
 import { setCustomSet } from '../redux/matchSlice';
-import { setInvitationList, setNotiCount } from '../redux/userSlice';
+import { setInvitationList, setJoin, setNotiCount } from '../redux/userSlice';
 import HomeIcon from '@mui/icons-material/Home';
 
 const HeaderNavigationBarContent = () => {
@@ -62,6 +64,14 @@ const HeaderNavigationBarContent = () => {
         event: 'getInvitationList',
         callback: (data: GetInvitationListJson[]) =>
           dispatch(setInvitationList(data)),
+      },
+      {
+        event: 'joinPrivateChatRoom',
+        once: true,
+        callback: (data: EmitResult) => {
+          if (data.result === true)
+            dispatch(setJoin(JoinStatus.CHAT));
+        },
       },
     ];
     registerSocketEvent(superSocket!, e);
@@ -109,9 +119,9 @@ const HeaderNavigationBarContent = () => {
     superSocket?.emit('declineInvite', { hostSlackId: hostSlackId });
   };
 
-  const acceptInvitation = (hostSlackId: string, hostName: string) => {
-    console.log('--- 수락함 ---', hostSlackId);
-    superSocket?.emit('agreeInvite', { hostSlackId: hostSlackId });
+  const acceptGameInvitation = (hostSlackId: string, hostName: string) => {
+    console.log('--- 게임 수락함 ---', hostSlackId);
+
     dispatch(
       setCustomSet({
         joinMode: GameJoinMode.CUSTOM_RECV,
@@ -121,7 +131,18 @@ const HeaderNavigationBarContent = () => {
       }),
     );
     router.push('/game');
+    superSocket?.emit('agreeInvite', { hostSlackId: hostSlackId });   
   };
+
+  const acceptChatInvitation = (hostSlackId: string, hostName: string, chatRoomName: string, chatRoomType: RoomStatus) => {
+    console.log('--- chat 수락함 ---', hostName, chatRoomName);
+    superSocket?.emit('agreeInvite', { hostSlackId: hostSlackId });
+    chatSocket?.emit('joinPrivateChatRoom', {roomName: chatRoomName});
+    // 추가적인 상태 설정 
+    //채팅 방 켜기
+
+  }; 
+   
 
   const menuId = 'primary-search-account-menu';
   const renderNoti = (
@@ -154,12 +175,13 @@ const HeaderNavigationBarContent = () => {
                     ` 모드로 게임을 초대하셨습니다 ! `}
                 <Button
                   variant="contained"
-                  onClick={() =>
-                    acceptInvitation(
-                      invitation.hostSlackId,
-                      invitation.hostName,
-                    )
-                  }
+                  onClick={() => {
+                    if (invitation.inviteType === InviteType.GAME) {
+                      acceptGameInvitation(invitation.hostSlackId, invitation.hostName,);
+                    } else if (invitation.inviteType === InviteType.CHAT) {
+                      acceptChatInvitation(invitation.hostSlackId, invitation.hostName, invitation.chatRoomName, invitation.chatRoomType);
+                    }
+                  }}
                 >
                   수락
                 </Button>

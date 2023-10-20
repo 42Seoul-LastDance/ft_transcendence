@@ -102,7 +102,7 @@ export class SocketUsersService {
         const hostId: number = this.dmSocketList.get(socketId);
         const host: User = await this.userService.findUserById(hostId);
         const guest: User = await this.userService.getUserBySlackId(payload['slackId']);
-        if (!guest) return undefined;
+        if (!guest || hostId === guest.id) return undefined;
 
         const guestSocket: Socket = this.dmUserList.get(guest.id);
         if (!guestSocket) return undefined;

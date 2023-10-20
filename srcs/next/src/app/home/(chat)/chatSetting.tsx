@@ -104,7 +104,8 @@ const ChatSetting = () => {
   };
 
   const checkExistUser = async () => {
-    const response = await sendRequest('get', `/users/exist/`, router, {
+    console.log('checkExistUser', inviteName);
+    const response = await sendRequest('post', `/users/exist/`, router, {
       slackId: inviteName,
     });
     if (response.status > 300) {
@@ -114,12 +115,20 @@ const ChatSetting = () => {
   };
 
   const inviteFriend = async () => {
-    // if (
-    //   isValid('유저네임이', inviteName, maxUniqueNameLength, dispatch) === false
-    // )
-    //   return;
-    // const exist = await checkExistUser();
-    // if (!exist) return;
+    if (
+      isValid('유저네임이', inviteName, maxUniqueNameLength, dispatch) === false
+    )
+      return;
+    const exist = await checkExistUser();
+    console.log('유저 있었나요', exist);
+    memberList[0].slackId
+    memberList.map((member, index)=> {
+      console.log(member.slackId, member.userName);
+    })
+
+    console.log('memberlist:', memberList);
+    if (!exist) return;
+    console.log('초대 시 데이터 확인: ', chatRoom);
     superSocket?.emit('sendInvitation', {
       slackId: inviteName,
       inviteType: InviteType.CHAT,
@@ -128,6 +137,7 @@ const ChatSetting = () => {
       gameMode: GameMode.NONE,
     });
     myAlert('success', '초대 메시지를 보냈습니다', dispatch);
+    //TODO 입력한 input창 clear해주세요 (juhoh)
   };
 
   const handlePassword = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,6 +150,7 @@ const ChatSetting = () => {
       roomName: chatRoom?.roomName,
       password: password,
     });
+    //TODO 입력한 input창 clear해주세요 (juhoh)
   };
 
   const unBanUser = (targetSlackId: string) => {
@@ -202,6 +213,7 @@ const ChatSetting = () => {
       </List>
       {myPermission === UserPermission.OWNER ? (
         <>
+          {chatRoom?.status === RoomStatus.PUBLIC ? (
           <div
             style={{ display: 'flex', alignItems: 'center', padding: '8px' }}
           >
@@ -224,7 +236,7 @@ const ChatSetting = () => {
               send
             </Button>
           </div>
-          {chatRoom?.status === RoomStatus.PRIVATE ? (
+          ): (
             <div
               style={{ display: 'flex', alignItems: 'center', padding: '8px' }}
             >
@@ -247,7 +259,7 @@ const ChatSetting = () => {
                 send
               </Button>
             </div>
-          ) : null}
+          )}
         </>
       ) : null}
     </>

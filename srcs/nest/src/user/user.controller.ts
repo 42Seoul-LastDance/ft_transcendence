@@ -155,22 +155,19 @@ export class UserController {
         }
     }
 
-    @Get('/exist/')
+    @Post('/exist/')
     @UseGuards(JwtAuthGuard)
     async checkIfExists(@Res() res: Response, @Body('slackId') slackId: string) {
         try {
             const user: User = await this.userService.getUserBySlackId(slackId);
             if (user) {
-                res.status(200);
-                return res.send();
+                return res.sendStatus(200);
             }
         } catch (error) {
             this.logger.log(`error status:`, error.status);
             if (error.status === 404) {
-                res.status(400);
-                return res.send();
+                return res.sendStatus(400);
             } else throw new BadRequestException();
-            return;
         }
     }
 

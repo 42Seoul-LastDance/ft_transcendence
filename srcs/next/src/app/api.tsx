@@ -1,6 +1,5 @@
 import axios from 'axios';
-import { getCookie } from './cookie';
-import reGenerateToken from './auth';
+import reGenerateToken, { getToken } from './auth';
 import { BACK_URL } from './globals';
 import { AxiosResponse } from 'axios';
 
@@ -16,12 +15,12 @@ const sendRequest = async (
   router: any,
   data = {},
 ): Promise<AxiosResponse> => {
-  try {
-    let token = getCookie('access_token'); // 여기에 쿠키 이름을 설정하세요.
+	let token = getToken('access_token'); // 여기에 쿠키 이름을 설정하세요.
     if (!token) {
       router.push('/');
       return new Promise(() => {});
     }
+  try {
     // 요청 헤더에 토큰 추가
     axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
@@ -42,7 +41,7 @@ const sendRequest = async (
         await reGenerateToken(router);
         axiosInstance.defaults.headers.common[
           'Authorization'
-        ] = `Bearer ${getCookie('access_token')}`;
+        ] = `Bearer ${token}}`;
         let secondResponse;
         try {
           secondResponse = await axiosInstance({

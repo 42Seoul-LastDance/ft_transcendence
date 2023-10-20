@@ -6,11 +6,11 @@ import {
   handleTryAuth,
   registerSocketEvent,
 } from './socket';
-import { getCookie } from '../cookie';
 import { useRouter } from 'next/navigation';
 import { Events, UserInfoJson } from '../interfaces';
 import { setName, setSlackId } from '../redux/userSlice';
 import { useDispatch } from 'react-redux';
+import { getToken } from '../auth';
 
 // SocketContext 생성
 const SuperSocketContext = createContext<Socket | undefined>(undefined);
@@ -22,7 +22,7 @@ export const useSuperSocket = () => {
 };
 
 // SocketProvider 컴포넌트 정의
-const superSocket = createSocket('DM', getCookie('access_token'));
+const superSocket = createSocket('DM', getToken('access_token'));
 
 const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
   // 소켓 상태 관리

@@ -7,7 +7,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
 import { useDispatch } from 'react-redux';
 import { useChatSocket } from '../../contexts/chatSocketContext';
-import { ChatRoomDto, Events, } from '../../interfaces';
+import { ChatRoomDto, EmitResult, Events} from '../../interfaces';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { clearSocketEvent, registerSocketEvent } from '@/app/contexts/socket';
 import { isValid } from '../valid';
@@ -15,6 +15,8 @@ import { maxNameLength, maxPasswordLength } from '@/app/globals';
 import { Fab, Modal, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { JoinStatus, RoomStatus } from '@/app/enums';
+import { myAlert } from '../alert';
+import error from 'next/error';
 
 const style: React.CSSProperties = {
   position: 'absolute',
@@ -50,10 +52,16 @@ const CreateRoomForm = () => {
       {
         event: 'createChatRoom',
         callback: (data: ChatRoomDto) => {
-          dispatch(setChatRoom(data));
-          dispatch(setJoin(JoinStatus.CHAT));
+            dispatch(setChatRoom(data));
+            dispatch(setJoin(JoinStatus.CHAT));
         },
       },
+      {
+        // event: 'eventFailure'
+        // callback: (data: EmitResult) => [
+        //   if (data)
+        // ]
+      }
     ];
     registerSocketEvent(chatSocket!, e);
     return () => clearSocketEvent(chatSocket!, e);

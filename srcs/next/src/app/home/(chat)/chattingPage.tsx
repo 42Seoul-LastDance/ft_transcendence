@@ -115,6 +115,10 @@ const ChattingPage = (props: ChattingPageProps) => {
     // TODO : 채팅방 입장 -> 퇴장 -> 다시 입장 시 메시지 안 옴!
   }, [target]);
 
+  useEffect(() => {
+    scrollToBottom();
+  }, [inputMessage] );
+
   // 기존 DM메시지 가져오기
   const prevDmMessages = async () => {
     const response = await sendRequest(
@@ -141,6 +145,12 @@ const ChattingPage = (props: ChattingPageProps) => {
     });
 
     setInputMessage('');
+  };
+
+  const scrollToBottom = () => {
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+    }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -193,35 +203,14 @@ const ChattingPage = (props: ChattingPageProps) => {
     >
       {join === JoinStatus.CHAT && (
         <>
-          <Paper
-            sx={{
-              fontFamily: 'sans-serif',
-              fontWeight: 'normal',
-              position: 'absolute',
-              padding: '30px',
-              bgcolor: 'Cadetblue',
-              aliginItems: 'center',
-            }}
-          >
-            <p>채팅방 컨트롤러</p>
             <IconButton
               color="info"
               aria-label="settings"
-              sx={{ position: 'absolute', bottom: '0px', right: '20px' }}
               onMouseOver={handleMouseOver}
               onClick={toggleSettings}
-            >
-              <div style={settingsBarStyle}></div>
+            > 
+              <div style={settingsBarStyle}></div> 
             </IconButton>
-            <IconButton
-              color="primary"
-              aria-label="quit"
-              sx={{ position: 'absolute', bottom: '0px', left: '20px' }}
-              onClick={handleExitRoom}
-            >
-              <DirectionsRunIcon />
-            </IconButton>
-          </Paper>
           <Drawer anchor="right" open={isMouseOver} onClose={toggleSettings}>
             <ChatSetting />
           </Drawer>
@@ -239,6 +228,7 @@ const ChattingPage = (props: ChattingPageProps) => {
         <CardContent
           style={{ overflowY: 'auto', height: 'calc(100% - 105px)' }}
         >
+          
           <List
             ref={listRef as React.RefObject<HTMLUListElement>}
             style={{ maxHeight: '550px', overflowY: 'auto' }}
@@ -300,6 +290,14 @@ const ChattingPage = (props: ChattingPageProps) => {
           >
             Send
           </Button>
+          <IconButton
+              color="primary"
+              aria-label="quit"
+              sx={{ position: 'static', top: '0px', left: '10%' }}
+              onClick={handleExitRoom}
+            >
+              <DirectionsRunIcon />
+        </IconButton>
         </div>
       </Card>
     </Container>

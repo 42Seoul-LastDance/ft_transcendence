@@ -90,7 +90,7 @@ export class AuthService {
             throw new UnauthorizedException('not verified token');
         }
 
-        const user = await this.userService.findUserById(payload.id);
+        const user = await this.userService.findUserById(payload.sub);
         const newPayload = {
             sub: user.id,
             userName: user.userName,
@@ -104,7 +104,7 @@ export class AuthService {
             sub: id,
             userName: userName,
         });
-        const refreshToken = await this.generateRefreshTokenBySecret({ id: id });
+        const refreshToken = await this.generateRefreshTokenBySecret({ sub: id });
         await this.userService.saveUserCurrentRefreshToken(id, refreshToken);
 
         const returnObject: { jwt: string; refreshToken: string } = {

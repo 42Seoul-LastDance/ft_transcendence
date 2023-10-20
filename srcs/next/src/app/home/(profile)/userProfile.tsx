@@ -63,11 +63,12 @@ const UserProfile = () => {
   const dispatch = useDispatch();
 
   const requestIsFriend = async () => {
-    const friendResp = await sendRequest(
-      'get',
-      `/friends/isFriend/${targetSlackId}`,
-      router,
-    );
+	const friendResp = await sendRequest(
+		'post',
+		`/friends/isFriend/`,
+		router,
+		{friendSlackId: targetSlackId}
+	  );
     setFriendStatus(friendResp.data['status']);
     if (
       friendResp.data['status'] === FriendStatus.LAGGING ||
@@ -220,7 +221,26 @@ const UserProfile = () => {
               <br />
               Exp: {exp} ({((exp / ((level + 1) * 500)) * 100).toFixed(2)}%)
               <br />
+			  <br />
               <Divider />
+			  <br />
+			Total Ranking Game : {normalWin + normalLose + hardWin + hardLose}
+            <br />
+            {normalWin + normalLose > 0 && (
+              <span>
+                Normal Ranking Game Winning Rate:{' '}
+                {((normalWin / (normalWin + normalLose)) * 100).toFixed(2)}%
+              </span>
+            )}
+            <br />
+            {hardWin + hardLose > 0 && (
+              <span>
+                Hard Ranking Game Winning Rate:{' '}
+                {((hardWin / (hardWin + hardLose)) * 100).toFixed(2)}%
+              </span>
+            )}
+            <br />
+
             </Typography>
             <Typography
               id="modal-modal-description"

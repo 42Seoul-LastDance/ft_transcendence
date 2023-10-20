@@ -1,7 +1,6 @@
 import { Socket, io } from 'socket.io-client';
 import { BACK_URL } from '../globals';
-import { reGenerateToken } from '../auth';
-import { getCookie } from '../cookie';
+import { getToken, reGenerateToken } from '../auth';
 import { Events } from '../interfaces';
 
 // socket io event hook
@@ -62,7 +61,12 @@ export const createSocket = (
 export const handleTryAuth = async (socket: Socket, router: any) => {
   await reGenerateToken(router);
 
-  const xAccessToken = getCookie('access_token');
+  const xAccessToken = getToken('access_token');
+  if (!xAccessToken)
+  {
+	router.push('/');
+	return;
+  }
   if (socket?.connected) socket?.disconnect();
   socket.auth = {
     token: xAccessToken,

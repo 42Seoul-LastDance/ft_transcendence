@@ -2,6 +2,7 @@ import {
     Controller,
     Get,
     Put,
+    Post,
     Delete,
     Patch,
     Param,
@@ -10,9 +11,6 @@ import {
     UseGuards,
     Logger,
     Body,
-    // NotFoundException,
-    // InternalServerErrorException,
-    // BadRequestException,
 } from '@nestjs/common';
 import { FriendService } from './friend.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
@@ -24,18 +22,18 @@ export class FriendController {
     private logger = new Logger(FriendController.name);
     constructor(private readonly friendService: FriendService) {}
 
-    @Get('/isFriend/:friendSlackId')
-    @UseGuards(JwtAuthGuard) //slackId 작업 완료
-    async getFriendStatus(@Req() req, @Res() res: Response, @Param('friendSlackId') friendSlackId: string) {
+	@Post('/isFriend/')
+	@UseGuards(JwtAuthGuard) //slackId 작업 완료
+	async getFriendStatus(@Req() req, @Body('friendSlackId') friendSlackId: string, @Res() res: Response) {
+        this.logger.debug('parsing friendSlackId : ', friendSlackId);
         const status: FriendStatus = await this.friendService.getFriendStatus(+req.user.sub, friendSlackId);
-        //TODO res에 status JSON으로 담아서 보내기
         return res.send({ status: status });
     }
 
     @Put('/request/')
     @UseGuards(JwtAuthGuard)
-    async requestFriend(@Req() req, @Body() body, @Res() res: Response) {
-        await this.friendService.requestFriend(+req.user.sub, body.friendSlackId);
+    async requestFriend(@Req() req, @Body('friendSlackId') friendSlackId, @Res() res: Response) {
+        await this.friendService.requestFriend(+req.user.sub, friendSlackId);
         return res.sendStatus(200);
     }
 

@@ -177,7 +177,8 @@ export class ChatRoomGateway implements OnGatewayConnection, OnGatewayDisconnect
     @SubscribeMessage('createChatRoom')
     async createChatRoom(socket: Socket, payload: JSON) {
         this.logger.log('CREATE CHAT ROOM');
-        await this.chatroomService.createChatRoom(socket, Object.assign(new CreateRoomDto(), payload), this.server);
+        if (!await this.chatroomService.createChatRoom(socket, Object.assign(new CreateRoomDto(), payload), this.server))
+            return ;
         // * 프론트 요청 : create 후 새로 갱신된 리스트 전송
         const chatRoomList = this.chatroomService.getChatRoomList();
         const chatRoomInfo = await this.chatroomService.getChatRoomInfo(socket, payload['roomName'], payload['status']);

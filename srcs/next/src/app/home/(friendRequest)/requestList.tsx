@@ -59,7 +59,7 @@ const RequestList: React.FC = () => {
   };
 
   const checkExistUser = async () => {
-    const response = await sendRequest('get', `/users/exist/`, router, {
+    const response = await sendRequest('post', `/users/exist/`, router, {
       slackId: friendRequestSlackId,
     });
     console.log('res', response.status);
@@ -72,9 +72,10 @@ const RequestList: React.FC = () => {
 
   const checkAlreadyFriend = async () => {
     const response = await sendRequest(
-      'get',
-      `/friends/isFriend/${friendRequestSlackId}`,
+      'post',
+      `/friends/isFriend/`,
       router,
+	  {friendSlackId: friendRequestSlackId}
     );
     if (
       response.status === 200 &&
@@ -98,9 +99,6 @@ const RequestList: React.FC = () => {
     const isExist = await checkExistUser();
     if (!isExist) return;
     const isFriend = await checkAlreadyFriend();
-    /*
-    isFriend로 먼저 검사하니까 여기부터 바디로 바꿔야할 것 같은데요??
-    */
     if (isFriend) return;
     const response = await sendRequest('put', `/friends/request/`, router, {
       friendSlackId: friendRequestSlackId,

@@ -18,7 +18,7 @@ import { User } from 'src/user/user.entity';
 3. 채팅방 리스트 주기
 4. 채팅방 안에 있는 사람들끼리 채팅
 */
-
+// eventFailure
 interface Member {
     userName: string;
     slackId: string;
@@ -122,11 +122,12 @@ export class ChatRoomService {
     }
     //result, reason
     emitFailReason(socket: Socket, event: string, reason: string) {
+        this.logger.error(`error in ${event}`);
         const response = {
             result: false,
             reason: reason,
         };
-        socket.emit(event, response);
+        socket.emit('eventFailure', response);
     }
 
     emitSuccess(socket: Socket, event: string) {
@@ -216,14 +217,12 @@ export class ChatRoomService {
         if (roomStatus === RoomStatus.PUBLIC) room = this.publicRoomList.get(roomName);
         else if (roomStatus === RoomStatus.PRIVATE) {
             room = this.privateRoomList.get(roomName);
-            console.log('aaaa'); //찍힘
         } else return;
 
         if (room === undefined || room.memberList === undefined) {
             this.emitFailReason(socket, 'getMemberStateList', 'room or memberList does not exist');
             return;
         }
-        console.log('aaaa:', room.memberList.size);
         for (const member of room.memberList) {
             const name: string = await this.socketUsersService.getUserNameByUserId(member);
             const slackId: string = await this.socketUsersService.getSlackIdById(member);
@@ -260,7 +259,7 @@ export class ChatRoomService {
         return await this.getBanMemberList(room);
     }
 
-    async createChatRoom(socket: Socket, createRoomDto: CreateRoomDto, io: Server): Promise<void> {
+    async createChatRoom(socket: Socket, createRoomDto: CreateRoomDto, io: Server): Promise<boolean> {
         //check duplicate
 
         let checkDuplicate: ChatRoomDto;
@@ -270,7 +269,7 @@ export class ChatRoomService {
         if (checkDuplicate !== undefined) {
             this.logger.warn(`Create failed : chat room already exists.`);
             this.emitFailReason(socket, 'createChatRoom', 'channel already exists.');
-            return;
+            return false;
         }
 
         const roomDto: ChatRoomDto = new ChatRoomDto();
@@ -296,6 +295,7 @@ export class ChatRoomService {
         } else if (createRoomDto.status === RoomStatus.PUBLIC)
             await this.joinPublicChatRoom(socket, roomDto.roomName, roomDto.password, io);
         //.to('' + roomDto.id) => 글쓴 사람을 제외한 다른 사람들한테만 보이는지 확인
+        return true;
     }
 
     explodeRoom(socket: Socket, pastRoom: ChatRoomDto, io: Server) {
@@ -395,8 +395,8 @@ export class ChatRoomService {
         const userName = await this.socketUsersService.getUserNameByUserId(userId);
         this.logger.log('JOIN PRIVATE CHAT ROOM called.');
 
-        if (targetRoom == undefined) {
-            this.logger.warn(`JOIN PRIVATE CHAT ROOM : ${targetRoom.roomName} does not exist.`);
+        if (targetRoom === undefined) {
+            this.logger.warn(`JOIN PRIVATE CHAT ROOM : ${roomName} does not exist.`);
             this.emitFailReason(socket, 'joinPrivateChatRoom', 'Room does not exists.');
             return false;
         }

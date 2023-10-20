@@ -11,10 +11,11 @@ import { Button, Divider } from '@mui/material';
 
 const TFA = () => {
   const router = useRouter();
-  // const dispatch = useDispatch();
   const [code, setCode] = useState<string>('');
 
   const requestTFA = async () => {
+	if (typeof window === 'undefined') return ;
+
     const tfaToken = getCookie('2fa_token');
 
     if (!tfaToken) {
@@ -33,8 +34,8 @@ const TFA = () => {
         },
       );
       removeCookie('2fa_token');
-      setCookie('access_token', response.data['access_token']);
-      setCookie('refresh_token', response.data['refresh_token']);
+		localStorage.setItem('access_token', response.data['access_token']);	
+		localStorage.setItem('refresh_token', response.data['refresh_token']);	
       router.push('/home');
     } catch (error: any) {
       if (error.status === 401) alert('인증 코드가 틀립니다');
@@ -52,7 +53,7 @@ const TFA = () => {
 
   // 자동 2fa
   useEffect(() => {
-    if (getCookie('access_token')) router.push('/home');
+    if (localStorage.getItem('access_token')) router.push('/home');
   }, []);
 
   return (

@@ -2,15 +2,10 @@
 
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import ChattingTabs from './(chat)/chattingTabs';
-import ChattingPage from './(chat)/chattingPage';
-import ChatSocketProvider, {
+import {
   useChatSocket,
 } from '../contexts/chatSocketContext';
-import SuperSocketProvider, {
-  useSuperSocket,
-} from '../contexts/superSocketContext';
 import Link from 'next/link';
-import UserProfile from './(profile)/userProfile';
 import { useEffect, useState } from 'react';
 import { setIsMatched } from '../redux/matchSlice';
 import HeaderAlert from './alert';
@@ -18,9 +13,11 @@ import { Button, Grid, LinearProgress } from '@mui/material';
 import { setJoin } from '../redux/userSlice';
 import { useGameSocket } from '../contexts/gameSocketContext';
 import { JoinStatus, RoomStatus } from '../enums';
+import { useRouter } from 'next/navigation';
 
 const HomeContent = () => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const chatSocket = useChatSocket();
   const gameSocket = useGameSocket();
   const [render, setRender] = useState<boolean | undefined>(false);
@@ -41,13 +38,13 @@ const HomeContent = () => {
       {render ? (
         <>
           <br />
-          <Link href="/game">
             <Grid container justifyContent="center">
-              <Button variant="contained" color="secondary">
+              <Button variant="contained" color="secondary" onClick={()=>{
+				router.push('/game')
+			  }}>
                 Start Game !
               </Button>
             </Grid>
-          </Link>
           <br />
           <div>
             <ChattingTabs />
