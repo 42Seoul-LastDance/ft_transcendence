@@ -11,10 +11,12 @@ import { Button, Grow, IconButton, TextField, Typography } from '@mui/material';
 import { isValid } from '../valid';
 import { maxUniqueNameLength } from '@/app/globals';
 import { myAlert } from '../alert';
-import { FriendStatus, UserInfoJson } from '@/app/interface';
+import { UserInfoJson } from '@/app/interfaces';
 import CachedIcon from '@mui/icons-material/Cached';
-import { useSuperSocket } from '@/app/context/superSocketContext';
+import { useSuperSocket } from '@/app/contexts/superSocketContext';
 import { RootState } from '@/app/redux/store';
+import { FriendStatus } from '@/app/enums';
+
 const RequestList: React.FC = () => {
   const [requestList, setRequestList] = useState<UserInfoJson[]>([]);
   const router = useRouter();

@@ -1,5 +1,3 @@
-import { RoomStatus } from './interface';
-
 export const enum Emoji {
   NONE = -1,
   HI = 0,
@@ -29,6 +27,48 @@ export const enum GameJoinMode {
   CUSTOM_RECV = 2,
 }
 
+export const enum RoomStatus {
+	PRIVATE = 'PRIVATE',
+	PUBLIC = 'PUBLIC',
+}
+  
+export const enum UserPermission {
+	OWNER = 0,
+	ADMIN = 1,
+	MEMBER = 2,
+	NONE = 3,
+}
+
+export const enum TokenType {
+	Access = 0,
+	Refresh = 1,
+}
+
+export const enum FriendStatus {
+	FRIEND = 0,
+	LAGGING = 1,
+	REQUESTED = 2,
+	UNKNOWN = 3,
+}
+  
+export const enum JoinStatus {
+	NONE,
+	CHAT,
+	DM,
+}
+
+export const enum UserStatus {
+	ONLINE = 'online',
+	OFFLINE = 'offline',
+	GAME = 'game',
+}
+
+export const enum InviteType {
+	NONE = -1,
+	CHAT = 0,
+	GAME = 1,
+}
+
 export interface CustomGameSet {
   joinMode: GameJoinMode;
   gameMode: GameMode;
@@ -47,40 +87,4 @@ export interface StartGameJson {
   isFirst: boolean;
   leftName: string;
   rightName: string;
-}
-
-export interface SendEmojiJson {
-  type: Emoji;
-}
-
-export interface HandShakeJson {
-  side: PlayerSide;
-}
-
-export interface UserPannelProps {
-  screenSide: PlayerSide;
-}
-
-export interface InviteGameJson {
-  gameMode: GameMode;
-  friendName: string | null;
-}
-
-export interface AgreeInviteJson {
-  friendName: string | null;
-}
-
-export enum InviteType {
-  NONE = -1,
-  CHAT = 0,
-  GAME = 1,
-}
-
-export interface GetInvitationListJson {
-  hostName: string;
-  hostSlackId: string;
-  inviteType: InviteType;
-  chatRoomName: string;
-  chatRoomType: RoomStatus;
-  gameMode: GameMode;
 }

@@ -1,4 +1,4 @@
-import { getCookie, setCookie } from './Cookie';
+import { getCookie, setCookie } from './cookie';
 import axios, { AxiosResponse } from 'axios';
 import { BACK_URL } from './globals';
 

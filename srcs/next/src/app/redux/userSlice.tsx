@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { ChatRoomDto, JoinStatus } from '../interface';
-import { GetInvitationListJson } from '../Enums';
+import { ChatRoomDto, GetInvitationListJson,  } from '../interfaces';
+import { JoinStatus } from '../enums';
 
 export interface userState {
   userImg: string | null;

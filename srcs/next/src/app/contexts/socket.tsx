@@ -1,8 +1,8 @@
 import { Socket, io } from 'socket.io-client';
 import { BACK_URL } from '../globals';
 import { reGenerateToken } from '../auth';
-import { getCookie } from '../Cookie';
-import { Events } from '../interface';
+import { getCookie } from '../cookie';
+import { Events } from '../interfaces';
 
 // socket io event hook
 export const IoEventOnce = (

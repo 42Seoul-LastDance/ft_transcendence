@@ -4,17 +4,16 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal';
-import { useChatSocket } from '@/app/context/chatSocketContext';
 import { useRouter } from 'next/navigation';
 import sendRequest from '@/app/api';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/app/redux/store';
-import { UserProfileProps, FriendStatus, JoinStatus } from '@/app/interface';
 import { setViewProfile } from '@/app/redux/viewSlice';
-import { useSuperSocket } from '@/app/context/superSocketContext';
-// import { removeCookie } from '@/app/Cookie';
+import { useSuperSocket } from '@/app/contexts/superSocketContext';
 import { CircularProgress, Divider } from '@mui/material';
 import { setJoin } from '@/app/redux/userSlice';
+import { FriendStatus, JoinStatus } from '@/app/enums';
+
 const style = {
   position: 'absolute' as 'absolute',
   top: '50%',

@@ -6,13 +6,13 @@ import ChatRoomList from './chatRoomList';
 import FriendList from '../(dm)/friendList';
 import BlockList from '../(block)/blockList';
 import RequestList from '../(friendRequest)/requestList';
-import { useSuperSocket } from '@/app/context/superSocketContext';
+import { useSuperSocket } from '@/app/contexts/superSocketContext';
 import { useDispatch, useSelector } from 'react-redux';
-import { JoinStatus } from '@/app/interface';
 import { setChatRoom, setJoin } from '@/app/redux/userSlice';
 import ChattingPage from './chattingPage';
 import { RootState } from '@/app/redux/store';
-import { useChatSocket } from '@/app/context/chatSocketContext';
+import { useChatSocket } from '@/app/contexts/chatSocketContext';
+import { JoinStatus } from '@/app/enums';
 
 const ChattingTabs: React.FC = () => {
   const [value, setValue] = useState<number>(0);

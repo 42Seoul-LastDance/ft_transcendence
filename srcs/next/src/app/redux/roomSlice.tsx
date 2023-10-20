@@ -3,8 +3,8 @@ import {
   GetChatRoomListJSON,
   Member,
   UserInfoJson,
-  UserPermission,
-} from '../interface';
+} from '../interfaces';
+import { UserPermission } from '../enums';
 
 export interface RoomList {
   roomList: GetChatRoomListJSON[];

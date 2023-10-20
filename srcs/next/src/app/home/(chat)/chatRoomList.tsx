@@ -3,27 +3,26 @@
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import CreateRoomButton from './createRoomButton';
-import { useChatSocket } from '../../context/chatSocketContext';
+import { useChatSocket } from '../../contexts/chatSocketContext';
 import {
   ChatRoomDto,
   EmitResult,
   Events,
   GetChatRoomListJSON,
-  JoinStatus,
-} from '../../interface';
+} from '../../interfaces';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import { useDispatch } from 'react-redux';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { isValid } from '../valid';
 import { myAlert } from '../alert';
-import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
+import { clearSocketEvent, registerSocketEvent } from '@/app/contexts/socket';
 import { useEffect, useState } from 'react';
 import { Grow, ListItemIcon } from '@mui/material';
 import { maxPasswordLength } from '@/app/globals';
 import LockIcon from '@mui/icons-material/Lock';
 import CreateRoomForm from './createRoomForm';
+import { JoinStatus } from '@/app/enums';
 const ChatRoomList: React.FC = () => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
   const chatSocket = useChatSocket();

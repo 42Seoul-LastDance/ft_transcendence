@@ -8,9 +8,9 @@ npm cache clean --force
 # npm install --prefix srcs --save axios axios-auth-refresh
 # npm install --prefix srcs --save ws socket.io utf-8-validate bufferutil
 # npm install --prefix srcs --save @typescript-eslint
-npm install --prefix srcs --save @mui/material @mui/styles @emotion/react @emotion/styled @fontsource/roboto @mui/icons-material
 # npm install --prefix srcs --save babel-loader @babel/preset-react @babel/preset-env ts-loader
 
+# npm install --prefix srcs --save @mui/material @mui/styles @emotion/react @emotion/styled @fontsource/roboto @mui/icons-material
 
 echo "----- 😎 Successfully installed -----"
 

@@ -6,9 +6,9 @@ import {
   handleTryAuth,
   registerSocketEvent,
 } from './socket';
-import { getCookie } from '../Cookie';
+import { getCookie } from '../cookie';
 import { useRouter } from 'next/navigation';
-import { Events, UserInfoJson } from '../interface';
+import { Events, UserInfoJson } from '../interfaces';
 import { setName, setSlackId } from '../redux/userSlice';
 import { useDispatch } from 'react-redux';
 

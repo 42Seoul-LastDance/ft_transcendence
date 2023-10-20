@@ -5,19 +5,19 @@ import ChattingTabs from './(chat)/chattingTabs';
 import ChattingPage from './(chat)/chattingPage';
 import ChatSocketProvider, {
   useChatSocket,
-} from '../context/chatSocketContext';
+} from '../contexts/chatSocketContext';
 import SuperSocketProvider, {
   useSuperSocket,
-} from '../context/superSocketContext';
+} from '../contexts/superSocketContext';
 import Link from 'next/link';
 import UserProfile from './(profile)/userProfile';
 import { useEffect, useState } from 'react';
-import { JoinStatus, RoomStatus } from '../interface';
 import { setIsMatched } from '../redux/matchSlice';
 import HeaderAlert from './alert';
 import { Button, Grid, LinearProgress } from '@mui/material';
 import { setJoin } from '../redux/userSlice';
-import { useGameSocket } from '../context/gameSocketContext';
+import { useGameSocket } from '../contexts/gameSocketContext';
+import { JoinStatus, RoomStatus } from '../enums';
 
 const HomeContent = () => {
   const dispatch = useDispatch();

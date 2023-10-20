@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import { useGameSocket } from '../context/gameSocketContext';
-import { Emoji } from '../Enums';
+import { useGameSocket } from '../contexts/gameSocketContext';
+import { Emoji } from '../enums';
 import { useDispatch } from 'react-redux';
 import { setMyEmoji } from '../redux/matchSlice';
 

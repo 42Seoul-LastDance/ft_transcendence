@@ -1,20 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
 import {
-  IoEventListener,
-  IoEventOnce,
   clearSocketEvent,
   createSocket,
   handleTryAuth,
   registerSocketEvent,
 } from './socket';
-import { getCookie, removeCookie, setCookie } from '../Cookie';
+import { getCookie, removeCookie, setCookie } from '../cookie';
 import { useRouter } from 'next/navigation';
-import { setName } from '../redux/userSlice';
-import { Events } from '../interface';
+import { Events, HandShakeJson } from '../interfaces';
 import { RootState } from '../redux/store';
-import { GameJoinMode, HandShakeJson } from '../Enums';
+import { GameJoinMode } from '../enums';
 import {
   setIsMatchInProgress,
   setIsMatched,

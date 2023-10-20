@@ -3,18 +3,16 @@
 import React, { useEffect, useState } from 'react';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import { useSuperSocket } from '../../context/superSocketContext';
+import { useSuperSocket } from '../../contexts/superSocketContext';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Events,
   FriendListJson,
-  JoinStatus,
-  UserStatus,
-} from '@/app/interface';
+} from '@/app/interfaces';
 import { setJoin } from '@/app/redux/userSlice';
 import { Avatar, ButtonGroup, Grow, IconButton } from '@mui/material';
 import { setFriend, setFriendSlackId } from '@/app/redux/dmSlice';
-import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
+import { clearSocketEvent, registerSocketEvent } from '@/app/contexts/socket';
 import { RootState } from '@/app/redux/store';
 import { useRouter } from 'next/navigation';
 import { setFriendList } from '@/app/redux/friendSlice';
@@ -22,6 +20,8 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import UserProfile from '../(profile)/userProfile';
 import { setViewProfile } from '@/app/redux/viewSlice';
 import MessageIcon from '@mui/icons-material/Message';
+import { JoinStatus, UserStatus } from '@/app/enums';
+
 const FriendList: React.FC = () => {
   const superSocket = useSuperSocket();
   const dispatch = useDispatch();

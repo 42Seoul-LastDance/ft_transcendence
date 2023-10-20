@@ -6,14 +6,15 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
 import { useDispatch } from 'react-redux';
-import { useChatSocket } from '../../context/chatSocketContext';
-import { ChatRoomDto, Events, JoinStatus, RoomStatus } from '../../interface';
+import { useChatSocket } from '../../contexts/chatSocketContext';
+import { ChatRoomDto, Events, } from '../../interfaces';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
-import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
+import { clearSocketEvent, registerSocketEvent } from '@/app/contexts/socket';
 import { isValid } from '../valid';
 import { maxNameLength, maxPasswordLength } from '@/app/globals';
 import { Fab, Modal, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { JoinStatus, RoomStatus } from '@/app/enums';
 
 const style: React.CSSProperties = {
   position: 'absolute',

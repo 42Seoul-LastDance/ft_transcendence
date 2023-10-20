@@ -3,7 +3,6 @@ import React, { useState, MouseEvent, useEffect } from 'react';
 import List from '@mui/material/List';
 import {
   Button,
-  ListItemIcon,
   ListSubheader,
   Menu,
   TextField,
@@ -15,13 +14,10 @@ import ChatMenu from './chatMenu';
 import {
   Events,
   Member,
-  UserPermission,
   UserInfoJson,
-  RoomStatus,
-  InviteType,
-} from '@/app/interface';
-import { useChatSocket } from '@/app/context/chatSocketContext';
-import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
+} from '@/app/interfaces';
+import { useChatSocket } from '@/app/contexts/chatSocketContext';
+import { clearSocketEvent, registerSocketEvent } from '@/app/contexts/socket';
 import {
   setBanList,
   setMyPermission,
@@ -32,11 +28,11 @@ import { isValid } from '../valid';
 import { maxPasswordLength, maxUniqueNameLength } from '@/app/globals';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import { useSuperSocket } from '@/app/context/superSocketContext';
+import { useSuperSocket } from '@/app/contexts/superSocketContext';
 import { myAlert } from '../alert';
 import router from 'next/router';
 import sendRequest from '@/app/api';
-import { GameMode } from '@/app/Enums';
+import { GameMode, InviteType, RoomStatus, UserPermission } from '@/app/enums';
 
 const ChatSetting = () => {
   const dispatch = useDispatch();

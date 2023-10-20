@@ -5,18 +5,16 @@ import { setRoomList } from '../redux/roomSlice';
 import {
   Events,
   GetChatRoomListJSON,
-  JoinStatus,
-  RoomStatus,
-} from '../interface';
+} from '../interfaces';
 import {
   clearSocketEvent,
   createSocket,
   handleTryAuth,
   registerSocketEvent,
 } from './socket';
-import { getCookie, removeCookie, setCookie } from '../Cookie';
+import { getCookie } from '../cookie';
 import { useRouter } from 'next/navigation';
-import { setJoin, setName } from '../redux/userSlice';
+import { RoomStatus } from '../enums';
 
 // SocketContext 생성
 const ChatSocketContext = createContext<Socket | undefined>(undefined);

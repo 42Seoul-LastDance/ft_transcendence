@@ -19,12 +19,12 @@ import { setName, setUserImg } from '../redux/userSlice';
 import { styled } from '@mui/material/styles';
 import { maxUniqueNameLength } from '../globals';
 import { isValid } from '../home/valid';
-import { removeCookie } from '@/app/Cookie';
+import { removeCookie } from '@/app/cookie';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { ButtonGroup, IconButton } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+
 const SettingInfo = () => {
-  const [userName, setUserName] = useState<string>('');
   const [require2fa, setRequire2fa] = useState<boolean>(false);
   const [inputName, setInputName] = useState<string>('');
   const [inputImg, setInputImg] = useState<string | null>(null);
@@ -45,7 +45,6 @@ const SettingInfo = () => {
 
   const getUserInfo = async () => {
     const response = await sendRequest('get', '/users/userInfo/', router);
-    setUserName(response.data.userName);
     setRequire2fa(response.data.require2fa);
   };
 

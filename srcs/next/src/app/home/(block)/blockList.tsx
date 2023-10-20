@@ -1,26 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import { useSuperSocket } from '../../context/superSocketContext';
-import { useDispatch } from 'react-redux';
 import sendRequest from '../../api';
 import { useRouter } from 'next/navigation';
-// import { setChatMessages } from '@/app/redux/roomSlice';
-import { JoinStatus, Member, UserInfoJson } from '@/app/interface';
-import { setJoin } from '@/app/redux/userSlice';
+import { UserInfoJson } from '@/app/interfaces';
 import { Button, Grow } from '@mui/material';
-const style = {
-  width: '100%',
-  maxWidth: 360,
-  bgcolor: 'background.paper',
-};
 
 const BlockList: React.FC = () => {
-  const superSocket = useSuperSocket();
-  const dispatch = useDispatch();
   const [blockList, setBlockList] = useState<UserInfoJson[]>([]);
   const router = useRouter();
 

@@ -5,17 +5,15 @@ import Box from '@mui/material/Box';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import UserProfile from '../(profile)/userProfile';
-import { useChatSocket } from '@/app/context/chatSocketContext';
+import { useChatSocket } from '@/app/contexts/chatSocketContext';
 import { myAlert } from '../alert';
 import { useRouter } from 'next/navigation';
-import { GameJoinMode, GameMode } from '@/app/Enums';
-import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
+import { GameJoinMode, GameMode, JoinStatus, UserPermission } from '@/app/enums';
+import { clearSocketEvent, registerSocketEvent } from '@/app/contexts/socket';
 import {
   EmitResult,
   Events,
-  JoinStatus,
-  UserPermission,
-} from '@/app/interface';
+} from '@/app/interfaces';
 import { setMyPermission } from '@/app/redux/roomSlice';
 import { setCustomSet } from '@/app/redux/matchSlice';
 import { setViewProfile } from '@/app/redux/viewSlice';

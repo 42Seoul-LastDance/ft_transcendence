@@ -1,11 +1,9 @@
 'use client';
 
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
-import { useEffect } from 'react';
-import { useGameSocket } from '../context/gameSocketContext';
-import { setEmoji } from '../redux/matchSlice';
-import { Emoji, UserPannelProps, PlayerSide, SendEmojiJson } from '../Enums';
+import { PlayerSide } from '../enums';
+import { UserPannelProps } from '../interfaces';
 
 const imageStyle = {
   width: '50px', // 이미지의 너비를 조정

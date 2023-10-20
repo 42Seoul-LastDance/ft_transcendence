@@ -5,25 +5,22 @@ import store, { RootState } from '../redux/store';
 import Matching from './Matching';
 import GameSocketProvider, {
   useGameSocket,
-} from '../context/gameSocketContext';
+} from '../contexts/gameSocketContext';
 import Game from './Game';
-import { useSearchParams } from '../../../node_modules/next/navigation';
-import { GameJoinMode, GameMode, HandShakeJson, InviteType } from '../Enums';
+import { GameJoinMode, InviteType } from '../enums';
 import { useEffect } from 'react';
 import {
   setIsMatchInProgress,
   setIsMatched,
-  setSide,
 } from '../redux/matchSlice';
 import SuperSocketProvider, {
   useSuperSocket,
-} from '../context/superSocketContext';
+} from '../contexts/superSocketContext';
 import AutoAlert, { myAlert } from '../home/alert';
 
 const GameHomeContent = () => {
   const isMatched = useSelector((state: RootState) => state.match.isMatched);
   const dispatch = useDispatch();
-  const gameSocket = useGameSocket();
   const customSet = useSelector((state: RootState) => state.match.customSet);
   const superSocket = useSuperSocket();
 

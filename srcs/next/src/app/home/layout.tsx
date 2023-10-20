@@ -13,10 +13,10 @@ import MainHome from './page';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import SuperSocketProvider, {
   useSuperSocket,
-} from '../context/superSocketContext';
+} from '../contexts/superSocketContext';
 import ChatSocketProvider, {
   useChatSocket,
-} from '../context/chatSocketContext';
+} from '../contexts/chatSocketContext';
 import store, { RootState } from '../redux/store';
 import MenuItem from '@mui/material/MenuItem';
 import Menu from '@mui/material/Menu';
@@ -24,15 +24,14 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import UserProfile from './(profile)/userProfile';
 import { setViewProfile } from '../redux/viewSlice';
 import { useRouter } from 'next/navigation';
-import { clearSocketEvent, registerSocketEvent } from '../context/socket';
+import { clearSocketEvent, registerSocketEvent } from '../contexts/socket';
 import { useEffect } from 'react';
-import { Events } from '../interface';
+import { Events, GetInvitationListJson } from '../interfaces';
 import {
   GameJoinMode,
   GameMode,
-  GetInvitationListJson,
   InviteType,
-} from '../Enums';
+} from '../enums';
 import { Button } from '@mui/material';
 import { setCustomSet } from '../redux/matchSlice';
 import { setInvitationList, setNotiCount } from '../redux/userSlice';

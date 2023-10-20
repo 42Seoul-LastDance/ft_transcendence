@@ -8,8 +8,8 @@ import {
   setIsMatched,
   setSide,
 } from '../redux/matchSlice';
-import { GameJoinMode, GameMode, HandShakeJson } from '../Enums';
-import { useGameSocket } from '../context/gameSocketContext';
+import { GameJoinMode, GameMode } from '../enums';
+import { useGameSocket } from '../contexts/gameSocketContext';
 import CircularProgress from '@mui/material/CircularProgress';
 import { Button } from '@mui/material';
 

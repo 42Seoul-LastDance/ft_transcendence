@@ -1,21 +1,10 @@
+import { RoomStatus, UserPermission, UserStatus, Emoji, PlayerSide, GameMode, InviteType } from './enums';
 import { Socket } from 'socket.io-client';
 
 export interface ChatRoomDto {
   roomName: string;
   ownerName: string;
-  status: RoomStatus; // 또는 RoomStatus 타입으로 정의
-}
-
-export enum RoomStatus {
-  PRIVATE = 'PRIVATE',
-  PUBLIC = 'PUBLIC',
-}
-
-export enum UserPermission {
-  OWNER = 0,
-  ADMIN = 1,
-  MEMBER = 2,
-  NONE = 3,
+  status: RoomStatus;
 }
 
 export interface ChatMessage {
@@ -41,10 +30,6 @@ export interface EmitResult {
   reason: string;
 }
 
-export enum TokenType {
-  Access = 0,
-  Refresh = 1,
-}
 
 export interface UserProfileProps {
   targetName: string;
@@ -53,19 +38,6 @@ export interface UserProfileProps {
 
 export interface ChattingPageProps {
   socket: Socket | undefined;
-}
-
-export enum FriendStatus {
-  FRIEND = 0,
-  LAGGING = 1,
-  REQUESTED = 2,
-  UNKNOWN = 3,
-}
-
-export enum JoinStatus {
-  NONE,
-  CHAT,
-  DM,
 }
 
 export interface Member {
@@ -84,11 +56,6 @@ export interface GetChatRoomListJSON {
   roomName: string;
   requirePassword: boolean;
 }
-export enum UserStatus {
-  ONLINE = 'online',
-  OFFLINE = 'offline',
-  GAME = 'game',
-}
 
 export interface FriendListJson {
   userName: string;
@@ -100,8 +67,33 @@ export interface UserInfoJson {
   userName: string;
   slackId: string;
 }
-
-export enum InviteType {
-  CHAT = 0,
-  GAME = 1,
-}
+export interface SendEmojiJson {
+	type: Emoji;
+  }
+  
+  export interface HandShakeJson {
+	side: PlayerSide;
+  }
+  
+  export interface UserPannelProps {
+	screenSide: PlayerSide;
+  }
+  
+  export interface InviteGameJson {
+	gameMode: GameMode;
+	friendName: string | null;
+  }
+  
+  export interface AgreeInviteJson {
+	friendName: string | null;
+  }
+  
+  export interface GetInvitationListJson {
+	hostName: string;
+	hostSlackId: string;
+	inviteType: InviteType;
+	chatRoomName: string;
+	chatRoomType: RoomStatus;
+	gameMode: GameMode;
+  }
+  

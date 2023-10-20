@@ -2,28 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import * as React from 'react';
-import sendRequest from '../api';
 import { useRouter } from 'next/navigation';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import Button from '@mui/material/Button';
-import Switch from '@mui/material/Switch';
-import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
-import Avatar from '@mui/material/Avatar';
-import store, { RootState } from '../redux/store';
-import { Provider, useDispatch, useSelector } from 'react-redux';
-import { myAlert } from '../home/alert';
-import { setName, setUserImg } from '../redux/userSlice';
-import { styled } from '@mui/material/styles';
-import { maxUniqueNameLength } from '../globals';
-import { isValid } from '../home/valid';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { BACK_URL } from '../globals';
-import { getCookie, removeCookie, setCookie } from '../Cookie';
+import { getCookie, removeCookie, setCookie } from '../cookie';
 import axios from 'axios';
-import { Divider } from '@mui/material';
+import { Button, Divider } from '@mui/material';
 
 const TFA = () => {
   const router = useRouter();

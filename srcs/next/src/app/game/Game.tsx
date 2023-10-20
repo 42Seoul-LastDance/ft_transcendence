@@ -5,19 +5,19 @@ import { Unity, useUnityContext } from 'react-unity-webgl';
 import { RootState } from '../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
 import { setIsMatched, setNames } from '../redux/matchSlice';
-import { useGameSocket } from '../context/gameSocketContext';
+import { useGameSocket } from '../contexts/gameSocketContext';
 import { ReactUnityEventParameter } from 'react-unity-webgl/distribution/types/react-unity-event-parameters';
 import EmojiButtons from './EmojiButtons';
 import UserPannel from './UserPannel';
 import {
   PlayerSide,
   StartGameJson,
-  SendEmojiJson,
   Emoji,
   GameJoinMode,
-} from '../Enums';
+} from '../enums';
 import { setEmoji } from '../redux/matchSlice';
 import { useRouter } from 'next/navigation';
+import { SendEmojiJson } from '../interfaces';
 
 const Game = () => {
   const { unityProvider, sendMessage, addEventListener, removeEventListener } =

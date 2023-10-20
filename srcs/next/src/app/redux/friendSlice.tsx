@@ -1,5 +1,5 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
-import { FriendListJson } from '../interface';
+import { FriendListJson } from '../interfaces';
 
 export interface FriendListType {
   friendList: FriendListJson[];

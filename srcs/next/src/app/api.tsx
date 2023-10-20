@@ -1,7 +1,6 @@
 import axios from 'axios';
-import { getCookie } from './Cookie';
+import { getCookie } from './cookie';
 import reGenerateToken from './auth';
-import { useRouter } from 'next/navigation';
 import { BACK_URL } from './globals';
 import { AxiosResponse } from 'axios';
 

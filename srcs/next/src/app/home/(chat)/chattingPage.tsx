@@ -17,9 +17,8 @@ import {
   ChatMessage,
   ChattingPageProps,
   Events,
-  JoinStatus,
   receiveMessage,
-} from '../../interface';
+} from '../../interfaces';
 import ChatSetting from './chatSetting';
 import { RootState } from '../../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
@@ -28,11 +27,10 @@ import { setChatRoom, setJoin } from '@/app/redux/userSlice';
 import { myAlert } from '../alert';
 import { useRouter } from 'next/navigation';
 import sendRequest from '@/app/api';
-import { clearSocketEvent, registerSocketEvent } from '@/app/context/socket';
+import { clearSocketEvent, registerSocketEvent } from '@/app/contexts/socket';
 import { isValid } from '../valid';
 import { maxTypeLength } from '@/app/globals';
-import TableRowsIcon from '@mui/icons-material/TableRows';
-import MenuOpenIcon from '@mui/icons-material/MenuOpen';
+import { JoinStatus } from '@/app/enums';
 
 const ChattingPage = (props: ChattingPageProps) => {
   const [inputMessage, setInputMessage] = useState('');
