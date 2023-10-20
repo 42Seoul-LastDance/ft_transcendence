@@ -7,8 +7,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setIsMatched, setNames } from '../redux/matchSlice';
 import { useGameSocket } from '../contexts/gameSocketContext';
 import { ReactUnityEventParameter } from 'react-unity-webgl/distribution/types/react-unity-event-parameters';
-import EmojiButtons from './EmojiButtons';
-import UserPannel from './UserPannel';
+import EmojiButtons from './emojiButtons';
+import UserPannel from './userPannel';
 import {
   PlayerSide,
   StartGameJson,

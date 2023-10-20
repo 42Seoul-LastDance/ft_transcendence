@@ -2,11 +2,11 @@
 
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import store, { RootState } from '../redux/store';
-import Matching from './Matching';
+import Matching from './matching';
 import GameSocketProvider, {
   useGameSocket,
 } from '../contexts/gameSocketContext';
-import Game from './Game';
+import Game from './game';
 import { GameJoinMode, InviteType } from '../enums';
 import { useEffect } from 'react';
 import {
