@@ -8,12 +8,14 @@ import UserProfile from '../(profile)/userProfile';
 import { useChatSocket } from '@/app/contexts/chatSocketContext';
 import { myAlert } from '../alert';
 import { useRouter } from 'next/navigation';
-import { GameJoinMode, GameMode, JoinStatus, UserPermission } from '@/app/enums';
-import { clearSocketEvent, registerSocketEvent } from '@/app/contexts/socket';
 import {
-  EmitResult,
-  Events,
-} from '@/app/interfaces';
+  GameJoinMode,
+  GameMode,
+  JoinStatus,
+  UserPermission,
+} from '@/app/enums';
+import { clearSocketEvent, registerSocketEvent } from '@/app/contexts/socket';
+import { EmitResult, Events } from '@/app/interfaces';
 import { setMyPermission } from '@/app/redux/roomSlice';
 import { setCustomSet } from '@/app/redux/matchSlice';
 import { setViewProfile } from '@/app/redux/viewSlice';
@@ -96,6 +98,7 @@ const ChatMenu = () => {
   };
 
   const handleGameClick = (mode: GameMode) => {
+    chatSocket?.disconnect();
     dispatch(
       setCustomSet({
         joinMode: GameJoinMode.CUSTOM_SEND,

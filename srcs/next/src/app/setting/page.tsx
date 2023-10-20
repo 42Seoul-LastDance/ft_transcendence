@@ -23,11 +23,13 @@ import { removeCookie } from '@/app/cookie';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { ButtonGroup, IconButton } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import sendRequestImage from '../imageApi';
 
 const SettingInfo = () => {
   const [require2fa, setRequire2fa] = useState<boolean>(false);
   const [inputName, setInputName] = useState<string>('');
   const [inputImg, setInputImg] = useState<string | null>(null);
+  const [newImg, setNewImg] = useState<File | null>(null);
   const userImg = useSelector((state: RootState) => state.user.userImg);
   const dispatch = useDispatch();
   const myName = useSelector((state: RootState) => state.user.userName);
@@ -49,17 +51,18 @@ const SettingInfo = () => {
   };
 
   const getUserProfileImg = async () => {
-    const response = await sendRequest(
-      'get',
-      `users/profileImg/${mySlackId}`,
-      router,
-    );
-    const imageBlob = new Blob([response.data.profileImage], {
-      type: 'image/png',
-    });
-    const imageUrl = URL.createObjectURL(imageBlob);
-    dispatch(setUserImg(imageUrl));
-    setInputImg(imageUrl);
+    //TODO 하기 내용 profile에 있는 내용으로 바꾸기
+    // const response = await sendRequest(
+    //   'get',
+    //   `users/profileImg/${mySlackId}`,
+    //   router,
+    // );
+    // const imageBlob = new Blob([response.data.profileImage], {
+    //   type: 'image/png',
+    // });
+    // const imageUrl = URL.createObjectURL(imageBlob);
+    // dispatch(setUserImg(imageUrl));
+    // setInputImg(imageUrl);
   };
 
   const checkDuplicate = async (): Promise<boolean> => {
@@ -72,18 +75,55 @@ const SettingInfo = () => {
     return false;
   };
 
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      try {
+        //TODO 이미지 파일 용량(이건 현준이한테 물어봐) 및 mimeType(jpg, jpeg, png만 받아요) 제한 필요
+        setNewImg(file);
+        const imageUrl = URL.createObjectURL(file);
+        if (imageUrl) {
+          setInputImg(imageUrl);
+        }
+      } catch (error) {
+        console.error('Error uploading image:', error);
+      }
+    }
+  };
+
   const updateUserInfo = async () => {
+    //TODO 유저네임 입력하지 않고 이미지파일만 업로드할 수 없는 상황임. 수정필요 (from juhoh)
     if (
       isValid('유저네임이', inputName, maxUniqueNameLength, dispatch) === false
     )
       return;
     if ((await checkDuplicate()) === false) return;
 
-    const response = await sendRequest('patch', '/users/update/', router, {
-      userName: inputName ? inputName : null,
-      require2fa: require2fa,
-      profileImage: inputImg,
-    });
+    const formData = new FormData();
+    if (inputName) formData.append('userName', inputName);
+    if (require2fa) formData.append('require2fa', 'true');
+    else formData.append('require2fa', 'false');
+    if (newImg) formData.append('profileImage', newImg);
+
+    if (formData.has('userName')) {
+      console.log('userName:', formData.get('userName'));
+    }
+    if (formData.has('require2fa')) {
+      console.log('require2fa:', formData.get('require2fa'));
+    }
+    if (formData.has('profileImage')) {
+      console.log('File is added to FormData:', formData.get('profileImage'));
+    }
+
+    console.log('to send request image');
+    const response = await sendRequestImage(
+      'patch',
+      '/users/update/',
+      router,
+      formData,
+    );
     if (response.status < 300) {
       getUserInfo();
       getUserProfileImg();
@@ -114,16 +154,6 @@ const SettingInfo = () => {
     whiteSpace: 'nowrap',
     width: 1,
   });
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      if (imageUrl) {
-        setInputImg(imageUrl);
-      }
-    }
-  };
 
   const logout = async () => {
     try {
@@ -182,14 +212,6 @@ const SettingInfo = () => {
           onClick={async () => await updateUserInfo()}
         >
           변경하기
-        </Button>
-        <Button
-          variant="contained"
-          onClick={() => {
-            router.push('/home');
-          }}
-        >
-          돌아가기
         </Button>
         <Button variant="contained" onClick={logout}>
           로그아웃

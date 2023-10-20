@@ -2,11 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Socket } from 'socket.io-client';
 import { setRoomList } from '../redux/roomSlice';
-import {
-	EmitResult,
-  Events,
-  GetChatRoomListJSON,
-} from '../interfaces';
+import { EmitResult, Events, GetChatRoomListJSON } from '../interfaces';
 import {
   clearSocketEvent,
   createSocket,
@@ -14,9 +10,10 @@ import {
   registerSocketEvent,
 } from './socket';
 import { useRouter } from 'next/navigation';
-import { RoomStatus } from '../enums';
-import { getToken } from '../auth';
+import { JoinStatus, RoomStatus } from '../enums';
 import { myAlert } from '../home/alert';
+import { getCookie } from '../cookie';
+import { setJoin } from '../redux/userSlice';
 
 // SocketContext 생성
 const ChatSocketContext = createContext<Socket | undefined>(undefined);
@@ -35,11 +32,11 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   // 소켓 수명 관리
   useEffect(() => {
-    const token = getToken('access_token');
-	if (!token){
-		router.push('/');
-		return;
-	}
+    const token = getCookie('access_token');
+    if (!token) {
+      router.push('/');
+      return;
+    }
     const socket = createSocket('RoomChat', token);
     socket.connect();
     setChatSocket(socket);
@@ -62,6 +59,12 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
         callback: (data: GetChatRoomListJSON[]) => dispatch(setRoomList(data)),
       },
       {
+        event: 'joinPrivateChatRoom',
+        callback: () => {
+          dispatch(setJoin(JoinStatus.CHAT));
+        },
+      },
+      {
         event: 'connectSuccess',
         callback: () => {
           console.log('[Connect] chatSocket info', chatSocket);
@@ -76,8 +79,8 @@ const ChatSocketProvider = ({ children }: { children: React.ReactNode }) => {
           if (data.result === false) {
             myAlert('error', data.reason, dispatch);
           }
-        } 
-      }
+        },
+      },
     ];
 
     registerSocketEvent(chatSocket!, e);

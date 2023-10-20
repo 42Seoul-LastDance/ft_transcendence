@@ -1,21 +1,12 @@
 // ChatSetting.js
 import React, { useState, MouseEvent, useEffect } from 'react';
 import List from '@mui/material/List';
-import {
-  Button,
-  ListSubheader,
-  Menu,
-  TextField,
-} from '@mui/material';
+import { Button, ListSubheader, Menu, Switch, TextField } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import CommonListItem from './CommonListItem';
 import ChatMenu from './chatMenu';
-import {
-  Events,
-  Member,
-  UserInfoJson,
-} from '@/app/interfaces';
+import { Events, Member, UserInfoJson } from '@/app/interfaces';
 import { useChatSocket } from '@/app/contexts/chatSocketContext';
 import { clearSocketEvent, registerSocketEvent } from '@/app/contexts/socket';
 import {
@@ -33,6 +24,7 @@ import { myAlert } from '../alert';
 import router from 'next/router';
 import sendRequest from '@/app/api';
 import { GameMode, InviteType, RoomStatus, UserPermission } from '@/app/enums';
+import error from 'next/error';
 
 const ChatSetting = () => {
   const dispatch = useDispatch();
@@ -42,6 +34,7 @@ const ChatSetting = () => {
   const [password, setPassword] = useState<string>('');
   const [inviteName, setInviteName] = useState<string>('');
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
+  const [isInputEnabled, setInputEnabled] = useState(true);
   const myPermission = useSelector(
     (state: RootState) => state.room.myPermission,
   );
@@ -119,16 +112,29 @@ const ChatSetting = () => {
       isValid('유저네임이', inviteName, maxUniqueNameLength, dispatch) === false
     )
       return;
-    const exist = await checkExistUser();
-    console.log('유저 있었나요', exist);
-    memberList[0].slackId
-    memberList.map((member, index)=> {
-      console.log(member.slackId, member.userName);
-    })
-
+    // const exist = await checkExistUser();
+    // if (!exist) {
+    //   myAlert('error', '존재 유저입니다.', dispatch);
+    //   return;
+    // }
+    memberList.map((member, index) => {
+      if (member.slackId === inviteName) {
+        myAlert('error', '이미 채팅방에 존재하는 유저입니다.', dispatch);
+        return;
+      }
+    });
     console.log('memberlist:', memberList);
-    if (!exist) return;
-    console.log('초대 시 데이터 확인: ', chatRoom);
+    console.log(
+      '초대 시 데이터 확인: ',
+      chatRoom,
+      chatRoom?.roomName,
+      inviteName,
+    );
+    chatSocket?.emit('invitation', {
+      roomName: chatRoom?.roomName,
+      roomStatus: RoomStatus.PRIVATE,
+      slackId: inviteName,
+    });
     superSocket?.emit('sendInvitation', {
       slackId: inviteName,
       inviteType: InviteType.CHAT,
@@ -140,25 +146,36 @@ const ChatSetting = () => {
     //TODO 입력한 input창 clear해주세요 (juhoh)
   };
 
-  const handlePassword = (event: React.ChangeEvent<HTMLInputElement>) => {
-    isValid('비밀번호가', event.target.value, maxPasswordLength, dispatch);
-    setPassword(event.target.value);
-  };
-
-  const submitPassword = () => {
-    chatSocket?.emit('setRoomPassword', {
-      roomName: chatRoom?.roomName,
-      password: password,
-    });
-    //TODO 입력한 input창 clear해주세요 (juhoh)
-  };
-
   const unBanUser = (targetSlackId: string) => {
     chatSocket?.emit('unbanUser', {
       roomName: chatRoom?.roomName,
       roomStatus: RoomStatus.PUBLIC,
       targetSlackId: targetSlackId,
     });
+  };
+
+  const handlePassword = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(event.target.value);
+  };
+
+  const submitPassword = () => {
+    if (isValid('비밀번호가', password, maxPasswordLength, dispatch) === false)
+      return;
+    chatSocket?.emit('setRoomPassword', {
+      roomName: chatRoom?.roomName,
+      password: password,
+    });
+    setPassword('');
+  };
+
+  const handleSwitchChange = () => {
+    if (isInputEnabled) {
+      setPassword('');
+      chatSocket?.emit('unsetRoomPassword', {
+        roomName: chatRoom?.roomName,
+      });
+    }
+    setInputEnabled((prev) => !prev);
   };
 
   return (
@@ -214,29 +231,41 @@ const ChatSetting = () => {
       {myPermission === UserPermission.OWNER ? (
         <>
           {chatRoom?.status === RoomStatus.PUBLIC ? (
-          <div
-            style={{ display: 'flex', alignItems: 'center', padding: '8px' }}
-          >
-            <TextField
-              fullWidth
-              id="setPassword"
-              variant="outlined"
-              label="비밀번호 세팅하기"
-              value={password}
-              onChange={handlePassword}
-            />
-            <Button
-              id="setPasswordBtn"
-              variant="contained"
-              color="primary"
-              size="large"
-              onClick={submitPassword}
-              style={{ marginLeft: '8px' }}
-            >
-              send
-            </Button>
-          </div>
-          ): (
+            <>
+              <Switch
+                onChange={handleSwitchChange}
+                checked={isInputEnabled} // 스위치의 상태에 따라 체크 여부 변경
+              />
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '8px',
+                }}
+              >
+                <TextField
+                  fullWidth
+                  id="setPassword"
+                  variant="outlined"
+                  label="비밀번호 세팅하기"
+                  value={password}
+                  onChange={handlePassword}
+                  disabled={!isInputEnabled}
+                />
+                <Button
+                  id="setPasswordBtn"
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  onClick={submitPassword}
+                  style={{ marginLeft: '8px' }}
+                  disabled={!isInputEnabled}
+                >
+                  send
+                </Button>
+              </div>
+            </>
+          ) : (
             <div
               style={{ display: 'flex', alignItems: 'center', padding: '8px' }}
             >

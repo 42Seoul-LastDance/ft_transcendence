@@ -23,10 +23,7 @@ const Matching = () => {
   const gameSocket = useGameSocket();
 
   useEffect(() => {
-    if (
-      customSet.joinMode === GameJoinMode.CUSTOM_RECV ||
-      customSet.joinMode === GameJoinMode.CUSTOM_SEND
-    )
+    if (customSet.joinMode === GameJoinMode.CUSTOM_SEND)
       dispatch(setIsMatchInProgress({ isMatchInProgress: true }));
   }, []);
 
@@ -61,8 +58,7 @@ const Matching = () => {
             {/* 연습게임 넣을 예정 */}
             <CircularProgress />
           </div>
-          {customSet.joinMode === GameJoinMode.CUSTOM_RECV ||
-          customSet.joinMode === GameJoinMode.CUSTOM_SEND ? (
+          {customSet.joinMode === GameJoinMode.CUSTOM_SEND ? (
             <>
               <h1> Waiting... </h1>
               <Button

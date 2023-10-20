@@ -1,4 +1,5 @@
 'use client';
+import axios, { AxiosHeaderValue } from 'axios';
 import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -11,8 +12,10 @@ import { RootState } from '@/app/redux/store';
 import { setViewProfile } from '@/app/redux/viewSlice';
 import { useSuperSocket } from '@/app/contexts/superSocketContext';
 import { CircularProgress, Divider } from '@mui/material';
-import { setJoin } from '@/app/redux/userSlice';
+import { setJoin, setUserImg } from '@/app/redux/userSlice';
 import { FriendStatus, JoinStatus } from '@/app/enums';
+import Avatar from '@mui/material/Avatar';
+import sendRequestImage from '@/app/imageApi';
 
 const style = {
   position: 'absolute' as 'absolute',
@@ -35,14 +38,19 @@ const UserProfile = () => {
     (state: RootState) => state.view.targetSlackId,
   );
   const [close, setClose] = useState<boolean>(false);
+  //* users profile
   const [level, setLevel] = useState<number>(0);
   const [exp, setExp] = useState<number>(0);
   const [targetName, setTargetName] = useState<string>('');
   const [slackId, setSlackId] = useState<string>('');
+  //* users profileImg
+  const [mimeType, setMimeType] = useState<AxiosHeaderValue | undefined>('');
+  //* game ranking
   const [normalWin, setNormalWin] = useState<number>(0);
   const [normalLose, setNormalLose] = useState<number>(0);
   const [hardWin, setHardWin] = useState<number>(0);
   const [hardLose, setHardLose] = useState<number>(0);
+  //* game friend
   const [fNormalWin, setfNormalWin] = useState<number>(0);
   const [fNormalLose, setfNormalLose] = useState<number>(0);
   const [fHardWin, setfHardWin] = useState<number>(0);
@@ -51,6 +59,7 @@ const UserProfile = () => {
   const [fRightLose, setfRightLose] = useState<number>(0);
   const [fLeftWin, setfLeftWin] = useState<number>(0);
   const [fLeftLose, setfLeftLose] = useState<number>(0);
+  //* ////////////////////
   const [friendStatus, setFriendStatus] = useState<FriendStatus>(
     FriendStatus.UNKNOWN,
   );
@@ -59,16 +68,14 @@ const UserProfile = () => {
   const [isBlocked, setIsBlocked] = useState<boolean>(true);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const join = useSelector((state: RootState) => state.user.join);
+  const userImg = useSelector((state: RootState) => state.user.userImg);
 
   const dispatch = useDispatch();
 
   const requestIsFriend = async () => {
-	const friendResp = await sendRequest(
-		'post',
-		`/friends/isFriend/`,
-		router,
-		{friendSlackId: targetSlackId}
-	  );
+    const friendResp = await sendRequest('post', `/friends/isFriend/`, router, {
+      friendSlackId: targetSlackId,
+    });
     setFriendStatus(friendResp.data['status']);
     if (
       friendResp.data['status'] === FriendStatus.LAGGING ||
@@ -118,6 +125,15 @@ const UserProfile = () => {
     setLevel(response.data['level']);
     setExp(response.data['exp']);
     setSlackId(response.data['slackId']);
+
+    const responseImg = await sendRequestImage(
+      'get',
+      `/users/profileImg/${targetSlackId}`,
+      router,
+    );
+    setMimeType(responseImg.headers['Content-Type']);
+    const image = Buffer.from(responseImg.data, 'binary').toString('base64');
+    dispatch(setUserImg(`data:${mimeType};base64,${image}`));
 
     const gameData = await sendRequest(
       'get',
@@ -177,19 +193,6 @@ const UserProfile = () => {
     requestIsBlocked();
   };
 
-  // const logout = async () => {
-  //   const response = await sendRequest('post', `/auth/logout`, router);
-  //   if (response.status === 201) {
-  //     superSocket?.disconnect();
-  //     chatSocket?.disconnect();
-  //     removeCookie('access_token');
-  //     removeCookie('refresh_token');
-  //     setTimeout(() => {
-  //       router.push('/');
-  //     }, 1000);
-  //   }
-  // };
-
   return (
     <>
       <Modal
@@ -207,6 +210,7 @@ const UserProfile = () => {
               color="CadetBlue"
             >
               {targetName}'s Profile
+              <Avatar src={userImg || undefined} alt={`${slackId}`} />
             </Typography>
             <Divider />
             <Typography
@@ -221,26 +225,25 @@ const UserProfile = () => {
               <br />
               Exp: {exp} ({((exp / ((level + 1) * 500)) * 100).toFixed(2)}%)
               <br />
-			  <br />
+              <br />
               <Divider />
-			  <br />
-			Total Ranking Game : {normalWin + normalLose + hardWin + hardLose}
-            <br />
-            {normalWin + normalLose > 0 && (
-              <span>
-                Normal Ranking Game Winning Rate:{' '}
-                {((normalWin / (normalWin + normalLose)) * 100).toFixed(2)}%
-              </span>
-            )}
-            <br />
-            {hardWin + hardLose > 0 && (
-              <span>
-                Hard Ranking Game Winning Rate:{' '}
-                {((hardWin / (hardWin + hardLose)) * 100).toFixed(2)}%
-              </span>
-            )}
-            <br />
-
+              <br />
+              Total Ranking Game : {normalWin + normalLose + hardWin + hardLose}
+              <br />
+              {normalWin + normalLose > 0 && (
+                <span>
+                  Normal Ranking Game Winning Rate:{' '}
+                  {((normalWin / (normalWin + normalLose)) * 100).toFixed(2)}%
+                </span>
+              )}
+              <br />
+              {hardWin + hardLose > 0 && (
+                <span>
+                  Hard Ranking Game Winning Rate:{' '}
+                  {((hardWin / (hardWin + hardLose)) * 100).toFixed(2)}%
+                </span>
+              )}
+              <br />
             </Typography>
             <Typography
               id="modal-modal-description"

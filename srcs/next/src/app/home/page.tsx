@@ -2,9 +2,7 @@
 
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import ChattingTabs from './(chat)/chattingTabs';
-import {
-  useChatSocket,
-} from '../contexts/chatSocketContext';
+import { useChatSocket } from '../contexts/chatSocketContext';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { setIsMatched } from '../redux/matchSlice';
@@ -24,6 +22,8 @@ const HomeContent = () => {
 
   useEffect(() => {
     if (gameSocket?.connected) gameSocket.disconnect();
+    if (!chatSocket?.connected) chatSocket?.connect();
+
     dispatch(setIsMatched({ isMatched: false }));
     dispatch(setJoin(JoinStatus.NONE));
     chatSocket?.emit('getChatRoomList', {
@@ -38,13 +38,17 @@ const HomeContent = () => {
       {render ? (
         <>
           <br />
-            <Grid container justifyContent="center">
-              <Button variant="contained" color="secondary" onClick={()=>{
-				router.push('/game')
-			  }}>
-                Start Game !
-              </Button>
-            </Grid>
+          <Grid container justifyContent="center">
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => {
+                router.push('/game');
+              }}
+            >
+              Start Game !
+            </Button>
+          </Grid>
           <br />
           <div>
             <ChattingTabs />

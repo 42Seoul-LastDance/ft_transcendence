@@ -90,8 +90,10 @@ export class UserController {
         @Body('profileImage') @UploadedFile() profileImage: Express.Multer.File | undefined,
         @Body('userName') userName: string | undefined,
         @Body('require2fa') require2fa: boolean | undefined,
+        @Body() body,
     ) {
         try {
+            console.log(body);
             console.log('update', userName, require2fa, profileImage?.filename);
             await this.userService.updateUserInfo(req.user.sub, userName, require2fa, profileImage);
         } catch (error) {
@@ -190,7 +192,7 @@ export class UserController {
             // console.log(`checking name : ${body.name}`);
             const user = await this.userService.getUserByUserName(name);
             if (user) {
-                console.log('[ERROR]: checkIfExists');
+                console.log('[ERROR]: checkUniqueName');
                 return res.status(400).send({ reason: 'checkUniqueName failed: already in DB' });
             }
         } catch (error) {

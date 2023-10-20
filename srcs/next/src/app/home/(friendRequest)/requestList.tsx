@@ -49,7 +49,7 @@ const RequestList: React.FC = () => {
       `/friends/saYes/${friendSlackId}`,
       router,
     );
-    if (requestUnblock.status === 200) {
+    if (requestUnblock.status < 300) {
       handleGetFriendInvitation();
       superSocket?.emit('acceptFriend', {
         userSlackId: mySlackId,
@@ -71,15 +71,12 @@ const RequestList: React.FC = () => {
   };
 
   const checkAlreadyFriend = async () => {
-    const response = await sendRequest(
-      'post',
-      `/friends/isFriend/`,
-      router,
-	  {friendSlackId: friendRequestSlackId}
-    );
+    const response = await sendRequest('post', `/friends/isFriend/`, router, {
+      friendSlackId: friendRequestSlackId,
+    });
     if (
-      response.status === 200 &&
-      response.data.status === FriendStatus.FRIEND
+      response.status < 300 &&
+      response.data['status'] === FriendStatus.FRIEND
     ) {
       myAlert('error', '이미 친구입니다.', dispatch);
       return true;
@@ -103,7 +100,7 @@ const RequestList: React.FC = () => {
     const response = await sendRequest('put', `/friends/request/`, router, {
       friendSlackId: friendRequestSlackId,
     });
-    if (response.status === 200) {
+    if (response.status < 300) {
       myAlert('success', '친구 요청을 보냈습니다.', dispatch);
       handleGetFriendInvitation();
     }

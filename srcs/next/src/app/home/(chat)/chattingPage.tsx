@@ -12,6 +12,7 @@ import {
   IconButton,
   Drawer,
   Paper,
+  Typography,
 } from '@mui/material';
 import {
   ChatMessage,
@@ -62,10 +63,11 @@ const ChattingPage = (props: ChattingPageProps) => {
       {
         event: 'sendMessage',
         once: true,
-        callback: (data: ChatMessage) => {
-          if (join === JoinStatus.CHAT)
+        callback: (data: any) => {
+          console.log('sendMEssage 받음.');
+          if (join === JoinStatus.CHAT) {
             props.socket?.emit('receiveMessage', data);
-          else if (
+          } else if (
             join === JoinStatus.DM &&
             (data.userName === friendName || data.userName === myName)
           )
@@ -76,13 +78,14 @@ const ChattingPage = (props: ChattingPageProps) => {
         event: 'receiveMessage',
         once: true,
         callback: (data: receiveMessage) => {
-          if (data.canReceive === false) return;
-
+          console.log('receiveMessage 받음.');
+          if (join === JoinStatus.CHAT && data.canReceive === false) return;
           let newMsg: ChatMessage = {
             userName: data.userName,
             content: data.content,
           };
           setChatMessages([...chatMessages, newMsg]);
+          console.log('setChatMessages 함', chatMessages);
         },
       },
       {
@@ -108,7 +111,7 @@ const ChattingPage = (props: ChattingPageProps) => {
     registerSocketEvent(props.socket!, e);
     return () => clearSocketEvent(props.socket!, e);
   }, [join, chatMessages, target]);
-
+  //
   useEffect(() => {
     if (join === JoinStatus.DM) prevDmMessages();
     else if (join === JoinStatus.CHAT) clearChatMessages();
@@ -117,7 +120,7 @@ const ChattingPage = (props: ChattingPageProps) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [inputMessage] );
+  }, [inputMessage]);
 
   // 기존 DM메시지 가져오기
   const prevDmMessages = async () => {
@@ -136,7 +139,13 @@ const ChattingPage = (props: ChattingPageProps) => {
   // 메세지 보내기
   const SendMessage = () => {
     if (!inputMessage) return;
-
+    console.log(
+      'sendMessage  event 보냄',
+      target,
+      myName,
+      inputMessage,
+      chatRoom?.status,
+    );
     props.socket?.emit('sendMessage', {
       roomName: target,
       userName: myName!,
@@ -203,19 +212,30 @@ const ChattingPage = (props: ChattingPageProps) => {
     >
       {join === JoinStatus.CHAT && (
         <>
-            <IconButton
-              color="info"
-              aria-label="settings"
-              onMouseOver={handleMouseOver}
-              onClick={toggleSettings}
-            > 
-              <div style={settingsBarStyle}></div> 
-            </IconButton>
+          <IconButton
+            color="info"
+            aria-label="settings"
+            onMouseOver={handleMouseOver}
+            onClick={toggleSettings}
+          >
+            <div style={settingsBarStyle}></div>
+          </IconButton>
           <Drawer anchor="right" open={isMouseOver} onClose={toggleSettings}>
             <ChatSetting />
           </Drawer>
         </>
       )}
+      <IconButton
+        color="primary"
+        aria-label="quit"
+        sx={{
+          top: '1px',
+          left: '12px',
+        }}
+        onClick={handleExitRoom}
+      >
+        <DirectionsRunIcon />
+      </IconButton>
       <Card
         className="mt-4"
         style={{
@@ -223,17 +243,28 @@ const ChattingPage = (props: ChattingPageProps) => {
           width: '35rem',
           margin: 'auto',
           alignItems: 'center',
+          padding: '20px',
         }}
       >
+        {/* <ListItemText
+          disableTypography
+          primary={
+            </Typography>
+          }
+        ></ListItemText> */}
+        <Typography variant="body2" style={{ color: '#111111' }}>
+          {target}
+        </Typography>
         <CardContent
-          style={{ overflowY: 'auto', height: 'calc(100% - 105px)' }}
+          style={{
+            overflowY: 'auto',
+            height: 'calc(100% - 105px)',
+          }}
         >
-          
           <List
             ref={listRef as React.RefObject<HTMLUListElement>}
-            style={{ maxHeight: '550px', overflowY: 'auto' }}
+            style={{ maxHeight: '560px', overflowY: 'auto' }}
           >
-            <ListItemText>{target}</ListItemText>
             {chatMessages?.map((msg, index) =>
               msg.userName === 'server' ? (
                 <ListItem key={index}>
@@ -269,7 +300,14 @@ const ChattingPage = (props: ChattingPageProps) => {
             )}
           </List>
         </CardContent>
-        <div style={{ display: 'flex', alignItems: 'center', padding: '8px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0px',
+            bottom: '30px',
+          }}
+        >
           <TextField
             fullWidth
             id="msgText"
@@ -290,14 +328,6 @@ const ChattingPage = (props: ChattingPageProps) => {
           >
             Send
           </Button>
-          <IconButton
-              color="primary"
-              aria-label="quit"
-              sx={{ position: 'static', top: '0px', left: '10%' }}
-              onClick={handleExitRoom}
-            >
-              <DirectionsRunIcon />
-        </IconButton>
         </div>
       </Card>
     </Container>

@@ -7,14 +7,15 @@ import TextField from '@mui/material/TextField';
 import { BACK_URL } from '../globals';
 import { getCookie, removeCookie, setCookie } from '../cookie';
 import axios from 'axios';
-import { Button, Divider } from '@mui/material';
+import { Button, CircularProgress, Divider } from '@mui/material';
 
 const TFA = () => {
   const router = useRouter();
   const [code, setCode] = useState<string>('');
+  const [isRendered, setIsRendered] = useState<boolean>(false);
 
   const requestTFA = async () => {
-	if (typeof window === 'undefined') return ;
+    if (typeof window === 'undefined') return;
 
     const tfaToken = getCookie('2fa_token');
 
@@ -34,8 +35,8 @@ const TFA = () => {
         },
       );
       removeCookie('2fa_token');
-		localStorage.setItem('access_token', response.data['access_token']);	
-		localStorage.setItem('refresh_token', response.data['refresh_token']);	
+      setCookie('access_token', response.data['access_token']);
+      setCookie('refresh_token', response.data['refresh_token']);
       router.push('/home');
     } catch (error: any) {
       if (error.status === 401) alert('인증 코드가 틀립니다');
@@ -53,32 +54,45 @@ const TFA = () => {
 
   // 자동 2fa
   useEffect(() => {
-    if (localStorage.getItem('access_token')) router.push('/home');
+    if (getCookie('access_token')) router.push('/home');
+
+    setTimeout(() => {
+      setIsRendered(true);
+    }, 1000);
   }, []);
 
   return (
     <>
-      <h1> 2단계 인증 </h1>
-      <Divider />
-      <h3> 42 Email로 발송된 인증 코드를 입력해주세요 </h3>
-      <TextField
-        id="friendRequest"
-        variant="outlined"
-        label="인증 코드를 입력하세요"
-        value={code}
-        onChange={handleInputValue}
-        onKeyPress={handleKeyDown}
-      />
-      <Button
-        id="sendBtn"
-        variant="contained"
-        color="primary"
-        size="large"
-        onClick={requestTFA}
-        style={{ marginLeft: '8px' }}
-      >
-        send
-      </Button>
+      {isRendered ? (
+        <>
+          <h1> 2단계 인증 </h1>
+          <Divider />
+          <h3> 42 Email로 발송된 인증 코드를 입력해주세요 </h3>
+          <TextField
+            id="friendRequest"
+            variant="outlined"
+            label="인증 코드를 입력하세요"
+            value={code}
+            onChange={handleInputValue}
+            onKeyPress={handleKeyDown}
+          />
+          <Button
+            id="sendBtn"
+            variant="contained"
+            color="primary"
+            size="large"
+            onClick={requestTFA}
+            style={{ marginLeft: '8px' }}
+          >
+            send
+          </Button>
+        </>
+      ) : (
+        <>
+          <h2> 이미 로그인한 이력이 있는지 확인하는 중 ... 🙃 </h2>
+          <CircularProgress />
+        </>
+      )}
     </>
   );
 };

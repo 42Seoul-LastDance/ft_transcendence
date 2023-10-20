@@ -17,7 +17,7 @@ import {
   setSide,
 } from '../redux/matchSlice';
 import { myAlert } from '../home/alert';
-import { getToken } from '../auth';
+import { getCookie } from '../cookie';
 
 // SocketContext 생성
 const GameSocketContext = createContext<Socket | undefined>(undefined);
@@ -36,7 +36,7 @@ const GameSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const cookie = getToken('access_token');
+    const cookie = getCookie('access_token');
     if (cookie === undefined) {
       console.log('access token is not exist -> cookie is empty');
       router.push('/');

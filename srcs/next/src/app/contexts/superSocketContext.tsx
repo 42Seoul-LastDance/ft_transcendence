@@ -8,9 +8,16 @@ import {
 } from './socket';
 import { useRouter } from 'next/navigation';
 import { Events, UserInfoJson } from '../interfaces';
-import { setName, setSlackId } from '../redux/userSlice';
+import {
+  setInvitationList,
+  setJoin,
+  setName,
+  setNotiCount,
+  setSlackId,
+} from '../redux/userSlice';
 import { useDispatch } from 'react-redux';
-import { getToken } from '../auth';
+import { getCookie } from '../cookie';
+import { JoinStatus } from '../enums';
 
 // SocketContext 생성
 const SuperSocketContext = createContext<Socket | undefined>(undefined);
@@ -22,7 +29,7 @@ export const useSuperSocket = () => {
 };
 
 // SocketProvider 컴포넌트 정의
-const superSocket = createSocket('DM', getToken('access_token'));
+const superSocket = createSocket('DM', getCookie('access_token'));
 
 const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
   // 소켓 상태 관리
@@ -50,6 +57,16 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
           dispatch(setName(data.userName));
           dispatch(setSlackId(data.slackId));
         },
+      },
+      {
+        event: 'invitationSize',
+        callback: (data) => {
+          dispatch(setNotiCount(data));
+        },
+      },
+      {
+        event: 'getInvitationList',
+        callback: (data) => dispatch(setInvitationList(data)),
       },
     ];
     superSocket.connect();

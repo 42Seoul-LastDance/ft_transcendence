@@ -9,14 +9,12 @@ import GameSocketProvider, {
 import Game from './game';
 import { GameJoinMode, InviteType } from '../enums';
 import { useEffect } from 'react';
-import {
-  setIsMatchInProgress,
-  setIsMatched,
-} from '../redux/matchSlice';
+import { setIsMatchInProgress, setIsMatched } from '../redux/matchSlice';
 import SuperSocketProvider, {
   useSuperSocket,
 } from '../contexts/superSocketContext';
 import AutoAlert, { myAlert } from '../home/alert';
+import { useChatSocket } from '../contexts/chatSocketContext';
 
 const GameHomeContent = () => {
   const isMatched = useSelector((state: RootState) => state.match.isMatched);

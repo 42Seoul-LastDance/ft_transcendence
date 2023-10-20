@@ -10,12 +10,11 @@ const axiosInstance = axios.create({
   timeout: 10000, // 요청 제한 시간(ms)을 설정하세요.
 });
 
-const sendRequest = async (
+const sendRequestImage = async (
   method: string,
   url: string,
   router: any,
   data = {},
-  // isImage: boolean = false, //* 이미지용
 ): Promise<AxiosResponse> => {
   let token = getCookie('access_token');
   if (!token) {
@@ -23,17 +22,13 @@ const sendRequest = async (
     return new Promise(() => {});
   }
   try {
-    // 요청 헤더에 토큰 추가
     axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-    // Axios 요청 보내기
     const response = await axiosInstance({
       method,
       url,
+      responseType: 'arraybuffer',
       data,
     });
-
-    console.log(`axios 요청 성공! ${url} : `, response);
     return response;
   } catch (error: any) {
     switch (error.response?.status) {
@@ -44,12 +39,13 @@ const sendRequest = async (
         await reGenerateToken(router);
         axiosInstance.defaults.headers.common[
           'Authorization'
-        ] = `Bearer ${getCookie('access_token')}`;
+        ] = `Bearer ${token}`;
         let secondResponse;
         try {
           secondResponse = await axiosInstance({
             method,
             url,
+            responseType: 'arraybuffer',
             data,
           });
           return secondResponse;
@@ -76,4 +72,4 @@ const sendRequest = async (
   }
 };
 
-export default sendRequest;
+export default sendRequestImage;
