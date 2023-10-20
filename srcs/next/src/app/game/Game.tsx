@@ -11,13 +11,12 @@ import EmojiButtons from './emojiButtons';
 import UserPannel from './userPannel';
 import {
   PlayerSide,
-  StartGameJson,
   Emoji,
   GameJoinMode,
 } from '../enums';
 import { setEmoji } from '../redux/matchSlice';
 import { useRouter } from 'next/navigation';
-import { SendEmojiJson } from '../interfaces';
+import { SendEmojiJson, StartGameJson } from '../interfaces';
 
 const Game = () => {
   const { unityProvider, sendMessage, addEventListener, removeEventListener } =

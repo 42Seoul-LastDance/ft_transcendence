@@ -1,5 +1,6 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
-import { PlayerSide, GameJoinMode, GameMode, CustomGameSet } from '../enums';
+import { PlayerSide, GameJoinMode, GameMode } from '../enums';
+import { CustomGameSet } from '../interfaces';
 
 export interface MatchState {
   customSet: CustomGameSet;

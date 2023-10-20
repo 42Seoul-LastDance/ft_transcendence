@@ -1,4 +1,4 @@
-import { RoomStatus, UserPermission, UserStatus, Emoji, PlayerSide, GameMode, InviteType } from './enums';
+import { RoomStatus, UserPermission, UserStatus, Emoji, PlayerSide, GameMode, InviteType, GameJoinMode } from './enums';
 import { Socket } from 'socket.io-client';
 
 export interface ChatRoomDto {
@@ -97,3 +97,22 @@ export interface SendEmojiJson {
 	gameMode: GameMode;
   }
   
+  export interface CustomGameSet {
+	joinMode: GameJoinMode;
+	gameMode: GameMode;
+	opponentName: string | undefined;
+	opponentSlackId: string | undefined;
+  }
+  
+  export interface StartGameJson {
+	side: PlayerSide;
+	ballDirX: number;
+	ballDirY: number;
+	ballDirZ: number;
+	leftScore: number;
+	rightScore: number;
+	ballSpeed: number;
+	isFirst: boolean;
+	leftName: string;
+	rightName: string;
+  }

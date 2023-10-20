@@ -68,23 +68,3 @@ export const enum InviteType {
 	CHAT = 0,
 	GAME = 1,
 }
-
-export interface CustomGameSet {
-  joinMode: GameJoinMode;
-  gameMode: GameMode;
-  opponentName: string | undefined;
-  opponentSlackId: string | undefined;
-}
-
-export interface StartGameJson {
-  side: PlayerSide;
-  ballDirX: number;
-  ballDirY: number;
-  ballDirZ: number;
-  leftScore: number;
-  rightScore: number;
-  ballSpeed: number;
-  isFirst: boolean;
-  leftName: string;
-  rightName: string;
-}
