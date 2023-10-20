@@ -134,6 +134,9 @@ export class UserService {
         //userRepository 에서 payload.sub (userid) 에 해당하는 refresh token 꺼내서 같은 지 비교.
         try {
             const storedToken = (await this.findUserById(payload.sub)).refreshToken;
+            this.logger.debug('Checking RefreshToken to Verify');
+            this.logger.debug(`storedToken : ${storedToken}`);
+            this.logger.debug(`InputToken : ${token}`);
             if (!(storedToken && token === storedToken)) {
                 throw new UnauthorizedException();
             }
@@ -235,7 +238,7 @@ export class UserService {
             const imagePath = '/usr/app/srcs/profile/' + profileImgTarget;
             const image = readFileSync(imagePath); // 이미지 파일을 읽어옴
             if (!image) {
-                throw new InternalServerErrorException(`could not read ${imagePath}`);
+                throw new InternalServerErrorException(`img file not found ${imagePath}`);
             }
             const mimeType = 'image/' + extname(profileImgTarget).substring(1);
             return { image, mimeType };

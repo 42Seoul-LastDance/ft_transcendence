@@ -123,17 +123,6 @@ export class SocketUsersService {
         return guestSocket;
     }
 
-    isInvited(socketId: string, roomName: string): Boolean {
-        //user가 해당 roomName privateRoom에 초대받았는지 반환
-        const userId = this.getUserIdByChatSocketId(socketId);
-        const invitations: Map<number, Invitation> = this.inviteList.get(userId);
-
-        for (const hostId of invitations.keys()) {
-            if (invitations.get(hostId).chatRoomName === roomName) return true;
-        }
-        return false;
-    }
-
     async agreeInvite(socketId: string, hostSlackId: string) {
         const hostId: number = (await this.userService.getUserBySlackId(hostSlackId)).id;
         const guestId: number = this.dmSocketList.get(socketId);

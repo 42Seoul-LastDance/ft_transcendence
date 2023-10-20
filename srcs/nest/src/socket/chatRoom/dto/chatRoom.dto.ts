@@ -28,4 +28,7 @@ export class ChatRoomDto {
 
     @IsArray()
     muteList: Set<number> = new Set();
+
+    @IsArray()
+    inviteList: Set<number> = new Set();
 }

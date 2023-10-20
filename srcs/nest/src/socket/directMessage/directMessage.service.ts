@@ -28,7 +28,8 @@ export class DirectMessageService {
             result: false,
             reason: reason,
         };
-        socket.emit(event, response);
+        this.logger.error(event, '에러 발생 (DM 소켓)');
+        socket.emit('eventFailure', response);
     }
 
     async addNewUser(socket: Socket, userId: number) {
@@ -94,7 +95,7 @@ export class DirectMessageService {
 
         // !test
         if (!userId) {
-            this.emitFailReason(socket, 'sendMessage', 'no userId');
+            this.emitFailReason(socket, 'sendMessage', '문제가 발생했습니다.');
             return;
         }
 
@@ -137,7 +138,7 @@ export class DirectMessageService {
     async getFriendStateList(socket: Socket, userSlackId: string): Promise<[string, string, UserStatus][]> {
         if (userSlackId === undefined || userSlackId === null) {
             this.logger.error('userSlackId undefined');
-            this.emitFailReason(socket, 'getFriendStateList', 'userSlackId error');
+            this.emitFailReason(socket, 'getFriendStateList', 'SlackId에 오류가 있습니다.');
             return;
         }
         const result: { userName: string; slackId: string; userStatus: UserStatus }[] =

@@ -91,8 +91,14 @@ export class UserController {
         @Body('userName') userName: string | undefined,
         @Body('require2fa') require2fa: boolean | undefined,
     ) {
-        console.log('update', userName, require2fa, profileImage?.filename);
-        await this.userService.updateUserInfo(req.user.sub, userName, require2fa, profileImage);
+        try {
+            console.log('update', userName, require2fa, profileImage?.filename);
+            await this.userService.updateUserInfo(req.user.sub, userName, require2fa, profileImage);
+        } catch (error) {
+            //ERROR HANDLE
+            console.log('[ERROR]: updateUserInfo', error);
+            return res.status(400).send({ reason: 'updateUserInfo failed' });
+        }
     }
 
     // @Patch('/update/:userName')
@@ -124,34 +130,41 @@ export class UserController {
             const userSetting = await this.userService.getUserSetInfo(req.user.sub);
             return res.status(200).json(userSetting);
         } catch (error) {
-            //TODO front에 어떻게 보내줘야 하지? (프론트와 함께 고민 필요)
-            return res.status(200).json(['sth happened from back... sorry']);
+            //ERROR HANDLE
+            console.log('[ERROR]: getUserSetInfo', error);
+            return res.status(400).send({ reason: 'getUserSetInfo failed' });
         }
     }
 
     @Get('/profile/:slackId')
     @UseGuards(JwtAuthGuard)
     async getProfile(@Param('slackId') slackId: string, @Res() res) {
-        //누구의 profile을 보고 싶은지 id로 조회.
-        // * 무조건 있는 유저를 조회하긴 할텐데, userProfile도 검사 한 번 하는게 좋지 않을까요?
-        //TODO 존재하는 유저인지 확인 필요
-        const userProfile: UserProfileDto = await this.userService.getUserProfile(slackId);
-        return res.status(200).json(userProfile);
+        try {
+            //누구의 profile을 보고 싶은지 id로 조회.
+            // * 무조건 있는 유저를 조회하긴 할텐데, userProfile도 검사 한 번 하는게 좋지 않을까요?
+            //TODO 존재하는 유저인지 확인 필요
+            const userProfile: UserProfileDto = await this.userService.getUserProfile(slackId);
+            return res.status(200).json(userProfile);
+        } catch (error) {
+            //ERROR HANDLE
+            console.log('[ERROR]: getProfile', error);
+            return res.status(400).send({ reason: 'getProfile failed' });
+        }
     }
 
     @Get('/profileImg/:slackId')
     @UseGuards(JwtAuthGuard)
     async getProfileImage(@Res() res: Response, @Param('slackId') slackId: string) {
         try {
-            //TODO 존재하는 유저인지 확인 필요
+            //getUserProfileImage에서 존재하는 유저인지 확인함 (juhoh)
             const { image, mimeType } = await this.userService.getUserProfileImage(slackId);
             if (image === undefined || mimeType === undefined) return;
             res.setHeader('Content-Type', mimeType); // 이미지의 MIME 타입 설정
             res.send(image); // 이미지 파일을 클라이언트로 전송
         } catch (error) {
-            this.logger.error(`Failed to send profile image : ${error}`);
-            if (error.status === 404) throw new NotFoundException();
-            else throw new BadRequestException();
+            //ERROR HANDLE
+            console.log('[ERROR]: getProfileImage', error);
+            return res.status(400).send({ reason: 'getProfileImage failed' });
         }
     }
 
@@ -164,24 +177,25 @@ export class UserController {
                 return res.sendStatus(200);
             }
         } catch (error) {
-            this.logger.log(`error status:`, error.status);
-            if (error.status === 404) {
-                return res.sendStatus(400);
-            } else throw new BadRequestException();
+            //ERROR HANDLE
+            console.log('[ERROR]: checkIfExists', error);
+            return res.status(400).send({ reason: 'checkIfExists failed' });
         }
     }
 
     @Post('/username/')
     @UseGuards(JwtAuthGuard)
-    async checkUniqueName(@Body() body, @Res() res: Response) {
+    async checkUniqueName(@Body('name') name: string, @Res() res: Response) {
         try {
             // console.log(`checking name : ${body.name}`);
-            const user = await this.userService.getUserByUserName(body.name);
-            if (user) throw new BadRequestException(`${body.name} already exist`);
-            res.sendStatus(200);
+            const user = await this.userService.getUserByUserName(name);
+            if (user) {
+                console.log('[ERROR]: checkIfExists');
+                return res.status(400).send({ reason: 'checkUniqueName failed: already in DB' });
+            }
         } catch (error) {
-            if (error.getStatus() == 404) res.sendStatus(200);
-            else throw new BadRequestException();
+            //* this is not error
+            return res.sendStatus(200);
         }
     }
 }

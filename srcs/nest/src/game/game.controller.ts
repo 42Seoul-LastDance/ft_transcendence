@@ -11,14 +11,26 @@ export class GameController {
     @Get('/getGameData/:slackId')
     @UseGuards(JwtAuthGuard)
     async getGameData(@Req() req, @Res() res: Response, @Param('slackId') slackId: string) {
-        const gameData = await this.gameService.getGameData(slackId);
-        return res.send(gameData);
+        try {
+            const gameData = await this.gameService.getGameData(slackId);
+            return res.send(gameData);
+        } catch (error) {
+            //ERROR HANDLE
+            console.log('[ERROR]: getGameData', error);
+            return res.status(400).send({ reason: 'getGameData failed' });
+        }
     }
 
     @Get('/getFriendGameData/:slackId')
     @UseGuards(JwtAuthGuard)
     async getFriendGameData(@Req() req, @Res() res: Response, @Param('slackId') slackId: string) {
-        const friendGameData = await this.gameService.getFriendGameData(+req.user.sub, slackId);
-        return res.send(friendGameData);
+        try {
+            const friendGameData = await this.gameService.getFriendGameData(+req.user.sub, slackId);
+            return res.send(friendGameData);
+        } catch (error) {
+            //ERROR HANDLE
+            console.log('[ERROR]: getFriendGameData', error);
+            return res.status(400).send({ reason: 'getFriendGameData failed' });
+        }
     }
 }

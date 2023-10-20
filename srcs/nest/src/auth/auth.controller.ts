@@ -59,93 +59,109 @@ export class AuthController {
     @Get('/callback')
     @UseGuards(FortytwoAuthGuard)
     async callBack(@Req() req, @Res() res: Response) {
-        this.logger.log('42 callback called.');
+        try {
+            this.logger.log('42 callback called.');
 
-        //유저 검색해 신규 유저면 등록해줌 => 유저 리턴 (0912 작업 내용)
-        const user = await this.authService.signUser(req.user);
+            //유저 검색해 신규 유저면 등록해줌 => 유저 리턴 (0912 작업 내용)
+            const user = await this.authService.signUser(req.user);
 
-        //TODO : 2fa logic 잠시 막아둠(0912)
-        if (user.require2fa === true) {
+            //TODO : 2fa logic 잠시 막아둠(0912)
+            if (user.require2fa === true) {
+                res.status(HttpStatus.OK);
+                const token = await this.authService.generate2faToken(user.id, user.userName);
+                res.cookie('2fa_token', token, {
+                    // maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+                    // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+                    // secure: false,
+                });
+                try {
+                    this.logger.debug(`${user.id} id `);
+                    await this.authService.sendMail(user.id);
+                } catch (error) {
+                    this.logger.debug('sendMail fail T.T');
+                    return;
+                }
+
+                return res.redirect(process.env.FRONT_URL + '/tfa'); //TODO : 로직 변경
+            }
+
+            const { jwt, refreshToken } = await this.authService.generateAuthToken(user.id, user.userName);
             res.status(HttpStatus.OK);
-            const token = await this.authService.generate2faToken(user.id, user.userName);
-            // console.log('2fa token', token);
-            res.cookie('2fa_token', token, {
-                // maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+
+            res.cookie('access_token', jwt, {
+                // maxAge: +process.env.ACCESS_COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
                 // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
                 // secure: false,
             });
-            try {
-                this.logger.debug(`${user.id} id `);
-                await this.authService.sendMail(user.id);
-            } catch (error) {
-                this.logger.debug('sendMail fail T.T');
-                return;
-            }
-
-            //mail 보내기
-            // return res.status(200).json({
-            //     message: '2fa',
-            // });
-
-            //임시로 막아놓으ㅡㅁ
-            return res.redirect(process.env.FRONT_URL + '/tfa'); //TODO : 로직 변경
+            res.cookie('refresh_token', refreshToken, {
+                // maxAge: +process.env.REFRESH_COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
+                // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
+                // secure: false,
+            });
+            return res.redirect(process.env.FRONT_URL + '/home');
+        } catch (error) {
+            //ERROR HANDLE
+            console.log('[ERROR]: callBack', error);
+            return res.status(400).send({ reason: 'callback failed' });
         }
-
-        const { jwt, refreshToken } = await this.authService.generateAuthToken(user.id, user.userName);
-        res.status(HttpStatus.OK);
-
-        res.cookie('access_token', jwt, {
-            // maxAge: +process.env.ACCESS_COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-            // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-            // secure: false,
-        });
-        res.cookie('refresh_token', refreshToken, {
-            // maxAge: +process.env.REFRESH_COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-            // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-            // secure: false,
-        });
-        return res.redirect(process.env.FRONT_URL + '/home');
     }
 
     @Patch('verify2fa/')
     @UseGuards(Jwt2faGuard)
     async verify2fa(@Req() req, @Body('code') code: string, @Res() res: Response) {
-        this.logger.debug('code : ', code);
-        const isAuthenticated = await this.userService.verifyUser2faCode(req.user.sub, code);
+        try {
+            this.logger.debug('code : ', code);
+            const isAuthenticated = await this.userService.verifyUser2faCode(req.user.sub, code);
 
-        if (isAuthenticated) {
-            //jwt 발급
-            // res.clearCookie('2fa_token');
-            const { jwt, refreshToken } = await this.authService.generateAuthToken(req.user.sub, req.user.userName);
-            res.status(HttpStatus.OK);
-            return res.send({
-                access_token: jwt,
-                refresh_token: refreshToken,
-            });
-        } else {
-            this.logger.debug('verify failed');
-            throw new UnauthorizedException('verify failed');
+            if (isAuthenticated) {
+                const { jwt, refreshToken } = await this.authService.generateAuthToken(req.user.sub, req.user.userName);
+                res.status(HttpStatus.OK);
+                return res.send({
+                    access_token: jwt,
+                    refresh_token: refreshToken,
+                });
+            } else {
+                this.logger.debug('verify failed');
+                throw new UnauthorizedException('verify failed');
+            }
+        } catch (error) {
+            //ERROR HANDLE
+            console.log('[ERROR]: verify2fa', error);
+            return res.status(400).send({ reason: 'verify2fa failed' });
         }
     }
 
     @Get('/regenerateToken')
     @UseGuards(RegenerateAuthGuard)
     async regenerateToken(@Req() req, @Res() res: Response) {
-        this.logger.log('regenerateToken called');
-        const newToken = await this.authService.regenerateJwt(req);
-        return res.header({ 'x-access-token': newToken }).json({ token: newToken });
+        try {
+            this.logger.log('regenerateToken called');
+            const newToken = await this.authService.regenerateJwt(req);
+            this.logger.log('successfully sent new token in REGENERATE TOKEN', newToken);
+            return res.status(200).send({ token: newToken });
+        } catch (error) {
+            //ERROR HANDLE
+            console.log('[ERROR]: regenerateToken', error);
+            return res.status(400).send({ reason: 'regenerateToken failed' });
+        }
     }
 
     @Post('/logout')
     @UseGuards(JwtAuthGuard)
     async logout(@Req() req: any, @Res() res: Response) {
-        await this.userService.removeRefreshToken(req.user);
-        await this.socketUsersService.clearServerData(req.user.sub);
-        res.clearCookie('access_token');
-        res.clearCookie('refresh_token');
-        res.statusCode = 200;
-        return res.send({
-            message: 'logout success',
-        });
+        try {
+            await this.userService.removeRefreshToken(req.user);
+            await this.socketUsersService.clearServerData(req.user.sub);
+            res.clearCookie('access_token');
+            res.clearCookie('refresh_token');
+            res.statusCode = 200;
+            return res.send({
+                message: 'logout success',
+            });
+        } catch (error) {
+            //ERROR HANDLE
+            console.log('[ERROR]: logout', error);
+            return res.status(400).send({ reason: 'logout failed' });
+        }
     }
 }
