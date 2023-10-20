@@ -15,6 +15,7 @@ services:
             - '4242:4242'
         restart: always
         depends_on:
+            - nest
             - postgresql
 
     nest:
@@ -30,6 +31,8 @@ services:
         ports:
             - '3000:3000'
         restart: always
+        depends_on:
+            - postgresql
 
     postgresql:
         container_name: postgresql
