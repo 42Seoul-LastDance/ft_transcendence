@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { setIsMatched } from '../redux/matchSlice';
 import HeaderAlert from './alert';
-import { Button, Grid, LinearProgress } from '@mui/material';
+import { Button, Grid, LinearProgress, Typography } from '@mui/material';
 import { setJoin } from '../redux/userSlice';
 import { useGameSocket } from '../contexts/gameSocketContext';
 import { JoinStatus, RoomStatus } from '../enums';
@@ -40,13 +40,14 @@ const HomeContent = () => {
           <br />
           <Grid container justifyContent="center">
             <Button
+              className={'game-button'}
               variant="contained"
               color="secondary"
               onClick={() => {
                 router.push('/game');
               }}
             >
-              Start Game !
+              <Typography variant={'h5'}>Game !</Typography>
             </Button>
           </Grid>
           <br />

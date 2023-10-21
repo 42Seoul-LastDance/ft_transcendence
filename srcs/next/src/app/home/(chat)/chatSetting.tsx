@@ -24,7 +24,6 @@ import { myAlert } from '../alert';
 import router from 'next/router';
 import sendRequest from '@/app/api';
 import { GameMode, InviteType, RoomStatus, UserPermission } from '@/app/enums';
-import error from 'next/error';
 
 const ChatSetting = () => {
   const dispatch = useDispatch();

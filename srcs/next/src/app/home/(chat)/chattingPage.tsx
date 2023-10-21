@@ -11,9 +11,9 @@ import {
   ListItemText,
   IconButton,
   Drawer,
-  Paper,
   Typography,
 } from '@mui/material';
+import SendIcon from '@mui/icons-material/Send';
 import {
   ChatMessage,
   ChattingPageProps,
@@ -23,7 +23,6 @@ import {
 import ChatSetting from './chatSetting';
 import { RootState } from '../../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
-import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 import { setChatRoom, setJoin } from '@/app/redux/userSlice';
 import { myAlert } from '../alert';
 import { useRouter } from 'next/navigation';
@@ -32,11 +31,11 @@ import { clearSocketEvent, registerSocketEvent } from '@/app/contexts/socket';
 import { isValid } from '../valid';
 import { maxTypeLength } from '@/app/globals';
 import { JoinStatus } from '@/app/enums';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 const ChattingPage = (props: ChattingPageProps) => {
   const [inputMessage, setInputMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false); // 설정 아이콘 클릭 시 설정창 표시 여부
   const [isMouseOver, setIsMouseOver] = useState(false);
   const dispatch = useDispatch();
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
@@ -202,68 +201,66 @@ const ChattingPage = (props: ChattingPageProps) => {
   return (
     <Container
       maxWidth="sm"
-      style={{
+      sx={{
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-start',
         alignItems: 'center',
-        height: '100vh',
       }}
     >
       {join === JoinStatus.CHAT && (
         <>
-          <IconButton
+          <Button
             color="info"
             aria-label="settings"
             onMouseOver={handleMouseOver}
             onClick={toggleSettings}
           >
             <div style={settingsBarStyle}></div>
-          </IconButton>
+          </Button>
           <Drawer anchor="right" open={isMouseOver} onClose={toggleSettings}>
             <ChatSetting />
           </Drawer>
         </>
       )}
-      <IconButton
-        color="primary"
-        aria-label="quit"
-        sx={{
-          top: '1px',
-          left: '12px',
-        }}
-        onClick={handleExitRoom}
-      >
-        <DirectionsRunIcon />
-      </IconButton>
       <Card
         className="mt-4"
-        style={{
-          height: '700px',
-          width: '35rem',
-          margin: 'auto',
+        sx={{
+          height: '800px',
+          width: '600px',
           alignItems: 'center',
           padding: '20px',
+          borderRadius: '15px', // 가장자리 라운드 값 (여기서는 10px로 설정)
+          bgcolor: '#a0b8cf', // 원하는 색상을 여기
         }}
       >
-        {/* <ListItemText
-          disableTypography
-          primary={
-            </Typography>
-          }
-        ></ListItemText> */}
-        <Typography variant="body2" style={{ color: '#111111' }}>
-          {target}
-        </Typography>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <IconButton
+            color="primary"
+            aria-label="quit"
+            onClick={handleExitRoom}
+            style={{ marginRight: '10px' }}
+          >
+            <LogoutIcon />
+          </IconButton>
+          <Typography variant="h5" style={{}}>
+            {target}
+          </Typography>
+        </div>
         <CardContent
-          style={{
+          sx={{
             overflowY: 'auto',
-            height: 'calc(100% - 105px)',
+            height: '670px',
+            width: '97%',
+            borderRadius: '15px',
           }}
         >
           <List
             ref={listRef as React.RefObject<HTMLUListElement>}
-            style={{ maxHeight: '560px', overflowY: 'auto' }}
+            style={{
+              maxHeight: '650px',
+              overflowY: 'auto',
+            }}
           >
             {chatMessages?.map((msg, index) =>
               msg.userName === 'server' ? (
@@ -278,24 +275,32 @@ const ChattingPage = (props: ChattingPageProps) => {
                   />
                 </ListItem>
               ) : (
-                <ListItem key={index}>
-                  <ListItemText
-                    primary={msg.userName}
-                    secondary={msg.content}
-                    style={{
-                      textAlign: myName === msg.userName ? 'right' : 'left',
-                      paddingRight: '8px',
-                      paddingLeft: '8px',
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems:
+                      myName === msg.userName ? 'flex-end' : 'flex-start',
+                    marginRight: '10px',
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: '#86a' }}>
+                    {msg.userName}
+                  </Typography>
+                  <Card
+                    sx={{
+                      maxWidth: '200px',
+                      height: 'auto',
+                      marginBottom: '10px',
+                      borderRadius: '15px',
+                      bgcolor: '#f1f1f1',
                     }}
-                  />
-                  <div
-                    style={{
-                      textAlign: myName === msg.userName ? 'left' : 'right',
-                      fontSize: '12px',
-                      color: 'gray',
-                    }}
-                  ></div>
-                </ListItem>
+                  >
+                    <ListItem key={index}>
+                      <ListItemText secondary={msg.content} />
+                    </ListItem>
+                  </Card>
+                </div>
               ),
             )}
           </List>
@@ -303,9 +308,7 @@ const ChattingPage = (props: ChattingPageProps) => {
         <div
           style={{
             display: 'flex',
-            alignItems: 'center',
-            padding: '0px',
-            bottom: '30px',
+            alignItems: 'bottom',
           }}
         >
           <TextField
@@ -317,6 +320,12 @@ const ChattingPage = (props: ChattingPageProps) => {
             onChange={handleInputChange}
             onKeyUp={handleKeyDown}
             autoComplete="off"
+            InputProps={{
+              style: {
+                backgroundColor: '#f1f1f1',
+                borderRadius: '10px',
+              },
+            }}
           />
           <Button
             id="sendBtn"
@@ -324,9 +333,10 @@ const ChattingPage = (props: ChattingPageProps) => {
             color="primary"
             size="large"
             onClick={SendMessage}
-            style={{ marginLeft: '8px' }}
+            style={{ marginLeft: '15px', borderRadius: '10px' }}
+            endIcon={<SendIcon />}
           >
-            Send
+            send
           </Button>
         </div>
       </Card>

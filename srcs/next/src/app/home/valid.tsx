@@ -9,7 +9,8 @@ export const isValid = (
   dispatch: Dispatch<Action>,
 ): boolean => {
   const isEmptyInput = (): boolean => {
-    if (!input?.trim()) {
+    console.log(`${comment}`, '==========>', input, '<==========');
+    if (input?.trim().length === 0) {
       const alertMessage = `${comment} 비었습니다.`;
       myAlert('error', alertMessage, dispatch);
       return true;

@@ -26,12 +26,7 @@ import { setViewProfile } from '../redux/viewSlice';
 import { useRouter } from 'next/navigation';
 import { clearSocketEvent, registerSocketEvent } from '../contexts/socket';
 import { useEffect } from 'react';
-import {
-  ChatRoomDto,
-  EmitResult,
-  Events,
-  GetInvitationListJson,
-} from '../interfaces';
+import { GetInvitationListJson } from '../interfaces';
 import {
   GameJoinMode,
   GameMode,
@@ -189,56 +184,54 @@ const HeaderNavigationBarContent = () => {
 
   return (
     <>
-      <Box sx={{ display: 'flex' }}>
-        <AppBar component="nav" position="static" sx={{ flexGrow: 1 }}>
-          <Toolbar>
-            <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-              <HomeIcon
-                sx={{ marginRight: '5px' }}
-                onClick={() => {
-                  window.location.reload();
-                }}
-              />
-              <Typography align="left" variant="h6" noWrap component="div">
-                Home
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <IconButton
-                aria-label="Notification Menu"
-                size="large"
-                edge="end"
-                onClick={handleNotiOpen}
-                color="inherit"
-              >
-                <Badge badgeContent={notiCount} color="secondary">
-                  <NotificationsIcon />
-                </Badge>
-              </IconButton>
-              <IconButton
-                aria-label="Profile modal"
-                size="large"
-                edge="end"
-                onClick={handleProfileOpen}
-                color="inherit"
-              >
-                <AccountCircle />
-                <UserProfile />
-              </IconButton>
-              <IconButton
-                aria-label="Setting page"
-                size="large"
-                edge="end"
-                onClick={handleSettingOpen}
-                color="inherit"
-              >
-                <SettingsIcon />
-              </IconButton>
-            </Box>
-          </Toolbar>
-        </AppBar>
-        {renderNoti}
-      </Box>
+      <AppBar component="nav" position="static" sx={{ flexGrow: 1 }}>
+        <Toolbar>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+            <HomeIcon
+              sx={{ marginRight: '5px' }}
+              onClick={() => {
+                window.location.reload();
+              }}
+            />
+            <Typography align="left" variant="h6" noWrap component="div">
+              Home
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton
+              aria-label="Notification Menu"
+              size="large"
+              edge="end"
+              onClick={handleNotiOpen}
+              color="inherit"
+            >
+              <Badge badgeContent={notiCount} color="secondary">
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
+            <IconButton
+              aria-label="Profile modal"
+              size="large"
+              edge="end"
+              onClick={handleProfileOpen}
+              color="inherit"
+            >
+              <AccountCircle />
+              <UserProfile />
+            </IconButton>
+            <IconButton
+              aria-label="Setting page"
+              size="large"
+              edge="end"
+              onClick={handleSettingOpen}
+              color="inherit"
+            >
+              <SettingsIcon />
+            </IconButton>
+          </Box>
+        </Toolbar>
+      </AppBar>
+      {renderNoti}
       <MainHome />
     </>
   );

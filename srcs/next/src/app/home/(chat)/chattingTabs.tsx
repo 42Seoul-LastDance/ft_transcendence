@@ -14,6 +14,21 @@ import { RootState } from '@/app/redux/store';
 import { useChatSocket } from '@/app/contexts/chatSocketContext';
 import { JoinStatus } from '@/app/enums';
 
+const commonTabStyle = {
+  bgcolor: '#white',
+  borderRadius: '15px 15px 0 0',
+};
+
+const activeTabStyle = {
+  ...commonTabStyle,
+  fontWeight: 'bold',
+};
+
+const inactiveTabStyle = {
+  ...commonTabStyle,
+  opacity: 0.8,
+};
+
 const ChattingTabs: React.FC = () => {
   const [value, setValue] = useState<number>(0);
   const dispatch = useDispatch();
@@ -29,12 +44,28 @@ const ChattingTabs: React.FC = () => {
   };
 
   return (
-    <div>
+    <div style={{ justifyContent: 'center' }}>
       <Tabs value={value} onChange={handleChange}>
-        <Tab label="Chatting" />
-        <Tab label="Friends" />
-        <Tab label="Requests" />
-        <Tab label="Block List" />
+        <Tab
+          label="Chatting"
+          className="list-item"
+          sx={value === 0 ? activeTabStyle : inactiveTabStyle}
+        />
+        <Tab
+          label="Friends"
+          className="list-item"
+          sx={value === 1 ? activeTabStyle : inactiveTabStyle}
+        />
+        <Tab
+          label="Requests"
+          className="list-item"
+          sx={value === 2 ? activeTabStyle : inactiveTabStyle}
+        />
+        <Tab
+          label="Block List"
+          className="list-item"
+          sx={value === 3 ? activeTabStyle : inactiveTabStyle}
+        />
       </Tabs>
       <div>
         {value === 0 && (

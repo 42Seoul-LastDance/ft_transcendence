@@ -3,6 +3,7 @@ import Alert, { AlertColor } from '@mui/material/Alert'; // import AlertColor
 import { setAlertMsg, setSeverity, setShowAlert } from '../redux/alertSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
+import { Typography } from '@mui/material';
 
 interface HeaderAlertProps {
   severity: AlertColor; // restrict severity to AlertColor
@@ -37,7 +38,14 @@ const HeaderAlert: React.FC<HeaderAlertProps> = ({}) => {
 
   return showAlert ? (
     <div className="alert-container">
-      <Alert severity={severity}>{message}</Alert>
+      <Alert
+        sx={{
+          borderRadius: '15px',
+        }}
+        severity={severity}
+      >
+        <Typography variant="h6">{message}</Typography>
+      </Alert>
     </div>
   ) : null;
 };

@@ -1,6 +1,6 @@
 body {
-  background-color: rgb(39, 39, 42);
-  color: rgb(158, 158, 196);
+  background-color: rgb(255, 255, 255);
+  color: #1976d2;
 }
 
 .alert-container {
@@ -13,4 +13,70 @@ body {
 
 .list-item:hover {
   background-color: #384357;
+}
+
+.card-item:hover {
+  background-color: #1976d2;
+}
+
+.black-hover:hover {
+  background-color: #222222;
+}
+/* 스크롤바 커스터마이징 */
+::-webkit-scrollbar {
+  width: 5px; /* 스크롤바 너비 조절 */
+}
+
+/* 스크롤바 트랙 (배경) */
+::-webkit-scrollbar-track {
+  background: #f1f1f1; /* 트랙 배경색 설정 */
+}
+
+/* 스크롤바 엄지 (드래그 가능한 부분) */
+::-webkit-scrollbar-thumb {
+  background: #86abd0; /* 엄지 배경색 설정 */
+  border-radius: 15px; /* 엄지 모양 설정 */
+}
+/* 스크롤바 활성 상태 시 엄지 스타일 */
+::-webkit-scrollbar-thumb:hover {
+  background: #555; /* 엄지 배경색 설정 */
+}
+
+.game-button {
+  width: 130px;
+  height: 70px;
+  border-radius: 15px;
+  background: linear-gradient(to right, #fc6ab3, #fe9595);
+  border: 0;
+  color: white;
+  font-weight: bold;
+  transition: background 0.3s;
+  cursor: pointer;
+}
+
+.game-button:hover {
+  transform: scale(1.05); /* 버튼 크기를 약간 키워 튕기는 효과 생성 */
+  animation: shake 0.5s ease infinite;
+}
+
+@keyframes shake {
+  0% {
+    transform: translateX(0); /* 시작 지점 */
+  }
+  25% {
+    transform: translateX(-2px); /* 왼쪽으로 흔들 때 */
+  }
+  50% {
+    transform: translateX(2px); /* 오른쪽으로 흔들 때 */
+  }
+  75% {
+    transform: translateX(-2px); /* 다시 왼쪽으로 흔들 때 */
+  }
+  100% {
+    transform: translateX(4); /* 원래 위치로 돌아올 때 */
+  }
+}
+
+selecter {
+  background-color: #fefff1;
 }
