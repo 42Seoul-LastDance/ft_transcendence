@@ -6,8 +6,8 @@ import { MyLogger } from './my-logger';
 async function bootstrap() {
     // Set the defaultMaxListeners before creating the NestJS app instance
 
+    require('events').EventEmitter.prototype._maxListeners = 100;
     const app = await NestFactory.create(AppModule, { cors: true, logger: new MyLogger() });
-    require('events').EventEmitter.defaultMaxListeners = 0;
 
     app.enableCors({
         origin: true,
