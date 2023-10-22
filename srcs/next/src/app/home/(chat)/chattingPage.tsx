@@ -236,7 +236,7 @@ const ChattingPage = (props: ChattingPageProps) => {
       >
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <IconButton
-            color="primary"
+            color="secondary"
             aria-label="quit"
             onClick={handleExitRoom}
             style={{ marginRight: '10px' }}
@@ -315,6 +315,7 @@ const ChattingPage = (props: ChattingPageProps) => {
             fullWidth
             id="msgText"
             variant="outlined"
+            color="secondary"
             label="Message"
             value={inputMessage}
             onChange={handleInputChange}
@@ -330,7 +331,7 @@ const ChattingPage = (props: ChattingPageProps) => {
           <Button
             id="sendBtn"
             variant="contained"
-            color="primary"
+            color="secondary"
             size="large"
             onClick={SendMessage}
             style={{ marginLeft: '15px', borderRadius: '10px' }}

@@ -26,19 +26,11 @@ import { setViewProfile } from '../redux/viewSlice';
 import { useRouter } from 'next/navigation';
 import { clearSocketEvent, registerSocketEvent } from '../contexts/socket';
 import { useEffect } from 'react';
-import { GetInvitationListJson } from '../interfaces';
-import {
-  GameJoinMode,
-  GameMode,
-  InviteType,
-  JoinStatus,
-  RoomStatus,
-} from '../enums';
+import { Events, GetInvitationListJson } from '../interfaces';
+import { GameJoinMode, GameMode, InviteType } from '../enums';
 import { Button } from '@mui/material';
 import { setCustomSet } from '../redux/matchSlice';
-import { setInvitationList, setJoin, setNotiCount } from '../redux/userSlice';
 import HomeIcon from '@mui/icons-material/Home';
-import { myAlert } from './alert';
 
 const HeaderNavigationBarContent = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -184,7 +176,14 @@ const HeaderNavigationBarContent = () => {
 
   return (
     <>
-      <AppBar component="nav" position="static" sx={{ flexGrow: 1 }}>
+      <AppBar
+        component="nav"
+        position="static"
+        sx={{
+          flexGrow: 1,
+          background: 'black',
+        }}
+      >
         <Toolbar>
           <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
             <HomeIcon

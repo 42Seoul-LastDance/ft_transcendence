@@ -247,6 +247,7 @@ const ChatSetting = () => {
                   id="setPassword"
                   variant="outlined"
                   label="비밀번호 세팅하기"
+                  color="secondary"
                   value={password}
                   onChange={handlePassword}
                   disabled={!isInputEnabled}
@@ -254,7 +255,7 @@ const ChatSetting = () => {
                 <Button
                   id="setPasswordBtn"
                   variant="contained"
-                  color="primary"
+                  color="secondary"
                   size="large"
                   onClick={submitPassword}
                   style={{ marginLeft: '8px' }}
@@ -273,13 +274,14 @@ const ChatSetting = () => {
                 id="friendInvite"
                 variant="outlined"
                 label="slackId로 친구 초대하기"
+                color="secondary"
                 value={inviteName}
                 onChange={handleInviteName}
               />
               <Button
                 id="friendInviteBtn"
                 variant="contained"
-                color="primary"
+                color="secondary"
                 size="large"
                 onClick={inviteFriend}
                 style={{ marginLeft: '8px' }}

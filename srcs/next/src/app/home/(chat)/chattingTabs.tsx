@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Tab, Tabs } from '@mui/material';
 import ChatRoomList from './chatRoomList';
 import FriendList from '../(dm)/friendList';
@@ -13,10 +13,17 @@ import ChattingPage from './chattingPage';
 import { RootState } from '@/app/redux/store';
 import { useChatSocket } from '@/app/contexts/chatSocketContext';
 import { JoinStatus } from '@/app/enums';
-
+import PersonIcon from '@mui/icons-material/Person';
+import ChatIcon from '@mui/icons-material/Chat';
+import GroupAddIcon from '@mui/icons-material/GroupAdd';
+import BlockIcon from '@mui/icons-material/Block';
 const commonTabStyle = {
-  bgcolor: '#white',
+  color: 'black', // 텍스트 색상을 검정색으로 설정
   borderRadius: '15px 15px 0 0',
+  borderBottom: '2px solid transparent', // 아웃라인 추가
+  borderColor: 'black', // 테두리의 색상을 검정색으로 설정
+  borderWidth: '2px', // 테두리의 두께를 2px로 설정
+  borderStyle: 'solid', // 테두리 스타일을 실선으로 설정
 };
 
 const activeTabStyle = {
@@ -26,9 +33,9 @@ const activeTabStyle = {
 
 const inactiveTabStyle = {
   ...commonTabStyle,
-  opacity: 0.8,
 };
 
+// 선택된 탭의 아웃라인 스타일 변경
 const ChattingTabs: React.FC = () => {
   const [value, setValue] = useState<number>(0);
   const dispatch = useDispatch();
@@ -45,25 +52,34 @@ const ChattingTabs: React.FC = () => {
 
   return (
     <div style={{ justifyContent: 'center' }}>
-      <Tabs value={value} onChange={handleChange}>
+      <Tabs
+        value={value}
+        onChange={handleChange}
+        textColor="secondary"
+        indicatorColor="secondary"
+      >
         <Tab
           label="Chatting"
-          className="list-item"
+          icon={<ChatIcon />}
+          className="yellow-hover"
           sx={value === 0 ? activeTabStyle : inactiveTabStyle}
         />
         <Tab
           label="Friends"
-          className="list-item"
+          icon={<PersonIcon />}
+          className="yellow-hover"
           sx={value === 1 ? activeTabStyle : inactiveTabStyle}
         />
         <Tab
           label="Requests"
-          className="list-item"
+          icon={<GroupAddIcon />}
+          className="yellow-hover"
           sx={value === 2 ? activeTabStyle : inactiveTabStyle}
         />
         <Tab
           label="Block List"
-          className="list-item"
+          icon={<BlockIcon />}
+          className="yellow-hover"
           sx={value === 3 ? activeTabStyle : inactiveTabStyle}
         />
       </Tabs>

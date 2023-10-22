@@ -7,7 +7,15 @@ import ListItemText from '@mui/material/ListItemText';
 import { useDispatch, useSelector } from 'react-redux';
 import sendRequest from '../../api';
 import { useRouter } from 'next/navigation';
-import { Button, Grow, IconButton, TextField, Typography } from '@mui/material';
+import {
+  Button,
+  Card,
+  Divider,
+  Grow,
+  IconButton,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { isValid } from '../valid';
 import { maxUniqueNameLength } from '@/app/globals';
 import { myAlert } from '../alert';
@@ -114,75 +122,98 @@ const RequestList: React.FC = () => {
     if (e.key === 'Enter') sendFriendRequest();
   };
 
+  const cardStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start', // 왼쪽 정렬
+    padding: '8px',
+    width: '50%',
+    opacity: '0.8',
+    maxWidth: '500px',
+    maxHeight: 'auto',
+    ml: '20px',
+    borderRadius: '15px',
+    marginTop: '20px',
+  };
+
   return (
     <>
-      <Typography id="modal-modal-description" sx={{ mt: 3 }}>
-        친구 요청 보내기
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '8px',
-            width: '400px',
-          }}
-        >
+      <Card sx={{ ...cardStyle }}>
+        <div style={{ marginBottom: '8px' }}>
+          <Typography id="modal-modal-description" variant="body1">
+            친구요청 보내기
+          </Typography>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           <TextField
-            fullWidth
             id="friendRequest"
-            variant="outlined"
             label="상대의 Slack ID를 입력하세요"
+            color="secondary"
             value={friendRequestSlackId}
             onChange={handleInputValue}
-            onKeyPress={handleKeyDown}
+            onKeyUp={handleKeyDown}
+            InputProps={{
+              style: {
+                backgroundColor: '#f1f1f1',
+                borderRadius: '15px',
+              },
+            }}
           />
           <Button
             id="sendBtn"
             variant="contained"
-            color="primary"
+            color="secondary"
             size="large"
             onClick={sendFriendRequest}
-            style={{ marginLeft: '8px' }}
+            sx={{
+              marginLeft: '8px',
+              borderRadius: '15px',
+              width: '80px',
+              height: '50px',
+            }}
           >
             send
           </Button>
         </div>
-      </Typography>
+      </Card>
 
-      <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+      <Card sx={{ ...cardStyle }}>
         <List>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <p style={{ marginRight: '8px' }}>받은 친구 요청 리스트</p>
-            <IconButton
-              aria-label="refresh"
-              onClick={handleGetFriendInvitation}
-            >
-              <CachedIcon />
-            </IconButton>
-          </div>
-          {requestList.map((info: UserInfoJson, index: number) => (
-            <Grow in={true} timeout={500 * (index + 1)} key={index}>
-              <ListItem key={info.userName} divider>
-                <ListItemText
-                  primary={`유저 이름: ${info.userName}`}
-                  secondary={info.slackId}
-                />
-                <Button
-                  variant="contained"
-                  onClick={() => acceptInvitation(info.slackId)}
-                >
-                  친구수락
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => declineInvitation(info.slackId)}
-                >
-                  거절
-                </Button>
-              </ListItem>
-            </Grow>
-          ))}
+          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <p style={{ marginRight: '8px' }}>받은 친구 요청 리스트</p>
+              <IconButton
+                aria-label="refresh"
+                onClick={handleGetFriendInvitation}
+              >
+                <CachedIcon />
+              </IconButton>
+            </div>
+            {requestList.map((info: UserInfoJson, index: number) => (
+              <Grow in={true} timeout={500 * (index + 1)} key={index}>
+                <ListItem key={info.userName} divider>
+                  <ListItemText
+                    primary={`유저 이름: ${info.userName}`}
+                    secondary={info.slackId}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={() => acceptInvitation(info.slackId)}
+                  >
+                    친구수락
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={() => declineInvitation(info.slackId)}
+                  >
+                    거절
+                  </Button>
+                </ListItem>
+              </Grow>
+            ))}
+          </Typography>
         </List>
-      </Typography>
+      </Card>
     </>
   );
 };

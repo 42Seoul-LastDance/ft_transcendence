@@ -1,6 +1,8 @@
 body {
-  background-color: rgb(255, 255, 255);
-  color: #1976d2;
+  background-image: url('/theme/witch.jpeg'); /* 이미지 파일의 경로 */
+  background-size: cover; /* 배경 이미지를 화면 크기에 맞게 확대 또는 축소 */
+  background-position: center; /* 배경 이미지를 중앙 정렬 */
+  background-attachment: fixed; /* 스크롤 시 배경 이미지 고정 여부 (선택적) */
 }
 
 .alert-container {
@@ -12,15 +14,15 @@ body {
 }
 
 .list-item:hover {
-  background-color: #384357;
+  background-color: #ffbf06;
 }
 
-.card-item:hover {
-  background-color: #1976d2;
+.purple-hover:hover {
+  background-color: #a8336c;
 }
 
-.black-hover:hover {
-  background-color: #222222;
+.yellow-hover:hover {
+  background-color: #ffbf06;
 }
 /* 스크롤바 커스터마이징 */
 ::-webkit-scrollbar {
@@ -34,27 +36,28 @@ body {
 
 /* 스크롤바 엄지 (드래그 가능한 부분) */
 ::-webkit-scrollbar-thumb {
-  background: #86abd0; /* 엄지 배경색 설정 */
-  border-radius: 15px; /* 엄지 모양 설정 */
+  background: #84707a; /* 엄지 배경색 설정 */
 }
 /* 스크롤바 활성 상태 시 엄지 스타일 */
 ::-webkit-scrollbar-thumb:hover {
-  background: #555; /* 엄지 배경색 설정 */
+  background: #ffbf06;
 }
 
 .game-button {
-  width: 130px;
+  width: 150px;
   height: 70px;
   border-radius: 15px;
-  background: linear-gradient(to right, #fc6ab3, #fe9595);
+  background: linear-gradient(to right, #ffbf06, #ffde80);
   border: 0;
   font-weight: bold;
+  color: '#pp501';
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
   transition: background 0.3s;
   cursor: pointer;
 }
 
 .game-button:hover {
+  background-color: #222222;
   transform: scale(1.05); /* 버튼 크기를 약간 키워 튕기는 효과 생성 */
   animation: shake 0.5s ease infinite;
 }
@@ -87,7 +90,6 @@ body {
   justify-content: center;
   align-items: center;
   backdrop-filter: blur(8px); /* 배경 블러 처리 */
-  background: #808080b3; /* 배경 어두운 투명 배경 */
   z-index: 1; /* 모달을 다른 내용 위에 표시하기 위한 z-index */
 }
 
@@ -100,9 +102,24 @@ body {
   margin: 20px;
   transform: translate(-50%, -50%);
   border-radius: 15px;
-  opacity: 0.8;
+  opacity: 1;
 }
 
-selecter {
-  background-color: #6f6f6fb3;
+.image-slider {
+  overflow: hidden;
+  width: 100%;
+}
+
+.image-slider-inner {
+  display: flex;
+  transition: transform 1s ease;
+}
+
+.image-slider img {
+  width: 100%;
+  height: auto;
+}
+
+test {
+  color: #ae5781;
 }

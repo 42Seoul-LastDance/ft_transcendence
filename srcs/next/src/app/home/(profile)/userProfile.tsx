@@ -1,5 +1,4 @@
 'use client';
-import axios, { AxiosHeaderValue } from 'axios';
 import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -11,23 +10,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/app/redux/store';
 import { setViewProfile } from '@/app/redux/viewSlice';
 import { useSuperSocket } from '@/app/contexts/superSocketContext';
-import { CircularProgress, Divider } from '@mui/material';
+import { Card, CircularProgress, Divider } from '@mui/material';
 import { setJoin, setUserImg } from '@/app/redux/userSlice';
 import { FriendStatus, JoinStatus } from '@/app/enums';
 import Avatar from '@mui/material/Avatar';
 import sendRequestImage from '@/app/imageApi';
-
-const style = {
-  position: 'absolute' as 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 400,
-  bgcolor: 'background.paper',
-  border: '2px solid #000',
-  boxShadow: 24,
-  p: 4,
-};
 
 const UserProfile = () => {
   const superSocket = useSuperSocket();
@@ -193,6 +180,26 @@ const UserProfile = () => {
     requestIsBlocked();
   };
 
+  const cardStyle = {
+    width: 'auto',
+    height: 'auto',
+    minWidth: '200px',
+    minHeight: '100px',
+    display: 'flex',
+    borderRadius: '15px',
+    justifyContent: 'center',
+    padding: '10px',
+    margin: '10px',
+    opacity: '0.95',
+    bgcolor: 'white',
+  };
+
+  const TypographyStyle = {
+    variant: 'body2',
+    color: 'Grey',
+    fontSize: '20px',
+  };
+
   return (
     <>
       <Modal
@@ -202,33 +209,41 @@ const UserProfile = () => {
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
       >
-        <Box className="modal-content">
-          {isLoaded ? (
-            <Box sx={style}>
-              <Typography
-                id="modal-modal-title"
-                variant="h6"
-                component="h1"
-                color="CadetBlue"
+        {isLoaded ? (
+          <Box className="modal-content">
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Card sx={{ ...cardStyle }}>
+                <Typography
+                  id="modal-modal-title"
+                  variant="h6"
+                  color="CadetBlue"
+                >
+                  {targetName}'s Profile
+                  <Avatar src={userImg || undefined} alt={`${slackId}`} />
+                </Typography>
+              </Card>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
               >
-                {targetName}'s Profile
-                <Avatar src={userImg || undefined} alt={`${slackId}`} />
-              </Typography>
-              <Divider />
-              <Typography
-                id="modal-modal-description"
-                component="h6"
-                color="Grey"
-                sx={{ mt: 2 }}
-              >
-                slackId: {slackId}
-                <br />
-                Level: {level}
-                <br />
-                Exp: {exp} ({((exp / ((level + 1) * 500)) * 100).toFixed(2)}%)
-                <br />
-                <br />
-                <Divider />
+                <Card sx={{ ...cardStyle }}>
+                  <Typography sx={{ ...TypographyStyle }}>
+                    slackId : {slackId}
+                    <br />
+                    Level : {level}
+                    <br />
+                    Exp : {exp} (
+                    {((exp / ((level + 1) * 500)) * 100).toFixed(2)}
+                    %)
+                  </Typography>
+                </Card>
+              </div>
+            </div>
+            <Card sx={{ ...cardStyle }}>
+              <Typography sx={{ ...TypographyStyle }}>
                 <br />
                 Total Ranking Game :{' '}
                 {normalWin + normalLose + hardWin + hardLose}
@@ -248,90 +263,84 @@ const UserProfile = () => {
                 )}
                 <br />
               </Typography>
-              <Typography
-                id="modal-modal-description"
-                component="h6"
-                sx={{ mt: 2 }}
-              >
-                {mySlackId !== targetSlackId && (
-                  <>
-                    친선전 횟수:{' '}
-                    {fNormalWin + fNormalLose + fHardWin + fNormalLose}
-                    <br />
-                    {fNormalWin + fNormalLose > 0 && (
-                      <span>
-                        NORMAL 모드 승률:{' '}
-                        {(
-                          (fNormalWin / (fNormalWin + fNormalLose)) *
-                          100
-                        ).toFixed(2)}
-                        %<br />
-                      </span>
-                    )}
-                    {fHardWin + fHardLose > 0 && (
-                      <span>
-                        HARD 모드 승률:{' '}
-                        {((fHardWin / (fHardWin + fHardLose)) * 100).toFixed(2)}
-                        %
-                        <br />
-                      </span>
-                    )}
-                    {fLeftWin + fLeftLose > 0 && (
-                      <span>
-                        왼쪽에 있을 때 승률:{' '}
-                        {((fLeftWin / (fLeftWin + fLeftLose)) * 100).toFixed(2)}
-                        %
-                        <br />
-                      </span>
-                    )}
-                    {fRightWin + fRightLose > 0 && (
-                      <span>
-                        오른쪽에 있을 때 승률:{' '}
-                        {((fRightWin / (fRightWin + fRightLose)) * 100).toFixed(
-                          2,
-                        )}
-                        %<br />
-                      </span>
-                    )}
-                  </>
-                )}
-              </Typography>
-              <br />
-              <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-                {mySlackId !== targetSlackId && (
-                  <>
-                    {friendStatus === FriendStatus.FRIEND ? (
-                      <Button onClick={removeFriend} color="error">
-                        [ 친구 해제 ]
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={requestBeFriend}
-                        disabled={!friendRequestAvailable}
-                        color="success"
-                      >
-                        [ 친구 추가 ]
-                      </Button>
-                    )}
-                    {isBlocked === true ? (
-                      <Button onClick={unBlock} color="success">
-                        [ 차단 해제 ]
-                      </Button>
-                    ) : (
-                      <Button onClick={block} color="error">
-                        [ 차단 하기 ]
-                      </Button>
-                    )}
-                  </>
-                )}
-              </Typography>
-            </Box>
-          ) : (
-            <Box sx={style}>
-              <CircularProgress />
-            </Box>
-          )}
-        </Box>
+            </Card>
+            {mySlackId !== targetSlackId && (
+              <Card sx={{ ...cardStyle }}>
+                <Typography sx={{ ...TypographyStyle }}>
+                  친선전 횟수:{' '}
+                  {fNormalWin + fNormalLose + fHardWin + fNormalLose}
+                  <br />
+                  {fNormalWin + fNormalLose > 0 && (
+                    <span>
+                      NORMAL 모드 승률:{' '}
+                      {(
+                        (fNormalWin / (fNormalWin + fNormalLose)) *
+                        100
+                      ).toFixed(2)}
+                      %<br />
+                    </span>
+                  )}
+                  {fHardWin + fHardLose > 0 && (
+                    <span>
+                      HARD 모드 승률:{' '}
+                      {((fHardWin / (fHardWin + fHardLose)) * 100).toFixed(2)}
+                      %
+                      <br />
+                    </span>
+                  )}
+                  {fLeftWin + fLeftLose > 0 && (
+                    <span>
+                      왼쪽에 있을 때 승률:{' '}
+                      {((fLeftWin / (fLeftWin + fLeftLose)) * 100).toFixed(2)}
+                      %
+                      <br />
+                    </span>
+                  )}
+                  {fRightWin + fRightLose > 0 && (
+                    <span>
+                      오른쪽에 있을 때 승률:{' '}
+                      {((fRightWin / (fRightWin + fRightLose)) * 100).toFixed(
+                        2,
+                      )}
+                      %<br />
+                    </span>
+                  )}
+                </Typography>
+              </Card>
+            )}
+            {mySlackId !== targetSlackId && (
+              <Card sx={{ ...cardStyle }}>
+                <Typography sx={{ ...TypographyStyle }}>
+                  {' '}
+                  {friendStatus === FriendStatus.FRIEND ? (
+                    <Button onClick={removeFriend} color="error">
+                      [ 친구 해제 ]
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={requestBeFriend}
+                      disabled={!friendRequestAvailable}
+                      color="success"
+                    >
+                      [ 친구 추가 ]
+                    </Button>
+                  )}
+                  {isBlocked === true ? (
+                    <Button onClick={unBlock} color="success">
+                      [ 차단 해제 ]
+                    </Button>
+                  ) : (
+                    <Button onClick={block} color="error">
+                      [ 차단 하기 ]
+                    </Button>
+                  )}
+                </Typography>
+              </Card>
+            )}
+          </Box>
+        ) : (
+          <CircularProgress />
+        )}
       </Modal>
     </>
   );

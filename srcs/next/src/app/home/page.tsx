@@ -7,11 +7,18 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { setIsMatched } from '../redux/matchSlice';
 import HeaderAlert from './alert';
-import { Button, Grid, LinearProgress, Typography } from '@mui/material';
+import {
+  Button,
+  Grid,
+  IconButton,
+  LinearProgress,
+  Typography,
+} from '@mui/material';
 import { setJoin } from '../redux/userSlice';
 import { useGameSocket } from '../contexts/gameSocketContext';
 import { JoinStatus, RoomStatus } from '../enums';
 import { useRouter } from 'next/navigation';
+import RocketIcon from '@mui/icons-material/Rocket';
 
 const HomeContent = () => {
   const dispatch = useDispatch();
@@ -38,16 +45,20 @@ const HomeContent = () => {
       {render ? (
         <>
           <br />
-          <Grid container justifyContent="center">
+          <Grid container justifyContent="center" sx={{ margin: '20px' }}>
             <Button
               className={'game-button'}
+              sx={{ borderRadius: '15px' }}
               variant="contained"
               color="secondary"
               onClick={() => {
                 router.push('/game');
               }}
             >
-              <Typography variant={'h5'}>Game !</Typography>
+              <Typography variant="h5" sx={{ color: '#a8336c' }}>
+                Game
+              </Typography>
+              <RocketIcon sx={{ ml: '10px', color: '#a8336c' }} />
             </Button>
           </Grid>
           <br />
@@ -56,7 +67,7 @@ const HomeContent = () => {
           </div>
         </>
       ) : (
-        <LinearProgress />
+        <LinearProgress sx={{ color: '#ffbf06' }} />
       )}
     </>
   );

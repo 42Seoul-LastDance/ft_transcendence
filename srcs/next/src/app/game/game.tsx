@@ -9,14 +9,11 @@ import { useGameSocket } from '../contexts/gameSocketContext';
 import { ReactUnityEventParameter } from 'react-unity-webgl/distribution/types/react-unity-event-parameters';
 import EmojiButtons from './emojiButtons';
 import UserPannel from './userPannel';
-import {
-  PlayerSide,
-  Emoji,
-  GameJoinMode,
-} from '../enums';
+import { PlayerSide, Emoji, GameJoinMode } from '../enums';
 import { setEmoji } from '../redux/matchSlice';
 import { useRouter } from 'next/navigation';
 import { SendEmojiJson, StartGameJson } from '../interfaces';
+import { Button } from '@mui/material';
 
 const Game = () => {
   const { unityProvider, sendMessage, addEventListener, removeEventListener } =
@@ -183,7 +180,7 @@ const Game = () => {
 
       <EmojiButtons />
 
-      <button
+      <Button
         onClick={() => {
           setIsReady(true);
           socket?.emit('getReady');
@@ -191,8 +188,8 @@ const Game = () => {
         disabled={isReady}
       >
         Get Ready
-      </button>
-      <button
+      </Button>
+      <Button
         onClick={() => {
           dispatch(setIsMatched({ isMatched: false }));
           socket?.disconnect();
@@ -201,7 +198,7 @@ const Game = () => {
         disabled={isPlaying}
       >
         Exit Room
-      </button>
+      </Button>
     </>
   );
 };

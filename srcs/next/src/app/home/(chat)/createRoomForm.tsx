@@ -18,9 +18,9 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { JoinStatus, RoomStatus } from '@/app/enums';
-import { myAlert } from '../alert';
+import HeaderAlert, { myAlert } from '../alert';
 
 const CreateRoomForm = () => {
   const chatSocket = useChatSocket();
@@ -95,39 +95,58 @@ const CreateRoomForm = () => {
     if (event.key === 'Enter') addNewRoom();
   };
 
+  const cardStyle = {
+    borderRadius: '15px',
+    background: '#ffffff',
+    opacity: '0.95',
+  };
+
   return (
     <>
       <div>
+        <div
+          style={{
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            margin: '0 auto',
+            textAlign: 'center',
+            zIndex: 9999,
+          }}
+        >
+          <HeaderAlert severity={'warning'} />
+        </div>
+
         <Box sx={{ '& > :not(style)': { m: 1 }, opacity: 0.9 }}>
           <Fab
-            color="primary"
+            sx={{ border: '1px solid #ffbf06', background: 'black' }}
             size="small"
             aria-label="add"
             onClick={() => {
               setOpen(true);
             }}
           >
-            <AddIcon />
+            <StarBorderIcon sx={{ color: '#ffbf06' }} />
           </Fab>
         </Box>
         <Modal open={open} onClose={handleClose} className="modal">
           <Box className="modal-content">
-            <Typography id="modal-modal-title" variant="h4" component="h6">
+            <Typography id="modal-modal-title" variant="h5" color="#f1f1f1">
               방 만들기 {passwordEnabled ? '🔐' : ''}
             </Typography>
             <Box sx={{ marginTop: '30px' }}>
               <Card
                 sx={{
-                  borderRadius: '15px',
-                  marginBottom: '15px',
-                  background: '#f1f1f1',
-                  opacity: '0.9',
+                  ...cardStyle,
+                  marginBottom: '20px',
                 }}
               >
                 <CardContent>
                   <TextField
                     required
                     label="방 이름"
+                    color="secondary"
                     variant="standard"
                     value={roomName}
                     onChange={handleRoomNameChange}
@@ -135,6 +154,7 @@ const CreateRoomForm = () => {
                     fullWidth
                     margin="normal"
                     onKeyUp={handleKeyDown}
+                    sx={{ width: 'flex', height: 'auto' }} // 크기 조절을 원하는 값으로 설정
                   />
                 </CardContent>
               </Card>
@@ -144,13 +164,11 @@ const CreateRoomForm = () => {
                 }}
               >
                 <Card
-                  className="black-hover"
+                  className="yellow-hover"
                   sx={{
+                    ...cardStyle,
                     width: '200px',
-                    bgcolor: '#f1f1f1',
-                    borderRadius: '15px',
-                    marginRight: '7.5px',
-                    opacity: '0.9',
+                    marginRight: '10px',
                   }}
                   onClick={() => {
                     if (!isPrivate) {
@@ -176,11 +194,9 @@ const CreateRoomForm = () => {
                 </Card>
                 <Card
                   sx={{
+                    ...cardStyle,
                     width: '200px',
-                    borderRadius: '15px',
-                    marginLeft: '7.5px',
-                    background: '#f1f1f1',
-                    opacity: '0.9',
+                    marginLeft: '10px',
                   }}
                 >
                   <CardContent>
@@ -198,10 +214,12 @@ const CreateRoomForm = () => {
                         setPassword('');
                       }}
                       checked={passwordEnabled}
+                      color="secondary"
                     />
                     <TextField
                       label="비밀번호"
                       variant="outlined"
+                      color="secondary"
                       type="password"
                       value={password}
                       onChange={handlePasswordChange}
@@ -212,24 +230,22 @@ const CreateRoomForm = () => {
                 </Card>
               </div>
               <Card
-                className="black-hover"
+                className="yellow-hover"
                 sx={{
+                  ...cardStyle,
                   width: 'auto',
                   height: '50px',
-                  borderRadius: '15px',
-                  marginTop: '15px',
+                  marginTop: '20px',
                   display: 'flex',
-                  bgcolor: '#f1f1f1',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  opacity: '0.9',
                 }}
               >
                 <Button
                   onClick={() => {
                     addNewRoom();
                   }}
-                  color="primary"
+                  color="secondary"
                 >
                   <Typography variant="h5">완료</Typography>
                 </Button>
