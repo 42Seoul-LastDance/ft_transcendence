@@ -32,8 +32,6 @@ const HeaderAlert: React.FC<HeaderAlertProps> = ({}) => {
     const timer = setTimeout(() => {
       dispatch(setShowAlert(false));
     }, timeout);
-
-    return () => clearTimeout(timer);
   }, [showAlert, timeout]);
 
   return showAlert ? (
@@ -41,6 +39,7 @@ const HeaderAlert: React.FC<HeaderAlertProps> = ({}) => {
       <Alert
         sx={{
           borderRadius: '15px',
+          zIndex: 2,
         }}
         severity={severity}
       >

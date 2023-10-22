@@ -22,19 +22,6 @@ import AddIcon from '@mui/icons-material/Add';
 import { JoinStatus, RoomStatus } from '@/app/enums';
 import { myAlert } from '../alert';
 
-const modalStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '30%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 400,
-  background: '#444444',
-  boxShadow: '24px 24px 48px rgba(0, 0, 0, 0.2)',
-  padding: 4,
-  borderRadius: '15px',
-  opacity: '0.95',
-};
-
 const CreateRoomForm = () => {
   const chatSocket = useChatSocket();
   const dispatch = useDispatch();
@@ -111,7 +98,7 @@ const CreateRoomForm = () => {
   return (
     <>
       <div>
-        <Box sx={{ '& > :not(style)': { m: 1 } }}>
+        <Box sx={{ '& > :not(style)': { m: 1 }, opacity: 0.9 }}>
           <Fab
             color="primary"
             size="small"
@@ -123,9 +110,9 @@ const CreateRoomForm = () => {
             <AddIcon />
           </Fab>
         </Box>
-        <Modal open={open} onClose={handleClose}>
-          <Box sx={modalStyle}>
-            <Typography id="modal-modal-title" variant="h5" component="h6">
+        <Modal open={open} onClose={handleClose} className="modal">
+          <Box className="modal-content">
+            <Typography id="modal-modal-title" variant="h4" component="h6">
               방 만들기 {passwordEnabled ? '🔐' : ''}
             </Typography>
             <Box sx={{ marginTop: '30px' }}>
@@ -133,7 +120,7 @@ const CreateRoomForm = () => {
                 sx={{
                   borderRadius: '15px',
                   marginBottom: '15px',
-                  background: '#555',
+                  background: '#f1f1f1',
                   opacity: '0.9',
                 }}
               >
@@ -160,7 +147,7 @@ const CreateRoomForm = () => {
                   className="black-hover"
                   sx={{
                     width: '200px',
-                    bgcolor: '#555',
+                    bgcolor: '#f1f1f1',
                     borderRadius: '15px',
                     marginRight: '7.5px',
                     opacity: '0.9',
@@ -192,7 +179,7 @@ const CreateRoomForm = () => {
                     width: '200px',
                     borderRadius: '15px',
                     marginLeft: '7.5px',
-                    background: '#555',
+                    background: '#f1f1f1',
                     opacity: '0.9',
                   }}
                 >
@@ -224,25 +211,29 @@ const CreateRoomForm = () => {
                   </CardContent>
                 </Card>
               </div>
-              <Button
-                onClick={() => {
-                  addNewRoom();
-                }}
-                color="primary"
+              <Card
                 className="black-hover"
                 sx={{
-                  width: '400px',
+                  width: 'auto',
                   height: '50px',
                   borderRadius: '15px',
                   marginTop: '15px',
                   display: 'flex',
-                  bgcolor: '#555',
+                  bgcolor: '#f1f1f1',
                   justifyContent: 'center',
                   alignItems: 'center',
+                  opacity: '0.9',
                 }}
               >
-                <Typography variant="h5">완료</Typography>
-              </Button>
+                <Button
+                  onClick={() => {
+                    addNewRoom();
+                  }}
+                  color="primary"
+                >
+                  <Typography variant="h5">완료</Typography>
+                </Button>
+              </Card>
             </Box>
           </Box>
         </Modal>

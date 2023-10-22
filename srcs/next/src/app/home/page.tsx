@@ -65,8 +65,8 @@ const HomeContent = () => {
 const MainHome = () => {
   return (
     <>
-      <HeaderAlert severity={'warning'} />
       <HomeContent />
+      <HeaderAlert severity={'warning'} />
     </>
   );
 };
