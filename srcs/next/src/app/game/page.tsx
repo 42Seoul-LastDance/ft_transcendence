@@ -14,16 +14,16 @@ import SuperSocketProvider, {
   useSuperSocket,
 } from '../contexts/superSocketContext';
 import AutoAlert, { myAlert } from '../home/alert';
-import { useChatSocket } from '../contexts/chatSocketContext';
 
 const GameHomeContent = () => {
-  const isMatched = useSelector((state: RootState) => state.match.isMatched);
-  const dispatch = useDispatch();
-  const customSet = useSelector((state: RootState) => state.match.customSet);
-  const superSocket = useSuperSocket();
+	const isMatched = useSelector((state: RootState) => state.match.isMatched);
+	const customSet = useSelector((state: RootState) => state.match.customSet);
+	const alreadyPlayed = useSelector((state: RootState) => state.match.alreadyPlayed);
+	const superSocket = useSuperSocket();
+	const dispatch = useDispatch();
 
   useEffect(() => {
-    if (customSet.joinMode === GameJoinMode.CUSTOM_SEND) {
+    if (customSet.joinMode === GameJoinMode.CUSTOM_SEND && !alreadyPlayed) {
       dispatch(setIsMatched({ isMatched: false }));
       dispatch(setIsMatchInProgress({ isMatchInProgress: true }));
 
@@ -35,7 +35,7 @@ const GameHomeContent = () => {
         gameMode: customSet.gameMode,
       });
       myAlert('success', '상대방을 게임에 초대했습니다', dispatch);
-    } else if (customSet.joinMode === GameJoinMode.CUSTOM_RECV) {
+    } else if (customSet.joinMode === GameJoinMode.CUSTOM_RECV && !alreadyPlayed) {
       dispatch(setIsMatched({ isMatched: undefined }));
       myAlert('success', '게임 초대를 수락했습니다', dispatch);
     } else dispatch(setIsMatched({ isMatched: false }));

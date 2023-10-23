@@ -4,10 +4,22 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import { PlayerSide } from '../enums';
 import { UserPannelProps } from '../interfaces';
+import { Typography } from '@mui/material';
+
+const newspaperSpinning = [
+  { transform: "rotate(0) scale(1)" },
+  { transform: "rotate(360deg) scale(0)" },
+];
+
+const newspaperTiming = {
+  duration: 2000,
+  iterations: 1,
+};
 
 const imageStyle = {
-  width: '50px', // 이미지의 너비를 조정
+  width: '60px', // 이미지의 너비를 조정
   height: 'auto', // 높이를 자동으로 조정하여 비율 유지
+  Animation: 'animate'
 };
 
 const UserPannel: React.FC<UserPannelProps> = ({ screenSide }) => {
@@ -19,27 +31,46 @@ const UserPannel: React.FC<UserPannelProps> = ({ screenSide }) => {
 
   return (
     <>
-      {/* {mySide !== screenSide && <img src={emoji} style={imageStyle} />} */}
-      {/* {mySide === screenSide && <img src={myEmoji} style={imageStyle} />} */}
+    <div>
+     
       {screenSide === PlayerSide.LEFT ? (
+        <Typography 
+        variant="h5" style={{
+          textAlign: 'center',
+          marginRight: '40px',
+          marginBottom: '10px',
+        }}
+        >{leftName}</Typography>
+      ) : (
+        <Typography
+        variant="h5" style={{
+          textAlign: 'center',
+          marginLeft: '40px',
+          marginBottom: '10px',
+          
+        }}>{rightName}</Typography>
+      )}
+      {/* emoji */}
+       {screenSide === PlayerSide.LEFT ? (
         mySide === PlayerSide.LEFT ? (
           <img src={myEmoji} style={imageStyle} />
         ) : (
           <img src={emoji} style={imageStyle} />
         )
       ) : null}
-      {screenSide === PlayerSide.LEFT ? (
-        <div>{leftName}</div>
-      ) : (
-        <div>{rightName}</div>
-      )}
-      {screenSide === PlayerSide.RIGHT ? (
+       {
+       screenSide === PlayerSide.RIGHT ? (
         mySide === PlayerSide.RIGHT ? (
+          <div>
           <img src={myEmoji} style={imageStyle} />
+          </div>
         ) : (
+          <div>
           <img src={emoji} style={imageStyle} />
+          </div>
         )
-      ) : null}
+      ) :  null}
+      </div>
     </>
   );
 };

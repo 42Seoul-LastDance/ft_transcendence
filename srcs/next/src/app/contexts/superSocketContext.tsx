@@ -7,7 +7,7 @@ import {
   registerSocketEvent,
 } from './socket';
 import { useRouter } from 'next/navigation';
-import { Events, UserInfoJson } from '../interfaces';
+import { EmitResult, Events, UserInfoJson } from '../interfaces';
 import {
   setInvitationList,
   setJoin,
@@ -18,6 +18,7 @@ import {
 import { useDispatch } from 'react-redux';
 import { getCookie } from '../cookie';
 import { JoinStatus } from '../enums';
+import { myAlert } from '../home/alert';
 
 // SocketContext 생성
 const SuperSocketContext = createContext<Socket | undefined>(undefined);
@@ -67,6 +68,19 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
       {
         event: 'getInvitationList',
         callback: (data) => dispatch(setInvitationList(data)),
+      },
+      {
+        event: 'updateInvitation',
+        callback: () => {
+          superSocket?.emit('getInvitationList');
+        },
+      },
+      {
+        event: 'eventFailure',
+        callback: (data: EmitResult) => {
+          myAlert('error', data.reason, dispatch);
+        console.log('eventFailure', data.reason)
+        },
       },
     ];
     superSocket.connect();

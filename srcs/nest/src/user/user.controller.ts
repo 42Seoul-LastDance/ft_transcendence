@@ -28,59 +28,6 @@ export class UserController {
     private logger = new Logger(UserController.name);
     constructor(private readonly userService: UserService) {}
 
-    //* user signup
-
-    // @Post('/signup')
-    // // @UseGuards(JwtEnrollGuard)
-    // @UseInterceptors(FileInterceptor('profileImage'))
-    // async signup(
-    //     // @Req() req,
-    //     // @Res() res: Response,
-    //     @UploadedFile() profileImage: Express.Multer.File, // TODO -> 테스트 필요 : 프론트에서 파일을 Body에 묶어서 보낼 수 있는지 확인
-    //     @Body('') : string, // * -> 프론트에서 Content-type 헤더를 multipart/form-data 로 설정하면 된다네요 by GPT ->great!!!
-    // ) {
-    //     const user = await this.userService.getUserByUserName();
-    //     if (user) throw new BadRequestException('already used ');
-
-    //     console.log(, profileImage.filename);
-    //     //* authDto, , imageUrl 필요
-    //     // await this.userService.registerUser(
-    //     //     req.authDto,
-    //     //     ,
-    //     //     profileImage.filename,
-    //     // );
-    //     // res.clearCookie('enroll_token');
-
-    //     // return res.redirect(process.env.FRONT_URL + '/main');
-    // }
-
-    // @Patch('/signup/')
-    // @UseGuards(JwtEnrollGuard)
-    // async signupuserName(@Req() req, @Body('') : string) {
-    //     const user = await this.userService.getUserByUserName();
-    //     if (user) throw new BadRequestException('already used ');
-    //     await this.userService.updateuserNameBySlackId(
-    //         req.authDto.slackId,
-    //         ,
-    //     );
-    // }
-
-    // //TODO: null일 수 도 있다
-    // @Patch('/signup/profileImage')
-    // @UseGuards(JwtEnrollGuard)
-    // @UseInterceptors(FileInterceptor('profileImage'))
-    // async signupProfileImage(
-    //     @Req() req,
-    //     @UploadedFile() file: Express.Multer.File,
-    // ) {
-    //     await this.userService.updateProfileImageBySlackId(
-    //         req.authDto.slackId,
-    //         file.filename,
-    //     );
-    // }
-
-    //TODO user info update 하나로 합치기 => 테스트 필요
-    //* user info update ===============================================================
     @Patch('/update')
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(FileInterceptor('profileImage'))
@@ -89,49 +36,41 @@ export class UserController {
         @Res() res: Response,
         @UploadedFile() profileImage: Express.Multer.File | undefined,
         @Body('userName') userName: string | undefined,
-        @Body('require2fa') require2fa: boolean,
+        @Body('require2fa') require2fa: string,
     ) {
         try {
+			let require : boolean;
             console.log('update', userName, require2fa, profileImage?.filename);
-            await this.userService.updateUserInfo(req.user.sub, userName, require2fa, profileImage);
+            if (require2fa === 'true')
+                require = true;
+            else
+                require = false;
+            await this.userService.updateUserInfo(req.user.sub, userName, require, profileImage);
+            this.logger.log('api done!');
+
+            const user = await this.userService.findUserById(req.user.sub);
+            console.log('user after end api:', user);
+
+            return res.sendStatus(200);
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: updateUserInfo', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'updateUserInfo failed' });
         }
     }
-
-    // @Patch('/update/:userName')
-    // @UseGuards(JwtAuthGuard)
-    // async updateUserName(@Req() req, @Param('userName') userName: string) {
-    //     const user = await this.userService.getUserByUserName(userName);
-    //     if (user) throw new BadRequestException('already used ');
-    //     await this.userService.updateUserNameBySlackId(req.user.slackId, userName);
-    // }
-
-    // @Patch('/update/tfa')
-    // @UseGuards(JwtAuthGuard)
-    // async updateUser2fa(@Req() req, @Body('2fa') is2fa: boolean) {
-    //     await this.userService.update2faConfBySlackId(req.user.slackId, is2fa);
-    // }
-
-    // @Patch('/update/profileImage')
-    // @UseGuards(JwtAuthGuard)
-    // @UseInterceptors(FileInterceptor('image_url'))
-    // async updateProfileImage(@Req() req, @UploadedFile() file: Express.Multer.File) {
-    //     await this.userService.updateProfileImageBySlackId(req.user.slackId, file.filename);
-    // }
-    //* EOF user info update ===============================================================
 
     @Get('/userInfo')
     @UseGuards(JwtAuthGuard)
     async getUserSetInfo(@Req() req, @Res() res: Response) {
         try {
-            const userSetting = await this.userService.getUserSetInfo(req.user.sub);
+			const userSetting = await this.userService.getUserSetInfo(req.user.sub);
+            this.logger.log('userInfo endpoint!!!!! 불림', userSetting);
             return res.status(200).json(userSetting);
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getUserSetInfo', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'getUserSetInfo failed' });
         }
     }
@@ -148,6 +87,7 @@ export class UserController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getProfile', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'getProfile failed' });
         }
     }
@@ -160,10 +100,11 @@ export class UserController {
             const { image, mimeType } = await this.userService.getUserProfileImage(slackId);
             if (image === undefined || mimeType === undefined) return;
             res.setHeader('Content-Type', mimeType); // 이미지의 MIME 타입 설정
-            res.send(image); // 이미지 파일을 클라이언트로 전송
+            return res.send(image); // 이미지 파일을 클라이언트로 전송
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getProfileImage', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'getProfileImage failed' });
         }
     }
@@ -171,14 +112,17 @@ export class UserController {
     @Post('/exist/')
     @UseGuards(JwtAuthGuard)
     async checkIfExists(@Res() res: Response, @Body('slackId') slackId: string) {
+        this.logger.debug('user/exists/ called.');
         try {
             const user: User = await this.userService.getUserBySlackId(slackId);
+            this.logger.debug('user' , user);
             if (user) {
                 return res.sendStatus(200);
             }
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: checkIfExists', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'checkIfExists failed' });
         }
     }
@@ -194,6 +138,7 @@ export class UserController {
                 return res.status(400).send({ reason: 'checkUniqueName failed: already in DB' });
             }
         } catch (error) {
+            if (error.status === 500) res.sendStatus(500);
             //* this is not error
             return res.sendStatus(200);
         }

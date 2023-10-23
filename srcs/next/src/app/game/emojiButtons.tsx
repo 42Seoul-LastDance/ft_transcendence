@@ -17,7 +17,7 @@ const EmojiButtons = () => {
   };
 
   const imageStyle = {
-    width: '50px', // 이미지의 너비를 조정
+    width: '60px', // 이미지의 너비를 조정
     height: 'auto', // 높이를 자동으로 조정하여 비율 유지
   };
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Unity, useUnityContext } from 'react-unity-webgl';
 import { RootState } from '../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
-import { setIsMatched, setNames } from '../redux/matchSlice';
+import { setAlreadyPlayed, setIsMatchInProgress, setIsMatched, setNames } from '../redux/matchSlice';
 import { useGameSocket } from '../contexts/gameSocketContext';
 import { ReactUnityEventParameter } from 'react-unity-webgl/distribution/types/react-unity-event-parameters';
 import EmojiButtons from './emojiButtons';
@@ -47,7 +47,7 @@ const Game = () => {
           }),
         );
         sendMessage('GameManager', 'StartGame', JSON.stringify(json));
-        console.log('! startGame Event Detected : ', json);
+        // console.log('! startGame Event Detected : ', json);
       });
     }
     if (!socket?.hasListeners('movePaddle')) {
@@ -68,7 +68,7 @@ const Game = () => {
     }
     if (!socket?.hasListeners('gameOver')) {
       socket?.on('gameOver', (json: JSON) => {
-        console.log('! gameOver Event Detected : ', json);
+        // console.log('! gameOver Event Detected : ', json);
         sendMessage('GameManager', 'GameOver', JSON.stringify(json));
         setIsPlaying(false);
         if (
@@ -80,11 +80,10 @@ const Game = () => {
     }
     if (!socket?.hasListeners('ballHit')) {
       socket?.on('ballHit', (json: JSON) => {
-        console.log('! ballHit Event Detected : ', json);
+        // console.log('! ballHit Event Detected : ', json);
         sendMessage('Ball', 'SynchronizeBallPos', JSON.stringify(json));
       });
     }
-    window.addEventListener('blur', handleBlur);
   };
 
   const handleUnityException = useCallback((data: ReactUnityEventParameter) => {
@@ -110,7 +109,8 @@ const Game = () => {
     addEventListener('ValidCheck', handleValidCheck);
     addEventListener('BallHit', handleBallHit);
     addEventListener('UnityException', handleUnityException);
-    // window.addEventListener('blur', handleBlur);
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('resize', handleBlur);
 
     return () => {
       removeEventListener('Init', Init);
@@ -119,6 +119,7 @@ const Game = () => {
       removeEventListener('BallHit', handleBallHit);
       removeEventListener('UnityException', handleUnityException);
       window.removeEventListener('blur', handleBlur);
+	  window.removeEventListener('resize', handleBlur);
     };
   }, [
     addEventListener,
@@ -137,6 +138,8 @@ const Game = () => {
         rightName: '???',
       }),
     );
+	dispatch(setIsMatchInProgress({isMatchInProgress: false}));
+	dispatch(setAlreadyPlayed({alreadyPlayed: true}));
   }, []);
 
   if (!socket?.hasListeners('sendEmoji')) {
@@ -173,11 +176,10 @@ const Game = () => {
         <UserPannel screenSide={PlayerSide.LEFT} />
         <Unity
           unityProvider={unityProvider}
-          style={{ width: 1024, height: 576 }}
+          style={{ width: 1024, height: 576, minWidth: 1024, minHeight: 576, }}
         />
         <UserPannel screenSide={PlayerSide.RIGHT} />
-      </div>
-
+	  </div>
       <EmojiButtons />
 
       <Button
@@ -192,6 +194,7 @@ const Game = () => {
       <Button
         onClick={() => {
           dispatch(setIsMatched({ isMatched: false }));
+		  dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
           socket?.disconnect();
           router.push('/home');
         }}

@@ -27,9 +27,9 @@ import { useRouter } from 'next/navigation';
 import { clearSocketEvent, registerSocketEvent } from '../contexts/socket';
 import { useEffect } from 'react';
 import { Events, GetInvitationListJson } from '../interfaces';
-import { GameJoinMode, GameMode, InviteType } from '../enums';
+import { GameJoinMode, GameMode, InviteType, JoinStatus } from '../enums';
 import { Button } from '@mui/material';
-import { setCustomSet } from '../redux/matchSlice';
+import { setAlreadyPlayed, setCustomSet } from '../redux/matchSlice';
 import HomeIcon from '@mui/icons-material/Home';
 
 const HeaderNavigationBarContent = () => {
@@ -44,24 +44,6 @@ const HeaderNavigationBarContent = () => {
   const chatSocket = useChatSocket();
   const superSocket = useSuperSocket();
   const isMenuOpen = Boolean(anchorEl);
-
-  useEffect(() => {
-    superSocket?.emit('invitationSize');
-  }, []);
-
-  useEffect(() => {
-    const e: Events[] = [
-      {
-        event: 'updateInvitation',
-        once: true,
-        callback: () => {
-          superSocket?.emit('getInvitationList');
-        },
-      },
-    ];
-    if (anchorEl) registerSocketEvent(superSocket!, e);
-    else clearSocketEvent(superSocket!, e);
-  }, [anchorEl, invitationList]);
 
   const handleProfileOpen = () => {
     dispatch(setViewProfile({ viewProfile: true, targetSlackId: mySlackId }));
@@ -98,6 +80,7 @@ const HeaderNavigationBarContent = () => {
         opponentSlackId: hostSlackId,
       }),
     );
+	dispatch(setAlreadyPlayed({alreadyPlayed: false}));
     chatSocket?.disconnect();
     router.push('/game');
     superSocket?.emit('agreeInvite', { hostSlackId: hostSlackId });
@@ -109,6 +92,7 @@ const HeaderNavigationBarContent = () => {
     chatRoomName: string,
   ) => {
     console.log('--- chat 수락함 ---', hostName, chatRoomName);
+	if (!(chatSocket?.connected)) chatSocket?.connect();
     superSocket?.emit('agreeInvite', { hostSlackId: hostSlackId });
     chatSocket?.emit('joinPrivateChatRoom', { roomName: chatRoomName });
   };
@@ -143,26 +127,28 @@ const HeaderNavigationBarContent = () => {
       onClose={handleMenuClose}
     >
       {invitationList.length === 0 ? (
-        <Typography>받은 초대가 없습니다</Typography>
+        <Typography style={{fontSize: '19px', padding: '10px', backgroundColor: '#f4dfff', font:'sans serif', }}>받은 초대가 없습니다</Typography>
       ) : (
         invitationList?.map(
           (invitation: GetInvitationListJson, index: number) => (
-            <MenuItem key={index}>
+            <MenuItem key={index} >
               {invitation.inviteType === InviteType.CHAT
                 ? `${invitation.hostName}님이 ${invitation.chatRoomType} 방인 ${invitation.chatRoomName}에 초대하셨습니다 ! `
                 : `${invitation.hostName}님이 ` +
                   (invitation.gameMode === GameMode.NORMAL
                     ? 'NORMAL'
                     : 'HARD') +
-                  ` 모드로 게임을 초대하셨습니다 ! `}
+                  ` 모드로 게임을 초대하셨습니다! `}
               <Button
                 variant="contained"
+                style={{backgroundColor: '#f4dfff', color: 'black', margin:'8px'}}
                 onClick={() => handleSubmitInvite(invitation)}
               >
                 수락
               </Button>
               <Button
                 variant="contained"
+                style={{backgroundColor: '#f4dfff', color: 'black', margin:'8px'}}
                 onClick={() => declineInvitation(invitation.hostSlackId)}
               >
                 거절

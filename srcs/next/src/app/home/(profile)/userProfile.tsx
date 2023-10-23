@@ -15,6 +15,7 @@ import { setJoin, setUserImg } from '@/app/redux/userSlice';
 import { FriendStatus, JoinStatus } from '@/app/enums';
 import Avatar from '@mui/material/Avatar';
 import sendRequestImage from '@/app/imageApi';
+// import axios from 'axios';
 
 const UserProfile = () => {
   const superSocket = useSuperSocket();
@@ -32,6 +33,7 @@ const UserProfile = () => {
   const [slackId, setSlackId] = useState<string>('');
   //* users profileImg
   const [mimeType, setMimeType] = useState<AxiosHeaderValue | undefined>('');
+  const [imageFile, setImageFile] = useState<string | undefined>('');
   //* game ranking
   const [normalWin, setNormalWin] = useState<number>(0);
   const [normalLose, setNormalLose] = useState<number>(0);
@@ -55,8 +57,6 @@ const UserProfile = () => {
   const [isBlocked, setIsBlocked] = useState<boolean>(true);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const join = useSelector((state: RootState) => state.user.join);
-  const userImg = useSelector((state: RootState) => state.user.userImg);
-
   const dispatch = useDispatch();
 
   const requestIsFriend = async () => {
@@ -69,7 +69,7 @@ const UserProfile = () => {
       friendResp.data['status'] === FriendStatus.REQUESTED
     )
       setFriendRequestAvailable(false);
-    console.log('친구니?', friendResp.data['status']);
+    // console.log('친구니?', friendResp.data['status']);
   };
 
   const requestIsBlocked = async () => {
@@ -79,7 +79,7 @@ const UserProfile = () => {
       router,
     );
     setIsBlocked(blockedResp.data['isBlocked']);
-    console.log('블락이니?', blockedResp.data['isBlocked']);
+    // console.log('블락이니?', blockedResp.data['isBlocked']);
   };
 
   const handleOpen = async () => {
@@ -120,6 +120,7 @@ const UserProfile = () => {
     );
     setMimeType(responseImg.headers['Content-Type']);
     const image = Buffer.from(responseImg.data, 'binary').toString('base64');
+    setImageFile(`data:${mimeType};base64,${image}`);
     dispatch(setUserImg(`data:${mimeType};base64,${image}`));
 
     const gameData = await sendRequest(
@@ -150,6 +151,7 @@ const UserProfile = () => {
 
   const handleClose = () => {
     setClose(true);
+	dispatch(setViewProfile({ viewProfile: false, targetSlackId: null }))
   };
 
   const requestBeFriend = async () => {
@@ -195,9 +197,9 @@ const UserProfile = () => {
   };
 
   const TypographyStyle = {
-    variant: 'body2',
+    variant: 'h6',
     color: 'Grey',
-    fontSize: '20px',
+    fontSize: '18px',
   };
 
   return (
@@ -206,12 +208,17 @@ const UserProfile = () => {
         className="modal"
         open={viewProfile}
         onClose={handleClose}
+        sx={{
+          display: 'flex',
+          justifyContent: 'center', // 수평 중앙 정렬
+          alignItems: 'center', // 수직 중앙 정렬
+        }}
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
       >
         {isLoaded ? (
           <Box className="modal-content">
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignContent: 'center' }}>
               <Card sx={{ ...cardStyle }}>
                 <Typography
                   id="modal-modal-title"
@@ -219,7 +226,7 @@ const UserProfile = () => {
                   color="CadetBlue"
                 >
                   {targetName}'s Profile
-                  <Avatar src={userImg || undefined} alt={`${slackId}`} />
+                  <Avatar src={imageFile || undefined} alt={`${slackId}`} />
                 </Typography>
               </Card>
               <div

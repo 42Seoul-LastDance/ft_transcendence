@@ -23,6 +23,7 @@ export class BlockedUsersController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getBlockList', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'getBlockList failed' });
         }
     }
@@ -37,6 +38,7 @@ export class BlockedUsersController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: unblockUser', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'unblockUser failed' });
         }
     }
@@ -52,6 +54,7 @@ export class BlockedUsersController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: blockUser', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'blockUser failed' });
         }
     }
@@ -68,6 +71,7 @@ export class BlockedUsersController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: isBlocked', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'isBlocked failed' });
         }
     }

@@ -1,8 +1,9 @@
 body {
-  background-image: url('/theme/witch.jpeg'); /* 이미지 파일의 경로 */
-  background-size: cover; /* 배경 이미지를 화면 크기에 맞게 확대 또는 축소 */
-  background-position: center; /* 배경 이미지를 중앙 정렬 */
-  background-attachment: fixed; /* 스크롤 시 배경 이미지 고정 여부 (선택적) */
+  /* background-image: url('/theme/background.jpeg'); 이미지 파일의 경로 */
+  background-color: "#444444";
+  /* background-size: cover; /* 배경 이미지를 화면 크기에 맞게 확대 또는 축소 */
+  /* background-position: center; 배경 이미지를 중앙 정렬 */
+  /* background-attachment: fixed; 스크롤 시 배경 이미지 고정 여부 (선택적) */
 }
 
 .alert-container {
@@ -90,7 +91,7 @@ body {
   justify-content: center;
   align-items: center;
   backdrop-filter: blur(8px); /* 배경 블러 처리 */
-  z-index: 1; /* 모달을 다른 내용 위에 표시하기 위한 z-index */
+  z-index: 3; /* 모달을 다른 내용 위에 표시하기 위한 z-index */
 }
 
 .modal-content {
@@ -102,7 +103,7 @@ body {
   margin: 20px;
   transform: translate(-50%, -50%);
   border-radius: 15px;
-  opacity: 1;
+  opacity: 4;
 }
 
 .image-slider {

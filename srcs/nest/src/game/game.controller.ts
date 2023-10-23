@@ -17,6 +17,7 @@ export class GameController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getGameData', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'getGameData failed' });
         }
     }
@@ -30,6 +31,7 @@ export class GameController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getFriendGameData', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'getFriendGameData failed' });
         }
     }

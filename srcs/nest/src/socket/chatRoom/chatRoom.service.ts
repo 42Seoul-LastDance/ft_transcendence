@@ -122,7 +122,7 @@ export class ChatRoomService {
     }
     //result, reason
     emitFailReason(socket: Socket, event: string, reason: string) {
-        this.logger.error(`error in ${event}`);
+        this.logger.log(`error in ${event} : ${reason}`);
         const response = {
             result: false,
             reason: reason,
@@ -272,7 +272,7 @@ export class ChatRoomService {
         const checkDuplicate: boolean = this.checkDuplicate(createRoomDto.roomName);
         if (checkDuplicate) {
             this.logger.warn(`Create failed : chat room already exists.`);
-            this.emitFailReason(socket, 'createChatRoom', `${createRoomDto.roomName} ㅂ`);
+            this.emitFailReason(socket, 'createChatRoom', `${createRoomDto.roomName} `);
             return false;
         }
 
@@ -358,7 +358,7 @@ export class ChatRoomService {
         const userId = this.socketUsersService.getUserIdByChatSocketId(socket.id);
         const userName = await this.socketUsersService.getUserNameByUserId(userId);
 
-        // console.log('JOIN PUBLIC CHAT ROOM targetRoom : ', targetRoom);
+        console.log('JOIN PUBLIC CHAT ROOM targetRoom : ', targetRoom);
         // console.log('userId: ', userId);
         if (targetRoom === undefined) {
             //NO SUCH ROOM
@@ -391,7 +391,8 @@ export class ChatRoomService {
         targetRoom.memberList.add(userId);
         socket.emit('serverMessage', `"${userName}"님이 "${targetRoom.roomName}"방에 접속했습니다`);
         socket.to(roomName).emit('serverMessage', `"${userName}"님이 "${targetRoom.roomName}"방에 접속했습니다`);
-
+        
+        this.logger.log('PUBLIC CHAT ROOM SUCCESS, EMIT');
         this.emitSuccess(socket, 'joinPublicChatRoom', `"${targetRoom.roomName}"방에 접속했어요.`);
         return true;
     }

@@ -1,10 +1,9 @@
 // ChatSetting.js
 import React, { useState, MouseEvent, useEffect } from 'react';
 import List from '@mui/material/List';
-import { Button, ListSubheader, Menu, Switch, TextField } from '@mui/material';
+import { Button, Card, Divider, ListSubheader, Menu, Switch, TextField } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
-import CommonListItem from './CommonListItem';
 import ChatMenu from './chatMenu';
 import { Events, Member, UserInfoJson } from '@/app/interfaces';
 import { useChatSocket } from '@/app/contexts/chatSocketContext';
@@ -33,7 +32,7 @@ const ChatSetting = () => {
   const [password, setPassword] = useState<string>('');
   const [inviteName, setInviteName] = useState<string>('');
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
-  const [isInputEnabled, setInputEnabled] = useState(true);
+  const [isInputEnabled, setInputEnabled] = useState(false);
   const myPermission = useSelector(
     (state: RootState) => state.room.myPermission,
   );
@@ -82,6 +81,20 @@ const ChatSetting = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const e: Events[] = [
+      {
+        event: 'getMemberStateList',
+        once: true,
+        callback: (data: Member[]) => {
+          if (anchorEl) setAnchorEl(null);
+          dispatch(setRoomMemberList(data));
+        },
+      }
+    ];
+    registerSocketEvent(chatSocket!, e);
+  } ,[anchorEl, memberList]);
+
   const handleClick = (event: MouseEvent<HTMLDivElement>, member: Member) => {
     dispatch(setSelectedMember(member));
     setAnchorEl(event.currentTarget);
@@ -111,11 +124,11 @@ const ChatSetting = () => {
       isValid('유저네임이', inviteName, maxUniqueNameLength, dispatch) === false
     )
       return;
-    // const exist = await checkExistUser();
-    // if (!exist) {
-    //   myAlert('error', '존재 유저입니다.', dispatch);
-    //   return;
-    // }
+    const exist = await checkExistUser();
+    if (!exist) {
+      myAlert('error', '존재하지 않는 유저입니다.', dispatch);
+      return;
+    }
     memberList.map((member, index) => {
       if (member.slackId === inviteName) {
         myAlert('error', '이미 채팅방에 존재하는 유저입니다.', dispatch);
@@ -158,41 +171,47 @@ const ChatSetting = () => {
   };
 
   const submitPassword = () => {
-    if (isValid('비밀번호가', password, maxPasswordLength, dispatch) === false)
-      return;
-    chatSocket?.emit('setRoomPassword', {
-      roomName: chatRoom?.roomName,
-      password: password,
-    });
-    setPassword('');
-  };
-
-  const handleSwitchChange = () => {
     if (isInputEnabled) {
+      if (isValid('비밀번호가', password, maxPasswordLength, dispatch) === false)
+        return;
+      chatSocket?.emit('setRoomPassword', {
+        roomName: chatRoom?.roomName,
+        password: password,
+      });
+      setPassword('');
+    } else {
       setPassword('');
       chatSocket?.emit('unsetRoomPassword', {
         roomName: chatRoom?.roomName,
       });
     }
+  };
+
+  const handleSwitchChange = () => {
     setInputEnabled((prev) => !prev);
   };
 
   return (
     <>
       <List
-        sx={{ width: 300, bgcolor: 'AntiqueWhite' }}
+        sx={{ width: 300, bgcolor: '#f4dfff' }}
         subheader={<ListSubheader>대화 참여자</ListSubheader>}
       >
         {memberList?.map((member: Member, index: number) => (
-          <CommonListItem
-            key={index}
-            primaryText={member.userName}
-            secondText={member.slackId}
-            permission={member.permission}
-            onClick={(event: React.MouseEvent<HTMLDivElement>) =>
-              handleClick(event, member)
-            }
-          ></CommonListItem>
+      			<ListItem alignItems="flex-start"  onClick={(e: any)=>{handleClick(e, member)}}>
+              <Card className="purple-hover" sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start', // 왼쪽 정렬
+                padding: '8px',
+                width: '460px',
+                maxHeight: 'auto',
+                borderRadius: '15px',
+                opacity: '0.8',
+              }}>
+        			<ListItemText primary={member.userName} secondary={member.slackId} />
+              </Card>
+      			</ListItem>
         ))}
         <Menu
           anchorEl={anchorEl}
@@ -204,17 +223,17 @@ const ChatSetting = () => {
         >
           <ChatMenu />
         </Menu>
-        {/* ChatMenu 컴포넌트에 선택한 멤버 정보 전달 */}
+
       </List>
       <List
-        sx={{ width: 300, bgcolor: 'Cadetblue' }}
+        sx={{ width: 300, bgcolor: '#f4dfff' }}
         subheader={
           <ListSubheader>앞으로 채팅방에 못 들어오는 유저</ListSubheader>
         }
       >
         {banList?.map((member: UserInfoJson, index: number) => (
           <ListItem key={index}>
-            <ListItemText primary={member.slackId} secondary="introduce" />
+            <ListItemText primary={member.userName} secondary={member.slackId} />
             {myPermission <= UserPermission.ADMIN && (
               <Button
                 onClick={() => {
@@ -259,9 +278,8 @@ const ChatSetting = () => {
                   size="large"
                   onClick={submitPassword}
                   style={{ marginLeft: '8px' }}
-                  disabled={!isInputEnabled}
                 >
-                  send
+                  OK
                 </Button>
               </div>
             </>

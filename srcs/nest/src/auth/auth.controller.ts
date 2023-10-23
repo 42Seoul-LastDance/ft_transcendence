@@ -69,39 +69,26 @@ export class AuthController {
             if (user.require2fa === true) {
                 res.status(HttpStatus.OK);
                 const token = await this.authService.generate2faToken(user.id, user.userName);
-                res.cookie('2fa_token', token, {
-                    // maxAge: +process.env.JWT_2FA_COOKIE_TIME, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-                    // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                    // secure: false,
-                });
+                res.cookie('2fa_token', token);
                 try {
                     this.logger.debug(`${user.id} id `);
                     await this.authService.sendMail(user.id);
                 } catch (error) {
                     this.logger.debug('sendMail fail T.T');
-                    return;
+                    return res.redirect(process.env.FRONT_URL);
                 }
-
                 return res.redirect(process.env.FRONT_URL + '/tfa'); //TODO : 로직 변경
             }
 
             const { jwt, refreshToken } = await this.authService.generateAuthToken(user.id, user.userName);
             res.status(HttpStatus.OK);
-
-            res.cookie('access_token', jwt, {
-                // maxAge: +process.env.ACCESS_COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-                // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                // secure: false,
-            });
-            res.cookie('refresh_token', refreshToken, {
-                // maxAge: +process.env.REFRESH_COOKIE_MAX_AGE, //테스트용으로 숫자 길게 맘대로 해둠: 3분
-                // sameSite: true, //: Lax 옵션으로 특정 상황에선 요청이 전송되는 방식.CORS 로 가능하게 하자.
-                // secure: false,
-            });
+            res.cookie('access_token', jwt);
+            res.cookie('refresh_token', refreshToken);
             return res.redirect(process.env.FRONT_URL + '/home');
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: callBack', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'callback failed' });
         }
     }
@@ -127,6 +114,7 @@ export class AuthController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: verify2fa', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'verify2fa failed' });
         }
     }
@@ -142,6 +130,7 @@ export class AuthController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: regenerateToken', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'regenerateToken failed' });
         }
     }
@@ -161,6 +150,7 @@ export class AuthController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: logout', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'logout failed' });
         }
     }

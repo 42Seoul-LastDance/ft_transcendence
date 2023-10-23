@@ -44,10 +44,7 @@ const roomSlice = createSlice({
     ) => {
       state.myPermission = action.payload;
     },
-    setSelectedMember: (
-      state: RoomList,
-      action: PayloadAction<Member | null>,
-    ) => {
+    setSelectedMember: (state: RoomList, action: PayloadAction<Member | null>,) => {
       state.selectedMember = action.payload;
     },
   },

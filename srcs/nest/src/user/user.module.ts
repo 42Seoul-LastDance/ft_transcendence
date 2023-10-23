@@ -24,7 +24,7 @@ import { DirectMessageModule } from 'src/socket/directMessage/directMessage.modu
         MulterModule.registerAsync({
             useFactory: () => ({
                 storage: diskStorage({
-                    destination: __dirname + '/../../profile',
+                    destination: '/usr/app/srcs/profile/',
                     filename: (req, file, callback) => {
                         const name = Date.now().toString(); // 파일 이름 -> 현재 시각 (유니크하게)
                         const mimeTypeMap = {

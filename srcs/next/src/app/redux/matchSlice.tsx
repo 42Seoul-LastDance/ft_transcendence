@@ -6,6 +6,7 @@ export interface MatchState {
   customSet: CustomGameSet;
   isMatched: boolean | undefined;
   isMatchInProgress: boolean;
+  alreadyPlayed: boolean;
   side: PlayerSide;
   emoji: string;
   myEmoji: string;
@@ -22,6 +23,7 @@ const initialState: MatchState = {
   },
   isMatched: undefined,
   isMatchInProgress: false,
+  alreadyPlayed: false,
   side: PlayerSide.NONE,
   emoji: '',
   myEmoji: '',
@@ -81,6 +83,12 @@ export const matchSlice = createSlice({
       state.leftName = action.payload.leftName;
       state.rightName = action.payload.rightName;
     },
+	setAlreadyPlayed: (
+		state: MatchState,
+		action: PayloadAction<{ alreadyPlayed: boolean }>,
+	) => {
+		state.alreadyPlayed = action.payload.alreadyPlayed;
+	},
   },
 });
 
@@ -93,4 +101,5 @@ export const {
   setMyEmoji,
   setNames,
   setIsMatchInProgress,
+  setAlreadyPlayed,
 } = matchSlice.actions;

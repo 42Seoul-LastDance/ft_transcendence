@@ -80,6 +80,7 @@ const Matching = () => {
               className="yellow-hover"
               sx={{ ...buttonStyle }}
               onClick={() => {
+				if (!(gameSocket?.connected)) gameSocket?.connect();
                 dispatch(setIsMatchInProgress({ isMatchInProgress: true }));
                 gameSocket?.emit('pushQueue', {
                   gameMode: GameMode.NORMAL,
@@ -111,6 +112,7 @@ const Matching = () => {
                 bgcolor: '#ffbf06',
               }}
               onClick={() => {
+				if (!(gameSocket?.connected)) gameSocket?.connect();
                 dispatch(setIsMatchInProgress({ isMatchInProgress: true }));
                 gameSocket?.emit('pushQueue', {
                   gameMode: GameMode.HARD,

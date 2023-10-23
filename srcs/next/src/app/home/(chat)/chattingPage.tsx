@@ -47,6 +47,7 @@ const ChattingPage = (props: ChattingPageProps) => {
   const friendSlackId = useSelector(
     (state: RootState) => state.dm.friendSlackId,
   );
+  const [chatState, setChatState] = useState<boolean>(false);
   let target: string | undefined | null = undefined;
 
   join === JoinStatus.CHAT
@@ -63,8 +64,8 @@ const ChattingPage = (props: ChattingPageProps) => {
         event: 'sendMessage',
         once: true,
         callback: (data: any) => {
-          console.log('sendMEssage 받음.');
           if (join === JoinStatus.CHAT) {
+            setChatState(!chatState);
             props.socket?.emit('receiveMessage', data);
           } else if (
             join === JoinStatus.DM &&
@@ -84,7 +85,6 @@ const ChattingPage = (props: ChattingPageProps) => {
             content: data.content,
           };
           setChatMessages([...chatMessages, newMsg]);
-          console.log('setChatMessages 함', chatMessages);
         },
       },
       {
@@ -109,12 +109,11 @@ const ChattingPage = (props: ChattingPageProps) => {
     ];
     registerSocketEvent(props.socket!, e);
     return () => clearSocketEvent(props.socket!, e);
-  }, [join, chatMessages, target]);
-  //
+  }, [join, chatMessages, target, chatState]);
+  
   useEffect(() => {
     if (join === JoinStatus.DM) prevDmMessages();
     else if (join === JoinStatus.CHAT) clearChatMessages();
-    // TODO : 채팅방 입장 -> 퇴장 -> 다시 입장 시 메시지 안 옴!
   }, [target]);
 
   useEffect(() => {
@@ -139,11 +138,12 @@ const ChattingPage = (props: ChattingPageProps) => {
   const SendMessage = () => {
     if (!inputMessage) return;
     console.log(
-      'sendMessage  event 보냄',
+      'sendMessage event 보냄',
       target,
       myName,
       inputMessage,
       chatRoom?.status,
+	  props.socket
     );
     props.socket?.emit('sendMessage', {
       roomName: target,
@@ -154,7 +154,6 @@ const ChattingPage = (props: ChattingPageProps) => {
 
     setInputMessage('');
   };
-
   const scrollToBottom = () => {
     if (listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
@@ -218,9 +217,14 @@ const ChattingPage = (props: ChattingPageProps) => {
           >
             <div style={settingsBarStyle}></div>
           </Button>
-          <Drawer anchor="right" open={isMouseOver} onClose={toggleSettings}>
-            <ChatSetting />
-          </Drawer>
+          <Drawer
+            anchor="right"
+            open={isMouseOver}
+            onClose={toggleSettings}
+            style={{ zIndex: 3 }} // z-index 값을 낮춤
+          >
+        <ChatSetting />
+      </Drawer>
         </>
       )}
       <Card
@@ -231,7 +235,9 @@ const ChattingPage = (props: ChattingPageProps) => {
           alignItems: 'center',
           padding: '20px',
           borderRadius: '15px', // 가장자리 라운드 값 (여기서는 10px로 설정)
-          bgcolor: '#a0b8cf', // 원하는 색상을 여기
+          // bgcolor: '#a0b8cf', // 원하는 색상을 여기
+          bgcolor: '#d1afe9',
+          // bgcolor: '#f4dfff',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -276,6 +282,7 @@ const ChattingPage = (props: ChattingPageProps) => {
                 </ListItem>
               ) : (
                 <div
+                  key={index}
                   style={{
                     display: 'flex',
                     flexDirection: 'column',

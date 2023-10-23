@@ -41,6 +41,11 @@ export class DirectMessageService {
         this.socketUsersService.setFriendList(userId);
         this.socketUsersService.setBlockList(userId);
         this.socketUsersService.setInviteList(userId);
+
+        socket.emit(
+            'invitationSize',
+            this.getInvitationSize(userId)
+        );
     }
 
     async getUserBySocketId(socketId: string): Promise<User> {
@@ -174,22 +179,27 @@ export class DirectMessageService {
         }
         const guestId: number = this.socketUsersService.getUserIdByDMSocketId(guestSocket.id);
         guestSocket.emit('updateInvitation');
-        guestSocket.emit('invitationSize', this.socketUsersService.getInviteListByUserId(guestId).size);
+        guestSocket.emit('invitationSize', this.getInvitationSize(guestId));
     }
 
     async agreeInvite(socketId: string, payload: JSON) {
         const guestSocket = await this.socketUsersService.agreeInvite(socketId, payload['hostSlackId']);
         const guestId: number = this.socketUsersService.getUserIdByDMSocketId(guestSocket.id);
         guestSocket.emit('updateInvitation');
-        guestSocket.emit('invitationSize', this.socketUsersService.getInviteListByUserId(guestId).size);
+        guestSocket.emit('invitationSize', this.getInvitationSize(guestId));
     }
 
     async declineInvite(socketId: string, payload: JSON) {
         const guestSocket = await this.socketUsersService.declineInvite(socketId, payload['hostSlackId']);
         const guestId: number = this.socketUsersService.getUserIdByDMSocketId(guestSocket.id);
         guestSocket.emit('updateInvitation');
-        guestSocket.emit('invitationSize', this.socketUsersService.getInviteListByUserId(guestId).size);
+        guestSocket.emit('invitationSize', this.getInvitationSize(guestId));
     }
+
+        getInvitationSize(userId: number){
+        return  this.socketUsersService.getInviteListByUserId(userId).size;
+    }
+
 
     async deleteFriend(socket: Socket, payload: JSON) {
         // 친구 삭제 이벤트가 일어날 때 친구 리스트 실시간 업데이트

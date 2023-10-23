@@ -24,6 +24,7 @@ const BlockList: React.FC = () => {
       router,
     );
     if (requestUnblock.status === 200) handleResponse();
+	handleResponse();
   };
 
   useEffect(() => {
@@ -48,6 +49,7 @@ const BlockList: React.FC = () => {
               />
               <Button
                 variant="contained"
+                color="secondary"
                 onClick={() => unblockUser(info.slackId)}
               >
                 해제하기

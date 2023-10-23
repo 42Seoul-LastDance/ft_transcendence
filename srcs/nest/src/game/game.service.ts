@@ -43,6 +43,7 @@ import { GameRepository } from './game.repository';
 import { DateTime } from 'luxon';
 import { UserService } from 'src/user/user.service';
 import { SocketUsersService } from '../socket/socketUsersService/socketUsers.service';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class GameService {
@@ -130,8 +131,8 @@ export class GameService {
     //* Match Game ======================================
     //큐 등록
     async pushQueue(playerId: string, gameMode: number) {
-        this.updatePlayer(playerId, gameMode, GameType.MATCH);
         try {
+            this.updatePlayer(playerId, gameMode, GameType.MATCH);
             if (this.matchQueue[gameMode] !== undefined) {
                 const playerQ = this.matchQueue[gameMode];
                 this.matchQueue[gameMode] = undefined;
@@ -208,11 +209,15 @@ export class GameService {
                 guestSocket.emit('updateInvitation');
                 guestSocket.emit(
                     'invitationSize',
-                    this.socketUsersService.getInviteListByUserId(hostPlayer.friendId).size,
+                    this.getInvitationSize(hostPlayer.friendId)
                 );
             }
             this.friendGameList.delete(hostPlayer.userName);
         }
+    }
+
+    getInvitationSize(userId: number){
+        return this.socketUsersService.getInviteListByUserId(userId).size;
     }
 
     denyInvite(playerId: string, friendName: string) {
@@ -343,10 +348,7 @@ export class GameService {
         const rivalSocket = this.gameRoomList.get(roomId).socket[PlayerSide.RIGHT];
         //score check
         try {
-            if (
-                gameInfo['ballPosX'] <= BALL_POS_X_MIN + SCORE_PADDING ||
-                gameInfo['ballPosX'] >= BALL_POS_X_MAX - SCORE_PADDING
-            ) {
+            if (gameInfo['score'] === true) {
                 let scoreSide = PlayerSide.RIGHT;
                 if (gameInfo['ballPosX'] >= BALL_POS_X_MAX - SCORE_PADDING) scoreSide = PlayerSide.LEFT;
                 this.gameRoomList.get(roomId).score[scoreSide] += 1;
@@ -355,7 +357,6 @@ export class GameService {
                     await this.finishGame(roomId, scoreSide, GameEndStatus.NORMAL);
                 } else this.continueGame(roomId);
             } else {
-                //받아침! => ballInfo update & rival에게 전달
                 this.updateBall(
                     roomId,
                     gameInfo['ballDirX'],
@@ -490,13 +491,14 @@ export class GameService {
                 endTime: room.endTime,
                 endGameStatus: room.endGameStatus,
             } as Game);
-            //! check for the data
             await this.gameRepository.save(newGameData);
 
-            //user table에 exp, level 업데이트
-            await this.userService.updateUserExp(winnerUserId, newGameData.winnerScore);
-            if (room.endGameStatus === GameEndStatus.NORMAL)
-                await this.userService.updateUserExp(loserUserId, newGameData.loserScore);
+            //ranking game 후: user table에 exp, level 업데이트
+            if (room.gameType === GameType.MATCH) {
+                await this.userService.updateUserExp(winnerUserId, newGameData.winnerScore);
+                if (room.endGameStatus === GameEndStatus.NORMAL)
+                    await this.userService.updateUserExp(loserUserId, newGameData.loserScore);
+            }
         } catch (error) {
             console.log('error >> gameService >> createGameData');
             throw new InternalServerErrorException('[ERR] gameService >> createGameData');
@@ -564,7 +566,6 @@ export class GameService {
 
     updatePlayer(playerId: string, gameMode: number, gameType: number, friendId?: number | undefined) {
         const player: Player = this.socketUsersService.getPlayerBySocketId(playerId);
-        //TODO throw 다른걸로 변경 필요
         if (player === undefined) throw new BadRequestException('player undefined');
         if (player.roomId) throw new BadRequestException('player already in gameRoom');
         if (friendId) player.friendId = friendId;
@@ -612,11 +613,12 @@ export class GameService {
     //*API용: 프로필 게임 정보
     async getGameData(slackId: string) {
         try {
-            const userId = (await this.userService.getUserBySlackId(slackId)).id;
+            const user: User = await this.userService.getUserBySlackId(slackId);
+            if (user === undefined) return null;
             const gameRecords = await this.gameRepository.find({
                 where: [
-                    { winnerId: userId, gameType: GameType.MATCH },
-                    { loserId: userId, gameType: GameType.MATCH },
+                    { winnerId: user.id, gameType: GameType.MATCH },
+                    { loserId: user.id, gameType: GameType.MATCH },
                 ],
             });
 
@@ -629,10 +631,10 @@ export class GameService {
 
             for (const record of gameRecords) {
                 if (record.gameMode === GameMode.NORMAL) {
-                    if (record.winnerId === userId) gameData.normalWin += 1;
+                    if (record.winnerId === user.id) gameData.normalWin += 1;
                     else gameData.normalLose += 1;
                 } else {
-                    if (record.winnerId === userId) gameData.hardWin += 1;
+                    if (record.winnerId === user.id) gameData.hardWin += 1;
                     else gameData.hardLose += 1;
                 }
             }
@@ -645,16 +647,17 @@ export class GameService {
 
     async getFriendGameData(userId: number, friendSlackId: string) {
         try {
-            const friendId = (await this.userService.getUserBySlackId(friendSlackId)).id;
+            const friend: User = await this.userService.getUserBySlackId(friendSlackId);
+            if (friend === undefined) return null;
             const gameRecords = await this.gameRepository.find({
                 where: [
                     {
                         winnerId: userId,
-                        loserId: friendId,
+                        loserId: friend.id,
                         gameType: GameType.FRIEND,
                     },
                     {
-                        winnerId: friendId,
+                        winnerId: friend.id,
                         loserId: userId,
                         gameType: GameType.FRIEND,
                     },

@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, Unique } from 'typeorm';
 import { UserStatus } from './user-status.enum';
-import { IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsString } from 'class-validator';
 import { userRole } from './user-role.enum';
 
 @Entity({ name: 'user', schema: 'public' })
@@ -33,20 +33,20 @@ export class User {
     @IsString()
     require2fa: boolean;
 
-    @Column({ default: 0 })
+    @Column({ default: '' })
     @IsString()
     code2fa: string;
 
     @Column({ default: UserStatus.OFFLINE })
-    @IsString()
+    @IsEnum(UserStatus)
     status: UserStatus;
 
     @Column({ default: 0 })
-    @IsString()
+    @IsNumber()
     exp: number;
 
     @Column({ default: 0 })
-    @IsString()
+    @IsNumber()
     level: number;
 
     @Column({ default: 0, nullable: true })

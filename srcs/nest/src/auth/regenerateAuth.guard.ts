@@ -36,7 +36,7 @@ export class RegenerateAuthGuard implements CanActivate {
     private getRefreshTokenFromHeader(request: Request): string | null {
         // HTTP 요청 헤더에서 "refresh_token" 값을 가져옵니다.
         const headers = request.headers.authorization;
-        this.logger.debug('refresh toekn REFRESH TOKEN:', request.headers.authorization);
+        // this.logger.debug('refresh toekn REFRESH TOKEN:', request.headers.authorization);
         // console.log('refresh token from header :', headers);
         if (!headers) return null;
         const token = headers.split(' ');
@@ -46,7 +46,7 @@ export class RegenerateAuthGuard implements CanActivate {
         // }
         // "refresh_token" 헤더가 없거나 문자열이 아닌 경우 null을 반환합니다.
         // return null;
-        this.logger.debug('token ', token[1]);
+        // this.logger.debug('token ', token[1]);
         return token[1];
     }
 }

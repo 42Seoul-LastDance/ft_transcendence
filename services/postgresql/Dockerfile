@@ -1,7 +1,6 @@
 FROM postgres:latest
 
-RUN apt-get update \
-	&& apt-get install -y dumb-init
+RUN apt-get update
 
 RUN mkdir -p /var/lib/postgresql/data
 RUN chown -R postgres:postgres /var/lib/postgresql/data
@@ -18,8 +17,7 @@ RUN echo "CREATE DATABASE ${DB_NAME};" > /docker-entrypoint-initdb.d/init_psql.s
     echo "GRANT ALL PRIVILEGES ON SCHEMA public TO ${POSTGRES_USER_ID};" >> /docker-entrypoint-initdb.d/init_psql.sql
 
 RUN chown postgres:postgres /docker-entrypoint-initdb.d/init_psql.sql
-USER postgres
 
-ENTRYPOINT	["/usr/bin/dumb-init", "--"]
+USER postgres
 
 CMD ["postgres", "-D", "/var/lib/postgresql/data"]

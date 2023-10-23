@@ -19,6 +19,7 @@ export class FriendController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getFriendStatus', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'getFriendStatus failed' });
         }
     }
@@ -32,6 +33,7 @@ export class FriendController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: requestFriend', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'requestFriend failed' });
         }
     }
@@ -45,6 +47,7 @@ export class FriendController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: deleteFriend', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'deleteFriend failed' });
         }
     }
@@ -61,6 +64,7 @@ export class FriendController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getInvitation', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'getInvitation failed' });
         }
     }
@@ -74,6 +78,7 @@ export class FriendController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: acceptRequest', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'acceptRequest failed' });
         }
     }
@@ -87,6 +92,7 @@ export class FriendController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: declineRequest', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'declineRequest failed' });
         }
     }

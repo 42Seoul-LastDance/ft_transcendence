@@ -17,7 +17,7 @@ import {
 import { clearSocketEvent, registerSocketEvent } from '@/app/contexts/socket';
 import { EmitResult, Events } from '@/app/interfaces';
 import { setMyPermission } from '@/app/redux/roomSlice';
-import { setCustomSet } from '@/app/redux/matchSlice';
+import { setAlreadyPlayed, setCustomSet } from '@/app/redux/matchSlice';
 import { setViewProfile } from '@/app/redux/viewSlice';
 import { setChatRoom, setJoin } from '@/app/redux/userSlice';
 
@@ -99,6 +99,7 @@ const ChatMenu = () => {
 
   const handleGameClick = (mode: GameMode) => {
     chatSocket?.disconnect();
+	dispatch(setAlreadyPlayed({alreadyPlayed: false}));
     dispatch(
       setCustomSet({
         joinMode: GameJoinMode.CUSTOM_SEND,
@@ -171,6 +172,7 @@ const ChatMenu = () => {
         '& > *': {
           m: 1,
         },
+        zIndex: 999,
       }}
     >
       <ButtonGroup

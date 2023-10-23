@@ -80,7 +80,9 @@ const FriendList: React.FC = () => {
               divider
               className="list-item"
               sx={{
-                width: 450,
+                mt: '5px',
+                borderRadius: '15px',
+                width: 480,
               }}
             >
               <Avatar

@@ -46,22 +46,6 @@ export class AuthService {
     }
 
     getRefreshTokenFromRequest(req: Request): string | undefined {
-        // console.log(req.headers);
-        // 이런형식으로 들어 와 요 ~ --jaejkim 10/08
-        // {
-        //     authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNjk2NzU1NTE1LCJleHAiOjE2OTg4MjkxMTV9.ksj-_2CXbMxJGPpi1wi2niD1cd-SFFe0GMIuv-V3k3I',
-        // }
-
-        //  X
-        // if (req.headers.cookie) {
-        //     const cookies = req.headers.cookie.split(';');
-        //     for (const cookie of cookies) {
-        //         const [name, value] = cookie.trim().split('=');
-        //         if (name === 'refresh_token') {
-        //             return decodeURIComponent(value);
-        //         }
-        //     }
-        // }
         if (req.headers.authorization) {
             const [bearer, token] = req.headers.authorization.split(' ');
             if (bearer === 'Bearer' && token) {
@@ -91,6 +75,7 @@ export class AuthService {
         }
 
         const user = await this.userService.findUserById(payload.sub);
+        if (user === undefined) throw new BadRequestException('no such user');
         const newPayload = {
             sub: user.id,
             userName: user.userName,
@@ -132,7 +117,7 @@ export class AuthService {
         } catch (error) {
             if (error.getStatus() == 404) {
                 // console.log('user does not exist, so must be saved.\n');
-                return await this.userService.registerUser(user, 'default.png');
+                return await this.userService.registerUser(user);
             } else throw error;
         }
     }
@@ -141,21 +126,23 @@ export class AuthService {
         try {
             this.mailService.sendMail(id);
         } catch (error) {
-            throw new BadRequestException('error from twofactorAuthentication');
+            throw new InternalServerErrorException('error from twofactorAuthentication');
         }
     }
 
-    async checkUserIfExists(@Res() res: Response, user: Auth42Dto): Promise<boolean> {
-        try {
-            await this.userService.getUserBySlackId(user.slackId);
-            return true;
-        } catch (error) {
-            if (error.getStatus() == 404) {
-                return false;
-            } else {
-                this.logger.error('checkUserIfExists error');
-                throw new BadRequestException('from 42callback');
-            }
-        }
-    }
+    //안쓰는듯..?
+    // async checkUserIfExists(@Res() res: Response, user: Auth42Dto): Promise<boolean> {
+    //     try {
+    //         await this.userService.getUserBySlackId(user.slackId);
+    //         return true;
+    //     } catch (error) {
+    //         if (error.getStatus() == 404) {
+    //             return false;
+    //         } else {
+    //             this.logger.error('checkUserIfExists error');
+    //             //TODO 하기 exception 괜찮은지 확인 필요(400에러)
+    //             throw new BadRequestException('from 42callback');
+    //         }
+    //     }
+    // }
 }

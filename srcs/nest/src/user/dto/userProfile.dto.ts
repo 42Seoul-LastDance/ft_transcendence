@@ -1,6 +1,5 @@
 import { IsNotEmpty, IsString, IsNumber } from 'class-validator';
 
-//TODO 프로필에 보여줄 내용 정해야함
 export class UserProfileDto {
     @IsNotEmpty()
     @IsNumber()

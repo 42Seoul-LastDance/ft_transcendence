@@ -2,10 +2,10 @@
 
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import ChattingTabs from './(chat)/chattingTabs';
-import { useChatSocket } from '../contexts/chatSocketContext';
+import ChatSocketProvider, { useChatSocket } from '../contexts/chatSocketContext';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { setIsMatched } from '../redux/matchSlice';
+import { setCustomSet, setIsMatchInProgress, setIsMatched } from '../redux/matchSlice';
 import HeaderAlert from './alert';
 import {
   Button,
@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { setJoin } from '../redux/userSlice';
 import { useGameSocket } from '../contexts/gameSocketContext';
-import { JoinStatus, RoomStatus } from '../enums';
+import { GameJoinMode, GameMode, JoinStatus, RoomStatus } from '../enums';
 import { useRouter } from 'next/navigation';
 import RocketIcon from '@mui/icons-material/Rocket';
 
@@ -27,16 +27,32 @@ const HomeContent = () => {
   const gameSocket = useGameSocket();
   const [render, setRender] = useState<boolean | undefined>(false);
 
-  useEffect(() => {
-    if (gameSocket?.connected) gameSocket.disconnect();
-    if (!chatSocket?.connected) chatSocket?.connect();
-
+  const disconnectGame = () => {
+	if (gameSocket?.connected) gameSocket.disconnect();
     dispatch(setIsMatched({ isMatched: false }));
+	dispatch(setIsMatchInProgress({isMatchInProgress: false}));
     dispatch(setJoin(JoinStatus.NONE));
+  }
+
+  const clickGame = () => {
+	chatSocket?.disconnect();
+	dispatch(
+		setCustomSet({
+		  joinMode: GameJoinMode.MATCH,
+		  gameMode: GameMode.NONE,
+		  opponentName: undefined,
+		  opponentSlackId: undefined,
+		}),
+	  );
+	router.push('/game');
+  }
+
+  useEffect(() => {
+	disconnectGame();
+    setRender(true);
     chatSocket?.emit('getChatRoomList', {
       roomStatus: RoomStatus.PUBLIC,
     });
-    setRender(true);
     return () => setRender(false);
   }, []);
 
@@ -51,9 +67,7 @@ const HomeContent = () => {
               sx={{ borderRadius: '15px' }}
               variant="contained"
               color="secondary"
-              onClick={() => {
-                router.push('/game');
-              }}
+              onClick={clickGame}
             >
               <Typography variant="h5" sx={{ color: '#a8336c' }}>
                 Game

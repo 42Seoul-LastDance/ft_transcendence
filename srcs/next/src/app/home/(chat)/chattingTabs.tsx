@@ -19,9 +19,11 @@ import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import BlockIcon from '@mui/icons-material/Block';
 const commonTabStyle = {
   color: 'black', // 텍스트 색상을 검정색으로 설정
+  width: '120px',
+  height: '40px',
   borderRadius: '15px 15px 0 0',
-  borderBottom: '2px solid transparent', // 아웃라인 추가
-  borderColor: 'black', // 테두리의 색상을 검정색으로 설정
+  borderBottom: '1px solid transparent', // 아웃라인 추가
+  borderColor: '#ffbf06', // 테두리의 색상을 검정색으로 설정
   borderWidth: '2px', // 테두리의 두께를 2px로 설정
   borderStyle: 'solid', // 테두리 스타일을 실선으로 설정
 };
@@ -77,7 +79,7 @@ const ChattingTabs: React.FC = () => {
           sx={value === 2 ? activeTabStyle : inactiveTabStyle}
         />
         <Tab
-          label="Block List"
+          label="BlockList"
           icon={<BlockIcon />}
           className="yellow-hover"
           sx={value === 3 ? activeTabStyle : inactiveTabStyle}

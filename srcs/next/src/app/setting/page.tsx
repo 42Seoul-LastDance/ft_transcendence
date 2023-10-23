@@ -14,7 +14,7 @@ import TextField from '@mui/material/TextField';
 import Avatar from '@mui/material/Avatar';
 import store, { RootState } from '../redux/store';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import { myAlert } from '../home/alert';
+import HeaderAlert, { myAlert } from '../home/alert';
 import { setName, setUserImg } from '../redux/userSlice';
 import { styled } from '@mui/material/styles';
 import { maxUniqueNameLength } from '../globals';
@@ -24,12 +24,16 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { ButtonGroup, IconButton } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import sendRequestImage from '../imageApi';
+import { AxiosHeaderValue } from 'axios';
 
 const SettingInfo = () => {
   const [require2fa, setRequire2fa] = useState<boolean>(false);
+  const [switchOn, setSwitchOn] = useState<boolean>(false);
   const [inputName, setInputName] = useState<string>('');
-  const [inputImg, setInputImg] = useState<string | null>(null);
+  const [thumbImg, setThumbImg] = useState<string | null>(null);
   const [newImg, setNewImg] = useState<File | null>(null);
+  const [mimeType, setMimeType] = useState<AxiosHeaderValue | undefined>('');
+  const [curImage, setCurImage] = useState<string | undefined>(undefined);
   const userImg = useSelector((state: RootState) => state.user.userImg);
   const dispatch = useDispatch();
   const myName = useSelector((state: RootState) => state.user.userName);
@@ -47,31 +51,37 @@ const SettingInfo = () => {
 
   const getUserInfo = async () => {
     const response = await sendRequest('get', '/users/userInfo/', router);
-    setRequire2fa(response.data.require2fa);
+    if (response.status === 200)
+    {
+      setRequire2fa(response.data['require2fa']);
+      setSwitchOn(response.data['require2fa']);
+    }
+    else
+    {
+      console.log('/users/userInfo/ 실패함')
+    }
   };
 
   const getUserProfileImg = async () => {
-    //TODO 하기 내용 profile에 있는 내용으로 바꾸기
-    // const response = await sendRequest(
-    //   'get',
-    //   `users/profileImg/${mySlackId}`,
-    //   router,
-    // );
-    // const imageBlob = new Blob([response.data.profileImage], {
-    //   type: 'image/png',
-    // });
-    // const imageUrl = URL.createObjectURL(imageBlob);
-    // dispatch(setUserImg(imageUrl));
-    // setInputImg(imageUrl);
+    const responseImg = await sendRequestImage(
+      'get',
+      `/users/profileImg/${mySlackId}`,
+      router,
+    );
+    setMimeType(responseImg.headers['Content-Type']);
+    const image = Buffer.from(responseImg.data, 'binary').toString('base64');
+    setCurImage(`data:${mimeType};base64,${image}`);
+    dispatch(setUserImg(`data:${mimeType};base64,${image}`));
   };
 
   const checkDuplicate = async (): Promise<boolean> => {
-    console.log('보내는 이름', inputName);
     const response = await sendRequest('post', `/users/username/`, router, {
       name: inputName,
     });
-    if (response.status < 300) return true;
+    if (response.status < 300) 
+		return true;
     else if (response.status === 404) router.push('/notFound');
+    else if (response.status === 400) myAlert('error', '이미 존재하는 유저네임입니다.', dispatch);
     return false;
   };
 
@@ -80,44 +90,47 @@ const SettingInfo = () => {
   ) => {
     const file = event.target.files?.[0];
     if (file) {
+      if ((file.type !== 'image/jpeg' && file.type !== 'image/jpg' && file.type !== 'image/png') ||
+        file.size > 2 * 1024 * 1024
+        ) {
+        myAlert('error', '2MB 이하 jpg, jpeg, png 파일만 가능해요!', dispatch);
+        event.target.value = '';
+        return;
+      }
       try {
-        //TODO 이미지 파일 용량(이건 현준이한테 물어봐) 및 mimeType(jpg, jpeg, png만 받아요) 제한 필요
         setNewImg(file);
         const imageUrl = URL.createObjectURL(file);
-        if (imageUrl) {
-          setInputImg(imageUrl);
-        }
+        if (imageUrl) setThumbImg(imageUrl);
+        //하기 alert있으면 적용하기 안누를거같아서... 주석처리했습니다
+		// myAlert('success', '성공적으로 업로드 되었습니다.', dispatch);
       } catch (error) {
-        console.error('Error uploading image:', error);
+        myAlert('error', '에러 발생! 다시 시도해주세요', dispatch);
+        event.target.value = '';
       }
     }
   };
 
   const updateUserInfo = async () => {
-    //TODO 유저네임 입력하지 않고 이미지파일만 업로드할 수 없는 상황임. 수정필요 (from juhoh)
     if (
-      isValid('유저네임이', inputName, maxUniqueNameLength, dispatch) === false
-    )
+      inputName !== '' &&
+      (isValid('유저네임이', inputName, maxUniqueNameLength, dispatch) === false ||
+      (await checkDuplicate()) === false)
+    ) {
+      setInputName('');
       return;
-    if ((await checkDuplicate()) === false) return;
-
+    }
+    //기존 값과 같은지 확인
+    if (inputName === '' && switchOn === require2fa && newImg === null) 
+	{
+		myAlert('error', '변경사항이 없어용', dispatch);
+		return;
+	}
     const formData = new FormData();
     if (inputName) formData.append('userName', inputName);
-    if (require2fa) formData.append('require2fa', 'true');
-    else formData.append('require2fa', 'false');
+	if (switchOn) formData.append('require2fa', 'true');
+	else formData.append('require2fa', 'false');
     if (newImg) formData.append('profileImage', newImg);
 
-    if (formData.has('userName')) {
-      console.log('userName:', formData.get('userName'));
-    }
-    if (formData.has('require2fa')) {
-      console.log('require2fa:', formData.get('require2fa'));
-    }
-    if (formData.has('profileImage')) {
-      console.log('File is added to FormData:', formData.get('profileImage'));
-    }
-
-    console.log('to send request image');
     const response = await sendRequestImage(
       'patch',
       '/users/update/',
@@ -125,18 +138,20 @@ const SettingInfo = () => {
       formData,
     );
     if (response.status < 300) {
-      getUserInfo();
-      getUserProfileImg();
+      await getUserInfo();
       dispatch(setName(inputName));
-      dispatch(setUserImg(inputImg!));
+	  //   getUserProfileImg();
+      //   dispatch(setUserImg(inputImg!));
+	    myAlert('success', '성공적으로 변경되었습니다.', dispatch);
     } else {
       myAlert('error', 'sth went wrong', dispatch);
     }
     setInputName('');
+	setNewImg(null);
   };
 
   const handle2faChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRequire2fa(event.target.checked);
+    setSwitchOn(!switchOn);
   };
 
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,6 +183,7 @@ const SettingInfo = () => {
 
   return (
     <>
+      <HeaderAlert severity='warning'/>
       <IconButton
         onClick={() => {
           router.push('/home');
@@ -175,49 +191,61 @@ const SettingInfo = () => {
       >
         <ArrowBackIcon />
       </IconButton>
-      <List>
-        <ListItem key="userName" divider>
-          <ListItemText primary={`유저 이름: ${myName ? myName : ''}`} />
-          <TextField
-            id="outlined-basic"
-            label="uniqueName"
-            variant="outlined"
-            value={inputName}
-            onChange={handleNameChange}
-          />
-          {/* //TODO 여기에 아이디 중복 확인 버튼 필요 */}
-        </ListItem>
-        {/* <Button={}></Button=> */}
-        <ListItem key="require2fa" divider>
-          <ListItemText primary={`2fa 설정: `} />
-          <Typography>Off</Typography>
-          <Switch checked={require2fa} onChange={handle2faChange} />
-          <Typography>On</Typography>
-        </ListItem>
-        <ListItem key="userImg" divider>
-          {inputImg && <Avatar src={inputImg} />}
+      <List style={{backgroundColor: '#f4dfff', padding: '30px'}}>
+        <Typography style={{textAlign: 'center', font: 'sans-serif'}}> 개인정보 수정 </Typography>
+        
+      <ListItem key="userImg" divider>
+      <Typography style={{textAlign: 'center', marginRight: '15px'}}> Profile </Typography>
+          {thumbImg ? (<Avatar src={thumbImg} />) : (<Avatar src={curImage || undefined} alt={`${mySlackId}`} />)}
           <Button
+            style={{ marginLeft:'30px'}}
             component="label"
             variant="contained"
-            startIcon={<CloudUploadIcon />}
+            color="secondary"
+            startIcon={<CloudUploadIcon />
+          }
           >
             이미지 업로드 하기
             <VisuallyHiddenInput type="file" onChange={handleImageUpload} />
           </Button>
         </ListItem>
+        <ListItem key="userName" divider>
+          <ListItemText primary={`유저 이름: ${myName ? myName : ''}`} />
+          <TextField
+            id="outlined-basic"
+            style={{width: '220px'}}
+            label="변경할 닉네임을 입력하세요"
+            variant="outlined"
+            color="secondary"
+            value={inputName}
+            onChange={handleNameChange}
+          />
+        </ListItem>
+        {/* <Button={}></Button=> */}
+        <ListItem key="require2fa" divider>
+          <ListItemText primary={`2fa 설정: `} />
+          <Typography>Off</Typography>
+          <Switch checked={switchOn} color="secondary" onChange={handle2faChange} />
+          <Typography>On</Typography>
+        </ListItem>
+       
       </List>
       <ButtonGroup sx={{ gap: 2, display: 'flex', justifyContent: 'flex-end' }}>
         <Button
           variant="contained"
-          onClick={async () => await updateUserInfo()}
+          color="secondary"
+          onClick={() => updateUserInfo()}
         >
-          변경하기
+          적용하기
         </Button>
-        <Button variant="contained" onClick={logout}>
+        <Button 
+          variant="contained" 
+          color="secondary"
+          onClick={logout}>
           로그아웃
         </Button>
       </ButtonGroup>
-    </>
+</>
   );
 };
 

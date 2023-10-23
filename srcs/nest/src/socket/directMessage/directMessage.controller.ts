@@ -26,6 +26,7 @@ export class DirectMessageController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getLoggedDMs', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'getLoggedDMs failed' });
         }
     }
@@ -40,6 +41,7 @@ export class DirectMessageController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: sendMessage', error);
+            if (error.status === 500) res.sendStatus(500);
             return res.status(400).send({ reason: 'sendMessage failed' });
         }
     }

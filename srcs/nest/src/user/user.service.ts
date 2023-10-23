@@ -7,14 +7,11 @@ import {
     Logger,
     NotFoundException,
     UnauthorizedException,
-    forwardRef,
 } from '@nestjs/common';
-// import { InjectRepository } from '@nestjs/typeorm';
 import { Like } from 'typeorm';
 import { User } from './user.entity';
 import { UserRepository } from './user.repository';
 import { Auth42Dto } from 'src/auth/dto/auth42.dto';
-import * as bcrypt from 'bcryptjs';
 import { existsSync, readFileSync, unlinkSync } from 'fs';
 import { extname } from 'path';
 import { UserProfileDto } from './dto/userProfile.dto';
@@ -22,7 +19,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserStatus } from './user-status.enum';
 import { POINT, LEVELUP } from 'src/game/game.constants';
 import { DirectMessageService } from 'src/socket/directMessage/directMessage.service';
-// import { SocketEventHandlerSerivce } from 'src/socket/socketEventHandler/socketEventHandler.service';
 
 @Injectable()
 export class UserService {
@@ -73,13 +69,13 @@ export class UserService {
         return user;
     }
 
-    async registerUser(authDto: Auth42Dto, filename: string): Promise<User> {
+    async registerUser(authDto: Auth42Dto): Promise<User> {
         try {
             const { email, slackId } = authDto;
             const newUser = this.userRepository.create({
                 userName: slackId,
                 email: email,
-                profileurl: filename ? filename : 'default.png',
+                profileurl: null,
                 slackId: slackId,
                 role: 'GENERIC',
                 require2fa: false,
@@ -104,13 +100,26 @@ export class UserService {
     ) {
         try {
             const user = await this.findUserById(userId);
-            if (user.userName !== userName && userName) user.userName = userName;
+            if (userName && user.userName !== userName) {
+                this.logger.debug('userName update');
+                user.userName = userName;
+            }
             user.require2fa = require2fa;
-            if (user.profileurl) {
-                //TODO 기존 이미지 파일 삭제하기
+            if (profileImage && user.profileurl) {
+                //기존 이미지 삭제
+                this.logger.debug('profile update');
+                try {
+                    const filePath = `/usr/app/srcs/profile/${user.profileurl}`;
+                    if (existsSync(filePath)) unlinkSync(filePath);
+                } catch (error) {
+                    this.logger.error('[ERROR] Failed to delete profile image: ' + error.message);
+                }
             }
             user.profileurl = profileImage ? profileImage.filename : user.profileurl;
+            
             await this.userRepository.update(userId, user);
+            // const newUser = await this.findUserById(userId);
+			// console.log('after update', newUser.userName, newUser.require2fa, newUser.profileurl);
         } catch (error) {
             this.logger.error('[ERRRRRR] userService: updateUserInfo');
         }
@@ -206,6 +215,8 @@ export class UserService {
         const user: User = await this.findUserById(userId);
 
         if (user) {
+            this.logger.debug('userInfo in getUserSetInfo:');
+            this.logger.debug(user);
             const userSetting = {
                 userName: user.userName,
                 require2fa: user.require2fa,
@@ -237,11 +248,13 @@ export class UserService {
                 console.log(slackId, user);
                 return null;
             }
-            const profileImgTarget = user.profileurl ? user.profileurl : 'default.png';
-            const imagePath = '/usr/app/srcs/profile/' + profileImgTarget;
-            const image = readFileSync(imagePath); // 이미지 파일을 읽어옴
+            let profileImgTarget = user.profileurl ? user.profileurl : 'default.png';
+            let imagePath = '/usr/app/srcs/profile/' + profileImgTarget;
+            let image = readFileSync(imagePath); // 이미지 파일을 읽어옴
             if (!image) {
-                throw new InternalServerErrorException(`img file not found ${imagePath}`);
+                profileImgTarget = 'default.png';
+                imagePath = '/usr/app/srcs/profile/' + profileImgTarget;
+                image = readFileSync(imagePath); // 이미지 파일을 읽어옴
             }
             const mimeType = 'image/' + extname(profileImgTarget).substring(1);
             return { image, mimeType };

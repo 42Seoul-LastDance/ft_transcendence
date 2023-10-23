@@ -67,13 +67,16 @@ const RequestList: React.FC = () => {
   };
 
   const checkExistUser = async () => {
-    const response = await sendRequest('post', `/users/exist/`, router, {
+    try {
+      const response = await sendRequest('post', `/users/exist/`, router, {
       slackId: friendRequestSlackId,
-    });
-    console.log('res', response.status);
-    if (response.status > 300) {
-      myAlert('error', '존재하지 않는 유저입니다', dispatch);
-      return false;
+      });
+      if (response.status === 400) {
+        myAlert('error', '존재하지 않는 유저입니다', dispatch);
+        return false;
+      }
+    } catch(e) {
+      console.log(e);
     }
     return true;
   };
@@ -82,6 +85,7 @@ const RequestList: React.FC = () => {
     const response = await sendRequest('post', `/friends/isFriend/`, router, {
       friendSlackId: friendRequestSlackId,
     });
+    console.log('res checkAlreadyFriend', response.data);
     if (
       response.status < 300 &&
       response.data['status'] === FriendStatus.FRIEND
@@ -127,24 +131,22 @@ const RequestList: React.FC = () => {
     flexDirection: 'column',
     alignItems: 'flex-start', // 왼쪽 정렬
     padding: '8px',
-    width: '50%',
     opacity: '0.8',
-    maxWidth: '500px',
+    width: '460px',
     maxHeight: 'auto',
-    ml: '20px',
     borderRadius: '15px',
     marginTop: '20px',
   };
 
   return (
     <>
-      <Card sx={{ ...cardStyle }}>
-        <div style={{ marginBottom: '8px' }}>
-          <Typography id="modal-modal-description" variant="body1">
+      <Card sx={{ ...cardStyle }} >
+        <div style={{ marginBottom: '8px'}} >
+          <Typography id="modal-modal-description" variant="body1" marginLeft={2} >
             친구요청 보내기
           </Typography>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center',}} >
           <TextField
             id="friendRequest"
             label="상대의 Slack ID를 입력하세요"
@@ -152,10 +154,16 @@ const RequestList: React.FC = () => {
             value={friendRequestSlackId}
             onChange={handleInputValue}
             onKeyUp={handleKeyDown}
+            sx = {{
+              width: '240px',
+              textAlign: 'center',
+        }}
             InputProps={{
               style: {
                 backgroundColor: '#f1f1f1',
                 borderRadius: '15px',
+                width: '240px',
+                height: '50px',
               },
             }}
           />
@@ -169,7 +177,7 @@ const RequestList: React.FC = () => {
               marginLeft: '8px',
               borderRadius: '15px',
               width: '80px',
-              height: '50px',
+              height: '40px',
             }}
           >
             send
@@ -179,9 +187,10 @@ const RequestList: React.FC = () => {
 
       <Card sx={{ ...cardStyle }}>
         <List>
-          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <p style={{ marginRight: '8px' }}>받은 친구 요청 리스트</p>
+              <Typography variant='body2'>
+                받은 친구 요청 리스트
+              </Typography>
               <IconButton
                 aria-label="refresh"
                 onClick={handleGetFriendInvitation}
@@ -198,12 +207,30 @@ const RequestList: React.FC = () => {
                   />
                   <Button
                     variant="contained"
+                    color="secondary"
+                    sx={{
+                      marginLeft: '80px',
+                      marginRight: '3px',
+                      borderRadius: '15px',
+                      width: '90px',
+                      height: '40px',
+                      
+                    }}
                     onClick={() => acceptInvitation(info.slackId)}
                   >
                     친구수락
                   </Button>
                   <Button
                     variant="contained"
+                    color="secondary"
+                    sx={{
+                      marginLeft: '8px',
+                      marginRight: '8px',
+                      borderRadius: '15px',
+                      width: '60px',
+                      height: '40px',
+                      
+                    }}
                     onClick={() => declineInvitation(info.slackId)}
                   >
                     거절
@@ -211,7 +238,6 @@ const RequestList: React.FC = () => {
                 </ListItem>
               </Grow>
             ))}
-          </Typography>
         </List>
       </Card>
     </>

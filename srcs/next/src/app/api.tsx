@@ -37,6 +37,8 @@ const sendRequest = async (
     return response;
   } catch (error: any) {
     switch (error.response?.status) {
+      case 400:
+        return error.response;
       case 404:
         router.push('/notFound');
         break;
@@ -52,10 +54,13 @@ const sendRequest = async (
             url,
             data,
           });
+          console.log(`axios 요청 성공! ${url} : `, secondResponse);
           return secondResponse;
         } catch (error: any) {
           console.log('토큰 재발급 후 요청 실패');
           switch (error.response?.status) {
+            case 400:
+              return error.response;
             case 404:
               router.push('/notFound');
               break;
@@ -71,6 +76,8 @@ const sendRequest = async (
               break;
           }
         }
+      default:
+        break;
     }
     return new Promise(() => {});
   }

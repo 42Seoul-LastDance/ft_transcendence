@@ -56,6 +56,8 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
             return;
         }
         socket.emit('connectSuccess');
+        
+        this.directMessageService
     }
 
     handleDisconnect(socket: Socket) {
@@ -152,9 +154,9 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
         await this.directMessageService.deleteFriend(socket, payload);
     }
 
-    // *update userName
-    @SubscribeMessage('updateUserName')
-    async updateUserName(socket: Socket, paylod: JSON) {
-        this.logger.log('updateUserName');
-    }
+    // // *update userName
+    // @SubscribeMessage('updateUserName')
+    // async updateUserName(socket: Socket, paylod: JSON) {
+    //     this.logger.log('updateUserName');
+    // }
 }

@@ -82,6 +82,8 @@ const CreateRoomForm = () => {
       isValid('패스워드가', password, maxPasswordLength, dispatch) === false
     )
       return;
+	  if (!(chatSocket?.connected))
+		chatSocket?.connect();
     chatSocket?.emit('createChatRoom', {
       roomName: roomName,
       password: password ? password : null,
