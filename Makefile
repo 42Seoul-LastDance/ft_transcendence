@@ -5,6 +5,7 @@ all		: $(NAME)
 $(NAME) :
 	mkdir -p ./srcs/postgresql
 	@git submodule update --init --remote
+	@cp ./env/.env .
 	@bash utils/setting_ip.sh
 	@if docker info | grep -q "ERROR"; then \
 		echo "\033[0;96m--- Docker will be running soon ---"; \

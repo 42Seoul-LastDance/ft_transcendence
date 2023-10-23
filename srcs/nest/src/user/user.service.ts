@@ -99,13 +99,16 @@ export class UserService {
     async updateUserInfo(
         userId: number,
         userName: string | undefined,
-        require2fa: boolean | undefined,
+        require2fa: boolean,
         profileImage: Express.Multer.File | undefined,
     ) {
         try {
             const user = await this.findUserById(userId);
-            user.userName = userName ? userName : user.userName;
+            if (user.userName !== userName && userName) user.userName = userName;
             user.require2fa = require2fa;
+            if (user.profileurl) {
+                //TODO 기존 이미지 파일 삭제하기
+            }
             user.profileurl = profileImage ? profileImage.filename : user.profileurl;
             await this.userRepository.update(userId, user);
         } catch (error) {

@@ -89,11 +89,9 @@ export class UserController {
         @Res() res: Response,
         @UploadedFile() profileImage: Express.Multer.File | undefined,
         @Body('userName') userName: string | undefined,
-        @Body('require2fa') require2fa: boolean | undefined,
-        @Body() body,
+        @Body('require2fa') require2fa: boolean,
     ) {
         try {
-            console.log(body);
             console.log('update', userName, require2fa, profileImage?.filename);
             await this.userService.updateUserInfo(req.user.sub, userName, require2fa, profileImage);
         } catch (error) {
