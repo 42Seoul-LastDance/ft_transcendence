@@ -73,7 +73,7 @@ export class UserService {
         try {
             const { email, slackId } = authDto;
             const newUser = this.userRepository.create({
-                userName: slackId,
+                userName: slackId + Math.floor(100000 + Math.random() * 900000).toString(),
                 email: email,
                 profileurl: null,
                 slackId: slackId,
@@ -116,10 +116,10 @@ export class UserService {
                 }
             }
             user.profileurl = profileImage ? profileImage.filename : user.profileurl;
-            
+
             await this.userRepository.update(userId, user);
             // const newUser = await this.findUserById(userId);
-			// console.log('after update', newUser.userName, newUser.require2fa, newUser.profileurl);
+            // console.log('after update', newUser.userName, newUser.require2fa, newUser.profileurl);
         } catch (error) {
             this.logger.error('[ERRRRRR] userService: updateUserInfo');
         }
