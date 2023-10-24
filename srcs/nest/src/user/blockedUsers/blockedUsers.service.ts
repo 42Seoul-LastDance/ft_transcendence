@@ -21,11 +21,6 @@ export class BlockedUsersService {
             targetUserId: targetId,
         });
         await this.blockedUsersRepository.save(blockInfo);
-        this.logger.log(
-            `Saved : ${(await this.userSerivce.findUserById(userId)).userName} blocked ${
-                (await this.userSerivce.findUserById(targetId)).userName
-            }`,
-        );
     }
 
     async unblockUserById(userId: number, targetId: number): Promise<void> {
@@ -62,11 +57,11 @@ export class BlockedUsersService {
 
         for (const blockUserId of blockListId) {
             const blockUser: User = await this.userSerivce.findUserById(blockUserId);
+            if (blockUser === undefined) continue;
             const blockUserName = blockUser.userName;
             const blockSlackId = blockUser.slackId;
             blockList.push({ userName: blockUserName, slackId: blockSlackId });
         }
-        this.logger.debug('GET BLOCK USER NAME LIST : ', blockList);
         return blockList;
     }
 }

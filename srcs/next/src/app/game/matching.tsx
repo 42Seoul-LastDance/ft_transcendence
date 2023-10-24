@@ -12,7 +12,6 @@ import { GameJoinMode, GameMode, JoinStatus } from '../enums';
 import { useGameSocket } from '../contexts/gameSocketContext';
 import CircularProgress from '@mui/material/CircularProgress';
 import { Button, Card, Grid, IconButton, Typography } from '@mui/material';
-import { getDisplayName } from 'next/dist/shared/lib/utils';
 import { useRouter } from 'next/navigation';
 
 const Matching = () => {
@@ -32,6 +31,8 @@ const Matching = () => {
 
   const CirculStyle = {
     color: '#ffde80', // 노란색 배경
+    marginLeft: '20px',
+    marginTop: '20px',
   };
 
   const cardContent = {
@@ -80,7 +81,7 @@ const Matching = () => {
               className="yellow-hover"
               sx={{ ...buttonStyle }}
               onClick={() => {
-				if (!(gameSocket?.connected)) gameSocket?.connect();
+                if (!gameSocket?.connected) gameSocket?.connect();
                 dispatch(setIsMatchInProgress({ isMatchInProgress: true }));
                 gameSocket?.emit('pushQueue', {
                   gameMode: GameMode.NORMAL,
@@ -112,7 +113,7 @@ const Matching = () => {
                 bgcolor: '#ffbf06',
               }}
               onClick={() => {
-				if (!(gameSocket?.connected)) gameSocket?.connect();
+                if (!gameSocket?.connected) gameSocket?.connect();
                 dispatch(setIsMatchInProgress({ isMatchInProgress: true }));
                 gameSocket?.emit('pushQueue', {
                   gameMode: GameMode.HARD,
@@ -131,8 +132,13 @@ const Matching = () => {
           <CircularProgress sx={{ ...CirculStyle }} />
           {customSet.joinMode === GameJoinMode.CUSTOM_SEND ? (
             <>
-              <h1> Waiting... </h1>
+              <Typography variant="h4" sx={{ color: 'white' }}>
+                Waiting...
+              </Typography>
               <Button
+                sx={{ ...buttonStyle, color: '#ffbf06' }}
+                variant="contained"
+                color="secondary"
                 onClick={() => {
                   dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
                   gameSocket?.emit('quitInvite');
@@ -143,9 +149,11 @@ const Matching = () => {
             </>
           ) : (
             <>
-              <h1> Matching... </h1>
+              <Typography variant="h4" sx={{ color: 'white' }}>
+                Matching...
+              </Typography>
               <Button
-                sx={{ ...buttonStyle, color: '#ffbf06' }}
+                sx={{ ...buttonStyle, color: '#white' }}
                 color="secondary"
                 variant="contained"
                 onClick={() => {

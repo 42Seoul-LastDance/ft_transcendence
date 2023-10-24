@@ -24,7 +24,7 @@ export const BALL_SCALE_X: number = 0.5;
 export const BALL_SCALE_Y: number = 0.5;
 export const BALL_SCALE_Z: number = 0.5;
 //Game: Paddle_common
-export const PADDLE_SPEED: number = 1000;
+export const PADDLE_SPEED: number = 1300;
 export const PADDLE_SCALE_X: number = 0.3;
 export const PADDLE_SCALE_Y: number = 0.7;
 export const PADDLE_SCALE_Z: number = 3;

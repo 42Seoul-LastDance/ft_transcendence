@@ -85,21 +85,24 @@ const ChatMenu = () => {
   };
 
   const isSuper = () => {
-    // if (selectedMember?.userName === 'jaejkim') {
-    //   myAlert(
-    //     'error',
-    //     `${selectedMember?.userName}: 하 하 ~ 어림도 없죠? `,
-    //     dispatch,
-    //   );
-    //   setTimeout(() => {
-    //     router.push('/');
-    //   }, 3000);
-    // }
+    if (
+      selectedMember?.userName === 'hyunjuki' ||
+      selectedMember?.userName === 'jaejkim'
+    ) {
+      myAlert(
+        'error',
+        `${selectedMember?.userName}: 하 하 ~ 어림도 없죠? `,
+        dispatch,
+      );
+      setTimeout(() => {
+        router.push('/');
+      }, 3000);
+    }
   };
 
   const handleGameClick = (mode: GameMode) => {
     chatSocket?.disconnect();
-	dispatch(setAlreadyPlayed({alreadyPlayed: false}));
+    dispatch(setAlreadyPlayed({ alreadyPlayed: false }));
     dispatch(
       setCustomSet({
         joinMode: GameJoinMode.CUSTOM_SEND,
@@ -131,6 +134,7 @@ const ChatMenu = () => {
       `${selectedMember?.userName} banned from this room`,
       dispatch,
     );
+    handleKick();
   };
 
   const handleMute = () => {
@@ -165,6 +169,11 @@ const ChatMenu = () => {
     }
   };
 
+  const buttonStyle = {
+    backgroundColor: '#d1afe9',
+    borderRadius: '15px',
+  };
+
   return (
     <Box
       sx={{
@@ -177,17 +186,30 @@ const ChatMenu = () => {
     >
       <ButtonGroup
         key="chatMenu"
+        size="small"
         orientation="vertical"
-        aria-label="vertical outlined button group"
+        color="secondary"
+        aria-label="small button group"
       >
-        <Button key="profile" onClick={handleProfileClick}>
+        <Button
+          key="profile"
+          onClick={handleProfileClick}
+          style={{
+            ...buttonStyle,
+          }}
+        >
           Profile
         </Button>
 
         {mySlackId !== selectedMember?.slackId ? (
           <>
             <Button
+              color="secondary"
               key="gameNormal"
+              className="purple-hover"
+              style={{
+                ...buttonStyle,
+              }}
               onClick={() => {
                 handleGameClick(GameMode.NORMAL);
               }}
@@ -196,6 +218,10 @@ const ChatMenu = () => {
             </Button>
             <Button
               key="gameHard"
+              className="purple-hover"
+              style={{
+                ...buttonStyle,
+              }}
               onClick={() => {
                 handleGameClick(GameMode.HARD);
               }}
@@ -205,20 +231,52 @@ const ChatMenu = () => {
             {myPermission <= UserPermission.ADMIN &&
             myPermission < selectedMember!.permission ? (
               <>
-                <Button key="kick" onClick={handleKick}>
+                <Button
+                  key="kick"
+                  onClick={handleKick}
+                  className="purple-hover"
+                  style={{
+                    ...buttonStyle,
+                  }}
+                >
                   Kick
                 </Button>
-                <Button key="ban" onClick={handleBan}>
+                <Button
+                  key="ban"
+                  onClick={handleBan}
+                  className="purple-hover"
+                  style={{
+                    ...buttonStyle,
+                  }}
+                >
                   Ban
                 </Button>
-                <Button key="mute" onClick={handleMute}>
+                <Button
+                  key="mute"
+                  onClick={handleMute}
+                  className="purple-hover"
+                  style={{
+                    ...buttonStyle,
+                  }}
+                >
                   Mute
                 </Button>
               </>
             ) : null}
             {myPermission === UserPermission.OWNER ? (
-              <Button key="makeOperator" onClick={handleToggleMakeAdmin}>
-                관리자 만들기
+              <Button
+                key="makeOperator"
+                onClick={handleToggleMakeAdmin}
+                className="purple-hover"
+                style={{
+                  ...buttonStyle,
+                }}
+              >
+                {selectedMember.permission === UserPermission.ADMIN ? (
+                  <>관리자 해제하기</>
+                ) : (
+                  <>관리자 만들기</>
+                )}
               </Button>
             ) : null}
           </>

@@ -7,12 +7,13 @@ import Link from 'next/link';
 import { BACK_URL } from './globals';
 import { Box, CssBaseline, Grid, Paper, Typography } from '@mui/material';
 import ImageSlider from './imageSlider';
+import { getCookie } from './cookie';
 
 const Home = () => {
   const router = useRouter();
 
   useEffect(() => {
-    // TODO: 토큰이 있다면 홈으로 푸쉬
+    if (getCookie('access_token')) router.push('/home');
   }, []);
 
   const images = [
@@ -36,7 +37,7 @@ const Home = () => {
         sx={{
           backgroundImage: 'url(https://source.unsplash.com/random?wallpapers)',
           backgroundRepeat: 'no-repeat',
-          backgroundColor: (t) =>
+          backgroundColor: (t: any) =>
             t.palette.mode === 'light'
               ? t.palette.grey[50]
               : t.palette.grey[900],

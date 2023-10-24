@@ -8,15 +8,13 @@ import { BACK_URL } from '../globals';
 import { getCookie, removeCookie, setCookie } from '../cookie';
 import axios from 'axios';
 import { Button, CircularProgress, Divider } from '@mui/material';
-
+import { Typography, Card } from '@mui/material';
 const TFA = () => {
   const router = useRouter();
   const [code, setCode] = useState<string>('');
   const [isRendered, setIsRendered] = useState<boolean>(false);
 
   const requestTFA = async () => {
-    if (typeof window === 'undefined') return;
-
     const tfaToken = getCookie('2fa_token');
 
     if (!tfaToken) {
@@ -39,8 +37,7 @@ const TFA = () => {
       setCookie('refresh_token', response.data['refresh_token']);
       router.push('/home');
     } catch (error: any) {
-      if (error.status === 401) alert('인증 코드가 틀립니다');
-      else console.log('이건 무슨 에러에용?', error.status);
+      alert('인증 코드가 틀립니다');
     }
   };
 
@@ -65,27 +62,47 @@ const TFA = () => {
     <>
       {isRendered ? (
         <>
-          <h1> 2단계 인증 </h1>
-          <Divider />
-          <h3> 42 Email로 발송된 인증 코드를 입력해주세요 </h3>
-          <TextField
-            id="friendRequest"
-            variant="outlined"
-            label="인증 코드를 입력하세요"
-            value={code}
-            onChange={handleInputValue}
-            onKeyPress={handleKeyDown}
-          />
-          <Button
-            id="sendBtn"
-            variant="contained"
-            color="primary"
-            size="large"
-            onClick={requestTFA}
-            style={{ marginLeft: '8px' }}
+          <Typography variant="h3" sx={{ color: '#ffbf06', mb: '20px' }}>
+            2단계 인증
+          </Typography>
+          <Typography variant="h5" sx={{ color: 'white' }}>
+            {'42 Email로 발송된 '}
+          </Typography>
+          <Typography variant="h5" sx={{ color: '#ffbf06' }}>
+            {'인증 코드를 '}
+          </Typography>
+          <Typography variant="h5" sx={{ color: 'white' }}>
+            {'입력해주세요'}
+          </Typography>
+
+          <Card
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              width: '300px',
+              borderRadius: '15px',
+            }}
           >
-            send
-          </Button>
+            <TextField
+              id="friendRequest"
+              variant="outlined"
+              label="인증 코드를 입력하세요"
+              color="secondary"
+              value={code}
+              onChange={handleInputValue}
+              onKeyPress={handleKeyDown}
+            />
+            <Button
+              id="sendBtn"
+              variant="contained"
+              color="secondary"
+              size="large"
+              onClick={requestTFA}
+              style={{ marginLeft: '10px' }}
+            >
+              send
+            </Button>
+          </Card>
         </>
       ) : (
         <>

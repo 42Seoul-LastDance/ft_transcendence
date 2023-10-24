@@ -26,16 +26,16 @@ export const isValid = (
     return false;
   };
 
-  const isRegexInput = (): boolean => {
-    const invalidCharacters: RegExp = /["'\n=+<>]/g;
-    if (input && invalidCharacters.test(input)) {
-      const alertMessage = `${comment} 유효하지 않은 특수문자입니다. : ${input}`;
-      myAlert('error', alertMessage, dispatch);
-      return true;
-    }
-    return false;
-  };
+  // const isRegexInput = (): boolean => {
+  //   const invalidCharacters: RegExp = /[\n=+<>]/g;
+  //   if (input && invalidCharacters.test(input)) {
+  //     const alertMessage = `${comment} 유효하지 않은 특수문자입니다. : ${input}`;
+  //     myAlert('error', alertMessage, dispatch);
+  //     return true;
+  //   }
+  //   return false;
+  // };
 
-  if (isOverInput() || isEmptyInput() || isRegexInput()) return false;
+  if (isOverInput() || isEmptyInput()) return false;
   else return true;
 };

@@ -64,6 +64,7 @@ export class AuthController {
 
             //유저 검색해 신규 유저면 등록해줌 => 유저 리턴 (0912 작업 내용)
             const user = await this.authService.signUser(req.user);
+            if (user === undefined) return res.redirect(process.env.FRONT_URL);
 
             //TODO : 2fa logic 잠시 막아둠(0912)
             if (user.require2fa === true) {
@@ -71,7 +72,7 @@ export class AuthController {
                 const token = await this.authService.generate2faToken(user.id, user.userName);
                 res.cookie('2fa_token', token);
                 try {
-                    this.logger.debug(`${user.id} id `);
+                    // this.logger.debug(`${user.id} id `);
                     await this.authService.sendMail(user.id);
                 } catch (error) {
                     this.logger.debug('sendMail fail T.T');
@@ -87,9 +88,9 @@ export class AuthController {
             return res.redirect(process.env.FRONT_URL + '/home');
         } catch (error) {
             //ERROR HANDLE
-            console.log('[ERROR]: callBack', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'callback failed' });
+            this.logger.error(`callBack : ${error.name}`);
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -97,7 +98,7 @@ export class AuthController {
     @UseGuards(Jwt2faGuard)
     async verify2fa(@Req() req, @Body('code') code: string, @Res() res: Response) {
         try {
-            this.logger.debug('code : ', code);
+            // this.logger.debug('code : ', code);
             const isAuthenticated = await this.userService.verifyUser2faCode(req.user.sub, code);
 
             if (isAuthenticated) {
@@ -113,9 +114,9 @@ export class AuthController {
             }
         } catch (error) {
             //ERROR HANDLE
-            console.log('[ERROR]: verify2fa', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'verify2fa failed' });
+            this.logger.error(`verify2fa : ${error.name}`);
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -123,15 +124,13 @@ export class AuthController {
     @UseGuards(RegenerateAuthGuard)
     async regenerateToken(@Req() req, @Res() res: Response) {
         try {
-            this.logger.log('regenerateToken called');
+            // this.logger.log('regenerateToken called');
             const newToken = await this.authService.regenerateJwt(req);
-            this.logger.log('successfully sent new token in REGENERATE TOKEN', newToken);
             return res.status(200).send({ token: newToken });
         } catch (error) {
-            //ERROR HANDLE
-            console.log('[ERROR]: regenerateToken', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'regenerateToken failed' });
+            this.logger.error(`regenerateToken : ${error.name}`);
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -149,9 +148,9 @@ export class AuthController {
             });
         } catch (error) {
             //ERROR HANDLE
-            console.log('[ERROR]: logout', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'logout failed' });
+            this.logger.error(`logout : ${error.name}`);
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 }

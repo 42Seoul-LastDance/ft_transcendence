@@ -3,6 +3,7 @@ import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { Response } from 'express';
 import { BlockedUsersService } from './blockedUsers.service';
 import { UserService } from '../user.service';
+import { User } from 'src/user/user.entity';
 
 @Controller('block')
 export class BlockedUsersController {
@@ -18,13 +19,12 @@ export class BlockedUsersController {
         try {
             const blockList: Array<{ userName: string; slackId: string }> =
                 await this.blockedUsersService.getBlockUsernameAndSlackIdListById(req.user.sub);
-            //TODO res에 JSON 잘 가는지 확인 필요
             return res.send(blockList);
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getBlockList', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'getBlockList failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -32,14 +32,15 @@ export class BlockedUsersController {
     @UseGuards(JwtAuthGuard) //친구가 아닐 때만 가능함.
     async unblockUser(@Req() req, @Res() res: Response, @Param('slackId') slackId: string) {
         try {
-            const targetId = (await this.userService.getUserBySlackId(slackId)).id;
-            this.blockedUsersService.unblockUserById(req.user.sub, targetId);
+            const target: User = await this.userService.getUserBySlackId(slackId);
+            if (target === undefined) return res.sendStatus(400);
+            this.blockedUsersService.unblockUserById(req.user.sub, target.id);
             return res.sendStatus(200);
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: unblockUser', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'unblockUser failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -47,15 +48,16 @@ export class BlockedUsersController {
     @UseGuards(JwtAuthGuard)
     async blockUser(@Req() req, @Res() res: Response, @Param('slackId') slackId: string) {
         try {
-            const targetId = (await this.userService.getUserBySlackId(slackId)).id;
-            this.logger.debug(`request sub in BLOCK USER ${req.user.sub}`);
-            this.blockedUsersService.blockUserById(req.user.sub, targetId);
+            const target: User = await this.userService.getUserBySlackId(slackId);
+            if (target === undefined) return res.sendStatus(400);
+            // this.logger.debug(`request sub in BLOCK USER ${req.user.sub}`);
+            this.blockedUsersService.blockUserById(req.user.sub, target.id);
             return res.sendStatus(200);
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: blockUser', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'blockUser failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -63,16 +65,17 @@ export class BlockedUsersController {
     @UseGuards(JwtAuthGuard)
     async isBlocked(@Req() req, @Param('slackId') slackId: string, @Res() res: Response): Promise<any> {
         try {
-            const targetId: number = (await this.userService.getUserBySlackId(slackId)).id;
-            this.logger.debug(`request sub in isBlocked ${req.user.sub}`);
-            const isBlocked: boolean = await this.blockedUsersService.isBlocked(req.user.sub, targetId);
+            const target: User = await this.userService.getUserBySlackId(slackId);
+            if (target === undefined) return res.sendStatus(400);
+            // this.logger.debug(`request sub in isBlocked ${req.user.sub}`);
+            const isBlocked: boolean = await this.blockedUsersService.isBlocked(req.user.sub, target.id);
             if (isBlocked) return res.send({ isBlocked: true });
             return res.send({ isBlocked: false });
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: isBlocked', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'isBlocked failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 }

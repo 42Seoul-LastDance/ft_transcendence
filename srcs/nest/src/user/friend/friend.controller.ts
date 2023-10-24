@@ -13,14 +13,13 @@ export class FriendController {
     @UseGuards(JwtAuthGuard) //slackId 작업 완료
     async getFriendStatus(@Req() req, @Body('friendSlackId') friendSlackId: string, @Res() res: Response) {
         try {
-            this.logger.debug('parsing friendSlackId : ', friendSlackId);
             const status: FriendStatus = await this.friendService.getFriendStatus(+req.user.sub, friendSlackId);
             return res.send({ status: status });
         } catch (error) {
             //ERROR HANDLE
-            console.log('[ERROR]: getFriendStatus', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'getFriendStatus failed' });
+            this.logger.error(`getFriendStatus : ${error.name}`);
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -33,8 +32,8 @@ export class FriendController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: requestFriend', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'requestFriend failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -47,8 +46,8 @@ export class FriendController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: deleteFriend', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'deleteFriend failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -63,9 +62,9 @@ export class FriendController {
             return res.send(invitations);
         } catch (error) {
             //ERROR HANDLE
-            console.log('[ERROR]: getInvitation', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'getInvitation failed' });
+            this.logger.error(`getInvitation : ${error.name}`);
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -78,8 +77,8 @@ export class FriendController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: acceptRequest', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'acceptRequest failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -92,8 +91,8 @@ export class FriendController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: declineRequest', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'declineRequest failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 }

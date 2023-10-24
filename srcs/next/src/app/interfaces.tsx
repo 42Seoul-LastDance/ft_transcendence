@@ -1,4 +1,15 @@
-import { RoomStatus, UserPermission, UserStatus, Emoji, PlayerSide, GameMode, InviteType, GameJoinMode } from './enums';
+import {
+  RoomStatus,
+  UserPermission,
+  UserStatus,
+  Emoji,
+  PlayerSide,
+  GameMode,
+  InviteType,
+  GameJoinMode,
+  GameEndStatus,
+  GameType,
+} from './enums';
 import { Socket } from 'socket.io-client';
 
 export interface ChatRoomDto {
@@ -29,7 +40,6 @@ export interface EmitResult {
   result: boolean;
   reason: string;
 }
-
 
 export interface UserProfileProps {
   targetName: string;
@@ -68,51 +78,77 @@ export interface UserInfoJson {
   slackId: string;
 }
 export interface SendEmojiJson {
-	type: Emoji;
-  }
-  
-  export interface HandShakeJson {
-	side: PlayerSide;
-  }
-  
-  export interface UserPannelProps {
-	screenSide: PlayerSide;
-  }
-  
-  export interface InviteGameJson {
-	gameMode: GameMode;
-	friendName: string | null;
-  }
-  
-  export interface AgreeInviteJson {
-	friendName: string | null;
-  }
-  
-  export interface GetInvitationListJson {
-	hostName: string;
-	hostSlackId: string;
-	inviteType: InviteType;
-	chatRoomName: string;
-	chatRoomType: RoomStatus;
-	gameMode: GameMode;
-  }
-  
-  export interface CustomGameSet {
-	joinMode: GameJoinMode;
-	gameMode: GameMode;
-	opponentName: string | undefined;
-	opponentSlackId: string | undefined;
-  }
-  
-  export interface StartGameJson {
-	side: PlayerSide;
-	ballDirX: number;
-	ballDirY: number;
-	ballDirZ: number;
-	leftScore: number;
-	rightScore: number;
-	ballSpeed: number;
-	isFirst: boolean;
-	leftName: string;
-	rightName: string;
-  }
+  type: Emoji;
+}
+
+export interface HandShakeJson {
+  side: PlayerSide;
+}
+
+export interface UserPannelProps {
+  screenSide: PlayerSide;
+}
+
+export interface InviteGameJson {
+  gameMode: GameMode;
+  friendName: string | null;
+}
+
+export interface AgreeInviteJson {
+  friendName: string | null;
+}
+
+export interface GetInvitationListJson {
+  hostName: string;
+  hostSlackId: string;
+  inviteType: InviteType;
+  chatRoomName: string;
+  chatRoomType: RoomStatus;
+  gameMode: GameMode;
+}
+
+export interface CustomGameSet {
+  joinMode: GameJoinMode;
+  gameMode: GameMode;
+  opponentName: string | undefined;
+  opponentSlackId: string | undefined;
+}
+
+export interface StartGameJson {
+  side: PlayerSide;
+  ballDirX: number;
+  ballDirY: number;
+  ballDirZ: number;
+  leftScore: number;
+  rightScore: number;
+  ballSpeed: number;
+  isFirst: boolean;
+  leftName: string;
+  rightName: string;
+}
+
+export interface GameOverJson {
+  winner: PlayerSide;
+  leftScore: number;
+  rightScore: number;
+  reason: GameEndStatus;
+}
+
+export interface GameHistoryJson {
+  myScore: number;
+  mySide: PlayerSide;
+  gameEnd: GameEndStatus;
+  rivalName: string;
+  rivalSlackId: string;
+  rivalScore: number;
+  gameType: GameType;
+}
+
+export interface MyHistory {
+  leftName: string;
+  rightName: string;
+  score: string;
+  gameEnd: string;
+  gameType: string;
+  win: string;
+}

@@ -19,7 +19,7 @@ import { BACK_URL } from './globals';
 //   }
 
 //   // 로컬에 없고 쿠키에는 있음
-//   if (tokenType == 'access_token') {
+//   if (tokenType === 'access_token') {
 //     localStorage.setItem('access_token', token);
 //     removeCookie('access_token');
 
@@ -31,7 +31,7 @@ import { BACK_URL } from './globals';
 //     }
 //     localStorage.setItem('refresh_token', refreshToken);
 //     removeCookie('refresh_token');
-//   } else if (tokenType == 'refresh_token') {
+//   } else if (tokenType === 'refresh_token') {
 //     localStorage.setItem('refresh_token', token);
 //     removeCookie('refresh_token');
 //   } else {
@@ -44,8 +44,8 @@ import { BACK_URL } from './globals';
 export const reGenerateToken = async (router: any): Promise<AxiosResponse> => {
   const refreshToken = getCookie('refresh_token');
   if (!refreshToken) {
-	removeCookie('access_token');
-	removeCookie('refresh_token');
+    removeCookie('access_token');
+    removeCookie('refresh_token');
     router.push('/');
     return new Promise(() => {});
   }
@@ -61,13 +61,13 @@ export const reGenerateToken = async (router: any): Promise<AxiosResponse> => {
   } catch (error: any) {
     if (error.status === 401) {
       console.log('reGenerateToken Failure (Invalid refresh_token)');
-	  removeCookie('access_token');
-	  removeCookie('refresh_token');
+      removeCookie('access_token');
+      removeCookie('refresh_token');
       router.push('/');
     } else {
       console.log('reGenerateToken Failure (What err??)', error.status);
-	  removeCookie('access_token');
-	  removeCookie('refresh_token');
+      removeCookie('access_token');
+      removeCookie('refresh_token');
       router.push('/');
     }
     return new Promise(() => {});

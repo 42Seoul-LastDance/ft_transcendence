@@ -80,8 +80,8 @@ const GameSocketProvider = ({ children }: { children: React.ReactNode }) => {
         event: 'kickout',
         callback: () => {
           myAlert('error', '상대방이 나갔습니다', dispatch);
-          dispatch(setIsMatched({ isMatched: false }));
           dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
+          dispatch(setIsMatched({ isMatched: false }));
         },
       },
       {

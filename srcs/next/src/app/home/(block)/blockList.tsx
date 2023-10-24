@@ -7,7 +7,8 @@ import sendRequest from '../../api';
 import { useRouter } from 'next/navigation';
 import { UserInfoJson } from '@/app/interfaces';
 import { Button, Grow } from '@mui/material';
-
+import List from '@mui/material/List';
+import BlackListItem from '../listItem';
 const BlockList: React.FC = () => {
   const [blockList, setBlockList] = useState<UserInfoJson[]>([]);
   const router = useRouter();
@@ -23,38 +24,38 @@ const BlockList: React.FC = () => {
       `/block/unblockUser/${slackId}`,
       router,
     );
-    if (requestUnblock.status === 200) handleResponse();
-	handleResponse();
+    if (requestUnblock.status < 300) handleResponse();
   };
 
   useEffect(() => {
     handleResponse();
   }, []);
+
   return (
     <>
       {Array.isArray(blockList) ? (
         blockList?.map((info: UserInfoJson, rowIdx: number) => (
           <Grow in={true} timeout={400 * (rowIdx + 1)} key={rowIdx}>
-            <ListItem
-              key={rowIdx}
-              divider
-              className="list-item"
-              sx={{
-                width: 450,
-              }}
-            >
-              <ListItemText
-                primary={`유저 이름: ${info.userName}`}
-                secondary={info.slackId}
-              />
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={() => unblockUser(info.slackId)}
+            <List>
+              <ListItem
+                key={rowIdx}
+                divider
+                className="list-item"
+                sx={{ ...BlackListItem }}
               >
-                해제하기
-              </Button>
-            </ListItem>
+                <ListItemText
+                  primary={`유저 이름: ${info.userName}`}
+                  secondary={info.slackId}
+                />
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={() => unblockUser(info.slackId)}
+                >
+                  해제하기
+                </Button>
+              </ListItem>
+            </List>
           </Grow>
         ))
       ) : (

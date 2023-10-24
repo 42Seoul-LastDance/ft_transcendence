@@ -82,8 +82,7 @@ const CreateRoomForm = () => {
       isValid('패스워드가', password, maxPasswordLength, dispatch) === false
     )
       return;
-	  if (!(chatSocket?.connected))
-		chatSocket?.connect();
+    if (!chatSocket?.connected) chatSocket?.connect();
     chatSocket?.emit('createChatRoom', {
       roomName: roomName,
       password: password ? password : null,
@@ -91,10 +90,6 @@ const CreateRoomForm = () => {
       status: isPrivate ? RoomStatus.PRIVATE : RoomStatus.PUBLIC,
     });
     handleClose();
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') addNewRoom();
   };
 
   const cardStyle = {
@@ -155,7 +150,6 @@ const CreateRoomForm = () => {
                     inputRef={roomNameInputRef}
                     fullWidth
                     margin="normal"
-                    onKeyUp={handleKeyDown}
                     sx={{ width: 'flex', height: 'auto' }} // 크기 조절을 원하는 값으로 설정
                   />
                 </CardContent>
@@ -243,12 +237,7 @@ const CreateRoomForm = () => {
                   alignItems: 'center',
                 }}
               >
-                <Button
-                  onClick={() => {
-                    addNewRoom();
-                  }}
-                  color="secondary"
-                >
+                <Button onClick={addNewRoom} color="secondary">
                   <Typography variant="h5">완료</Typography>
                 </Button>
               </Card>

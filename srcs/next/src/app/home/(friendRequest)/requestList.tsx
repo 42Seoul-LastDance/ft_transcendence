@@ -10,7 +10,6 @@ import { useRouter } from 'next/navigation';
 import {
   Button,
   Card,
-  Divider,
   Grow,
   IconButton,
   TextField,
@@ -48,7 +47,7 @@ const RequestList: React.FC = () => {
       `/friends/decline/${friendSlackId}`,
       router,
     );
-    if (requestUnblock.status === 200) handleGetFriendInvitation();
+    if (requestUnblock.status < 300) handleGetFriendInvitation();
   };
 
   const acceptInvitation = async (friendSlackId: string) => {
@@ -69,13 +68,13 @@ const RequestList: React.FC = () => {
   const checkExistUser = async () => {
     try {
       const response = await sendRequest('post', `/users/exist/`, router, {
-      slackId: friendRequestSlackId,
+        slackId: friendRequestSlackId,
       });
       if (response.status === 400) {
         myAlert('error', '존재하지 않는 유저입니다', dispatch);
         return false;
       }
-    } catch(e) {
+    } catch (e) {
       console.log(e);
     }
     return true;
@@ -85,7 +84,6 @@ const RequestList: React.FC = () => {
     const response = await sendRequest('post', `/friends/isFriend/`, router, {
       friendSlackId: friendRequestSlackId,
     });
-    console.log('res checkAlreadyFriend', response.data);
     if (
       response.status < 300 &&
       response.data['status'] === FriendStatus.FRIEND
@@ -96,6 +94,11 @@ const RequestList: React.FC = () => {
   };
 
   const sendFriendRequest = async () => {
+    setfriendRequestSlackId('');
+    if (mySlackId === friendRequestSlackId) {
+      myAlert('success', '당신은 당신의 가장 좋은 친구입니다 :)', dispatch);
+      return;
+    }
     if (
       isValid(
         '검색 값이',
@@ -140,13 +143,17 @@ const RequestList: React.FC = () => {
 
   return (
     <>
-      <Card sx={{ ...cardStyle }} >
-        <div style={{ marginBottom: '8px'}} >
-          <Typography id="modal-modal-description" variant="body1" marginLeft={2} >
+      <Card sx={{ ...cardStyle }}>
+        <div sx={{ margin: '8px' }}>
+          <Typography
+            id="modal-modal-description"
+            variant="body1"
+            marginLeft={2}
+          >
             친구요청 보내기
           </Typography>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center',}} >
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           <TextField
             id="friendRequest"
             label="상대의 Slack ID를 입력하세요"
@@ -154,10 +161,10 @@ const RequestList: React.FC = () => {
             value={friendRequestSlackId}
             onChange={handleInputValue}
             onKeyUp={handleKeyDown}
-            sx = {{
+            sx={{
               width: '240px',
               textAlign: 'center',
-        }}
+            }}
             InputProps={{
               style: {
                 backgroundColor: '#f1f1f1',
@@ -187,57 +194,53 @@ const RequestList: React.FC = () => {
 
       <Card sx={{ ...cardStyle }}>
         <List>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <Typography variant='body2'>
-                받은 친구 요청 리스트
-              </Typography>
-              <IconButton
-                aria-label="refresh"
-                onClick={handleGetFriendInvitation}
-              >
-                <CachedIcon />
-              </IconButton>
-            </div>
-            {requestList.map((info: UserInfoJson, index: number) => (
-              <Grow in={true} timeout={500 * (index + 1)} key={index}>
-                <ListItem key={info.userName} divider>
-                  <ListItemText
-                    primary={`유저 이름: ${info.userName}`}
-                    secondary={info.slackId}
-                  />
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    sx={{
-                      marginLeft: '80px',
-                      marginRight: '3px',
-                      borderRadius: '15px',
-                      width: '90px',
-                      height: '40px',
-                      
-                    }}
-                    onClick={() => acceptInvitation(info.slackId)}
-                  >
-                    친구수락
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    sx={{
-                      marginLeft: '8px',
-                      marginRight: '8px',
-                      borderRadius: '15px',
-                      width: '60px',
-                      height: '40px',
-                      
-                    }}
-                    onClick={() => declineInvitation(info.slackId)}
-                  >
-                    거절
-                  </Button>
-                </ListItem>
-              </Grow>
-            ))}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Typography variant="body2">받은 친구 요청 리스트</Typography>
+            <IconButton
+              aria-label="refresh"
+              onClick={handleGetFriendInvitation}
+            >
+              <CachedIcon />
+            </IconButton>
+          </div>
+          {requestList.map((info: UserInfoJson, index: number) => (
+            <Grow in={true} timeout={500 * (index + 1)} key={index}>
+              <ListItem key={info.userName} divider>
+                <ListItemText
+                  primary={`유저 이름: ${info.userName}`}
+                  secondary={info.slackId}
+                />
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  sx={{
+                    marginLeft: '80px',
+                    marginRight: '3px',
+                    borderRadius: '15px',
+                    width: '90px',
+                    height: '40px',
+                  }}
+                  onClick={() => acceptInvitation(info.slackId)}
+                >
+                  친구수락
+                </Button>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  sx={{
+                    marginLeft: '8px',
+                    marginRight: '8px',
+                    borderRadius: '15px',
+                    width: '60px',
+                    height: '40px',
+                  }}
+                  onClick={() => declineInvitation(info.slackId)}
+                >
+                  거절
+                </Button>
+              </ListItem>
+            </Grow>
+          ))}
         </List>
       </Card>
     </>

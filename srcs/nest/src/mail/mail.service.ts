@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { UserService } from 'src/user/user.service';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class MailService {
@@ -13,7 +14,8 @@ export class MailService {
     // }
 
     async sendMail(id: number): Promise<string> {
-        const email = (await this.userService.findUserById(id)).email;
+        const user: User = await this.userService.findUserById(id);
+        if (user === undefined) throw new BadRequestException('no such userId');
 
         const transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -57,14 +59,13 @@ export class MailService {
         const mailContent = generate2FAMail();
 
         const mailOptions = {
-            to: email,
+            to: user.email,
             subject: "🏓[The title is..... Last Pongmates's Dance with nest and next]🏓 2FA Verification Code",
             text: code,
             html: mailContent,
         };
         this.logger.log(`mail sent! code is ${code} and id is ${id}`);
         await transporter.sendMail(mailOptions);
-        this.logger.debug(`id, code : ${code}`);
         await this.userService.saveUser2faCode(id, code);
         return code;
     }

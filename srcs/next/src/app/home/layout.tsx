@@ -65,13 +65,10 @@ const HeaderNavigationBarContent = () => {
   };
 
   const declineInvitation = (hostSlackId: string) => {
-    console.log('--- 거절함 ---', hostSlackId);
     superSocket?.emit('declineInvite', { hostSlackId: hostSlackId });
   };
 
   const acceptGameInvitation = (hostSlackId: string, hostName: string) => {
-    console.log('--- 게임 수락함 ---', hostSlackId);
-
     dispatch(
       setCustomSet({
         joinMode: GameJoinMode.CUSTOM_RECV,
@@ -80,7 +77,7 @@ const HeaderNavigationBarContent = () => {
         opponentSlackId: hostSlackId,
       }),
     );
-	dispatch(setAlreadyPlayed({alreadyPlayed: false}));
+    dispatch(setAlreadyPlayed({ alreadyPlayed: false }));
     chatSocket?.disconnect();
     router.push('/game');
     superSocket?.emit('agreeInvite', { hostSlackId: hostSlackId });
@@ -91,8 +88,7 @@ const HeaderNavigationBarContent = () => {
     hostName: string,
     chatRoomName: string,
   ) => {
-    console.log('--- chat 수락함 ---', hostName, chatRoomName);
-	if (!(chatSocket?.connected)) chatSocket?.connect();
+    if (!chatSocket?.connected) chatSocket?.connect();
     superSocket?.emit('agreeInvite', { hostSlackId: hostSlackId });
     chatSocket?.emit('joinPrivateChatRoom', { roomName: chatRoomName });
   };
@@ -127,11 +123,20 @@ const HeaderNavigationBarContent = () => {
       onClose={handleMenuClose}
     >
       {invitationList.length === 0 ? (
-        <Typography style={{fontSize: '19px', padding: '10px', backgroundColor: '#f4dfff', font:'sans serif', }}>받은 초대가 없습니다</Typography>
+        <Typography
+          style={{
+            fontSize: '15px',
+            padding: '10px',
+            backgroundColor: '#f4dfff',
+            font: 'sans serif',
+          }}
+        >
+          받은 초대가 없습니다
+        </Typography>
       ) : (
         invitationList?.map(
           (invitation: GetInvitationListJson, index: number) => (
-            <MenuItem key={index} >
+            <MenuItem key={index}>
               {invitation.inviteType === InviteType.CHAT
                 ? `${invitation.hostName}님이 ${invitation.chatRoomType} 방인 ${invitation.chatRoomName}에 초대하셨습니다 ! `
                 : `${invitation.hostName}님이 ` +
@@ -141,14 +146,22 @@ const HeaderNavigationBarContent = () => {
                   ` 모드로 게임을 초대하셨습니다! `}
               <Button
                 variant="contained"
-                style={{backgroundColor: '#f4dfff', color: 'black', margin:'8px'}}
+                style={{
+                  backgroundColor: '#f4dfff',
+                  color: 'black',
+                  margin: '8px',
+                }}
                 onClick={() => handleSubmitInvite(invitation)}
               >
                 수락
               </Button>
               <Button
                 variant="contained"
-                style={{backgroundColor: '#f4dfff', color: 'black', margin:'8px'}}
+                style={{
+                  backgroundColor: '#f4dfff',
+                  color: 'black',
+                  margin: '8px',
+                }}
                 onClick={() => declineInvitation(invitation.hostSlackId)}
               >
                 거절

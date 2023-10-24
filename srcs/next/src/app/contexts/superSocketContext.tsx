@@ -7,7 +7,12 @@ import {
   registerSocketEvent,
 } from './socket';
 import { useRouter } from 'next/navigation';
-import { EmitResult, Events, UserInfoJson } from '../interfaces';
+import {
+  EmitResult,
+  Events,
+  FriendListJson,
+  UserInfoJson,
+} from '../interfaces';
 import {
   setInvitationList,
   setJoin,
@@ -19,6 +24,7 @@ import { useDispatch } from 'react-redux';
 import { getCookie } from '../cookie';
 import { JoinStatus } from '../enums';
 import { myAlert } from '../home/alert';
+import { setFriendList } from '../redux/friendSlice';
 
 // SocketContext 생성
 const SuperSocketContext = createContext<Socket | undefined>(undefined);
@@ -79,7 +85,13 @@ const SuperSocketProvider = ({ children }: { children: React.ReactNode }) => {
         event: 'eventFailure',
         callback: (data: EmitResult) => {
           myAlert('error', data.reason, dispatch);
-        console.log('eventFailure', data.reason)
+          console.log('eventFailure', data.reason);
+        },
+      },
+      {
+        event: 'getFriendStateList',
+        callback: (data: FriendListJson[]) => {
+          dispatch(setFriendList(data));
         },
       },
     ];

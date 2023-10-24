@@ -1,22 +1,22 @@
-export enum GameMode {
+export const enum GameMode {
     NORMAL = 0,
     HARD = 1,
     NONE = -1,
 }
 
-export enum GameType {
+export const enum GameType {
     MATCH = 0,
     FRIEND = 1,
     NONE = -1,
 }
 
-export enum PlayerSide {
+export const enum PlayerSide {
     LEFT = 0,
     RIGHT = 1,
     NONE = -1,
 }
 
-export enum GameEndStatus {
+export const enum GameEndStatus {
     NORMAL = 0,
     CHEATING = 1,
     DISCONNECT = 2,
@@ -24,18 +24,14 @@ export enum GameEndStatus {
     NONE = -1,
 }
 
-export enum GameStatus {
+export const enum GameStatus {
     WAIT = 0,
     GAME = 1,
     NONE = -1,
 }
 
-export enum Emoji {
-    HI = 0,
-    THUMBUP = 1,
-    SUNGLASSES = 2,
-    FANFARE = 3,
-    TONGUE = 4,
-    BADWORDS = 5,
+export const enum Emoji {
     NONE = -1,
+    MIN = 0,
+    MAX = 6,
 }

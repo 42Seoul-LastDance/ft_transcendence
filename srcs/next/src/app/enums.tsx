@@ -6,6 +6,7 @@ export const enum Emoji {
   FANFARE = 3,
   TONGUE = 4,
   BADWORDS = 5,
+  WITCH = 6,
 }
 
 export const enum PlayerSide {
@@ -28,43 +29,57 @@ export const enum GameJoinMode {
 }
 
 export const enum RoomStatus {
-	PRIVATE = 'PRIVATE',
-	PUBLIC = 'PUBLIC',
+  PRIVATE = 'PRIVATE',
+  PUBLIC = 'PUBLIC',
 }
-  
+
 export const enum UserPermission {
-	OWNER = 0,
-	ADMIN = 1,
-	MEMBER = 2,
-	NONE = 3,
+  OWNER = 0,
+  ADMIN = 1,
+  MEMBER = 2,
+  NONE = 3,
 }
 
 export const enum TokenType {
-	Access = 0,
-	Refresh = 1,
+  Access = 0,
+  Refresh = 1,
 }
 
 export const enum FriendStatus {
-	FRIEND = 0,
-	LAGGING = 1,
-	REQUESTED = 2,
-	UNKNOWN = 3,
+  FRIEND = 0,
+  LAGGING = 1,
+  REQUESTED = 2,
+  UNKNOWN = 3,
 }
-  
+
 export const enum JoinStatus {
-	NONE,
-	CHAT,
-	DM,
+  NONE,
+  CHAT,
+  DM,
 }
 
 export const enum UserStatus {
-	ONLINE = 'online',
-	OFFLINE = 'offline',
-	GAME = 'game',
+  ONLINE = 'online',
+  OFFLINE = 'offline',
+  GAME = 'game',
 }
 
 export const enum InviteType {
-	NONE = -1,
-	CHAT = 0,
-	GAME = 1,
+  NONE = -1,
+  CHAT = 0,
+  GAME = 1,
+}
+
+export const enum GameEndStatus {
+  NONE = -1,
+  NORMAL = 0,
+  CHEATING = 1,
+  DISCONNECT = 2,
+  OUTGAME = 3,
+}
+
+export const enum GameType {
+  NONE = -1,
+  MATCH = 0,
+  FRIEND = 1,
 }

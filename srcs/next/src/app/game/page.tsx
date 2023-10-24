@@ -16,11 +16,13 @@ import SuperSocketProvider, {
 import AutoAlert, { myAlert } from '../home/alert';
 
 const GameHomeContent = () => {
-	const isMatched = useSelector((state: RootState) => state.match.isMatched);
-	const customSet = useSelector((state: RootState) => state.match.customSet);
-	const alreadyPlayed = useSelector((state: RootState) => state.match.alreadyPlayed);
-	const superSocket = useSuperSocket();
-	const dispatch = useDispatch();
+  const isMatched = useSelector((state: RootState) => state.match.isMatched);
+  const customSet = useSelector((state: RootState) => state.match.customSet);
+  const alreadyPlayed = useSelector(
+    (state: RootState) => state.match.alreadyPlayed,
+  );
+  const superSocket = useSuperSocket();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (customSet.joinMode === GameJoinMode.CUSTOM_SEND && !alreadyPlayed) {
@@ -35,10 +37,16 @@ const GameHomeContent = () => {
         gameMode: customSet.gameMode,
       });
       myAlert('success', '상대방을 게임에 초대했습니다', dispatch);
-    } else if (customSet.joinMode === GameJoinMode.CUSTOM_RECV && !alreadyPlayed) {
+    } else if (
+      customSet.joinMode === GameJoinMode.CUSTOM_RECV &&
+      !alreadyPlayed
+    ) {
       dispatch(setIsMatched({ isMatched: undefined }));
       myAlert('success', '게임 초대를 수락했습니다', dispatch);
-    } else dispatch(setIsMatched({ isMatched: false }));
+    } else {
+      dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
+      dispatch(setIsMatched({ isMatched: false }));
+    }
   }, []);
 
   return (

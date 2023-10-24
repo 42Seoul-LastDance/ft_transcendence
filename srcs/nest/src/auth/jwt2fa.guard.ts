@@ -16,7 +16,6 @@ export class Jwt2faGuard implements CanActivate {
             throw new UnauthorizedException('2faJwt: no token');
         }
         try {
-            // this.logger.debug(`token = ${token}`);
             const payload = await this.jwtService.verifyAsync(token, {
                 secret: process.env.JWT_2FA_SECRET_KEY,
             });

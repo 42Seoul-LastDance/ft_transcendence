@@ -39,24 +39,17 @@ export class UserController {
         @Body('require2fa') require2fa: string,
     ) {
         try {
-			let require : boolean;
+            let require: boolean;
             console.log('update', userName, require2fa, profileImage?.filename);
-            if (require2fa === 'true')
-                require = true;
-            else
-                require = false;
+            if (require2fa === 'true') require = true;
+            else require = false;
             await this.userService.updateUserInfo(req.user.sub, userName, require, profileImage);
-            this.logger.log('api done!');
-
-            const user = await this.userService.findUserById(req.user.sub);
-            console.log('user after end api:', user);
-
             return res.sendStatus(200);
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: updateUserInfo', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'updateUserInfo failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -64,14 +57,13 @@ export class UserController {
     @UseGuards(JwtAuthGuard)
     async getUserSetInfo(@Req() req, @Res() res: Response) {
         try {
-			const userSetting = await this.userService.getUserSetInfo(req.user.sub);
-            this.logger.log('userInfo endpoint!!!!! 불림', userSetting);
+            const userSetting = await this.userService.getUserSetInfo(req.user.sub);
             return res.status(200).json(userSetting);
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getUserSetInfo', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'getUserSetInfo failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -87,8 +79,8 @@ export class UserController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getProfile', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'getProfile failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -103,27 +95,25 @@ export class UserController {
             return res.send(image); // 이미지 파일을 클라이언트로 전송
         } catch (error) {
             //ERROR HANDLE
-            console.log('[ERROR]: getProfileImage', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'getProfileImage failed' });
+            this.logger.error(`getProfileImage : ${error.name}`);
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
     @Post('/exist/')
     @UseGuards(JwtAuthGuard)
     async checkIfExists(@Res() res: Response, @Body('slackId') slackId: string) {
-        this.logger.debug('user/exists/ called.');
         try {
             const user: User = await this.userService.getUserBySlackId(slackId);
-            this.logger.debug('user' , user);
-            if (user) {
-                return res.sendStatus(200);
-            }
+            if (user === undefined) return res.sendStatus(400);
+            // this.logger.debug('user', user);
+            return res.sendStatus(200);
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: checkIfExists', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'checkIfExists failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -135,10 +125,10 @@ export class UserController {
             const user = await this.userService.getUserByUserName(name);
             if (user) {
                 console.log('[ERROR]: checkUniqueName');
-                return res.status(400).send({ reason: 'checkUniqueName failed: already in DB' });
-            }
+                return res.sendStatus(400);
+            } else return res.sendStatus(200);
         } catch (error) {
-            if (error.status === 500) res.sendStatus(500);
+            if (error.status === 500) return res.sendStatus(500);
             //* this is not error
             return res.sendStatus(200);
         }

@@ -102,7 +102,7 @@ export class SocketUsersService {
         const hostId: number = this.dmSocketList.get(socketId);
         const host: User = await this.userService.findUserById(hostId);
         const guest: User = await this.userService.getUserBySlackId(payload['slackId']);
-        if (!guest || hostId === guest.id) return undefined;
+        if (!guest || hostId === guest.id || host === undefined) return undefined;
 
         const guestSocket: Socket = this.dmUserList.get(guest.id);
         if (!guestSocket) return undefined;
@@ -124,28 +124,30 @@ export class SocketUsersService {
     }
 
     async agreeInvite(socketId: string, hostSlackId: string) {
-        const hostId: number = (await this.userService.getUserBySlackId(hostSlackId)).id;
         const guestId: number = this.dmSocketList.get(socketId);
-        const invitation: Invitation = this.inviteList.get(guestId).get(hostId);
+        const host: User = await this.userService.getUserBySlackId(hostSlackId);
+        if (host === undefined) return;
+        const invitation: Invitation = this.inviteList.get(guestId).get(host.id);
         if (invitation === undefined) return;
         //invitation 삭제
-        this.inviteList.get(guestId).delete(hostId);
+        this.inviteList.get(guestId).delete(host.id);
         return this.dmUserList.get(guestId);
     }
 
     async declineInvite(socketId: string, hostSlackId: string): Promise<Socket> {
-        const hostId: number = (await this.userService.getUserBySlackId(hostSlackId)).id;
         const guestId: number = this.dmSocketList.get(socketId);
-        const invitation: Invitation = this.inviteList.get(guestId).get(hostId);
+        const host: User = await this.userService.getUserBySlackId(hostSlackId);
+        if (host === undefined) return;
+        const invitation: Invitation = this.inviteList.get(guestId).get(host.id);
         if (invitation === undefined) return;
         if (invitation.inviteType === InviteType.GAME) {
             //Game의 경우 game socket으로 초대 거절 이벤트 전달
-            const hostGameSocketId: string = this.gameUserList.get(hostId);
+            const hostGameSocketId: string = this.gameUserList.get(host.id);
             const hostGameSocket: Socket = this.gamePlayerList.get(hostGameSocketId).socket;
             hostGameSocket.emit('denyInvite');
-            console.log('game socket으로 emit: denyInvite', hostId, hostSlackId);
+            console.log('game socket으로 emit: denyInvite', host.id, hostSlackId);
         }
-        this.inviteList.get(guestId).delete(hostId);
+        this.inviteList.get(guestId).delete(host.id);
         return this.dmUserList.get(guestId);
     }
 
@@ -230,7 +232,9 @@ export class SocketUsersService {
     //* getter
 
     async getSlackIdById(userId: number): Promise<string> {
-        return (await this.userService.findUserById(userId)).slackId;
+        const user: User = await this.userService.findUserById(userId);
+        if (user === undefined) return undefined;
+        return user.slackId;
     }
 
     async getUserByUserId(userId: number): Promise<User> {
@@ -242,11 +246,15 @@ export class SocketUsersService {
     }
 
     async getUserNameByUserId(userId: number): Promise<string> {
-        return (await this.userService.findUserById(userId)).userName;
+        const user: User = await this.userService.findUserById(userId);
+        if (user === undefined) return undefined;
+        return user.userName;
     }
 
     async getUserIdByUserName(userName: string): Promise<number> {
-        return (await this.userService.getUserByUserName(userName)).id;
+        const user: User = await this.userService.getUserByUserName(userName);
+        if (user === undefined) return undefined;
+        return user.id;
     }
 
     getChatRoomUserList(): Map<number, Socket> {
@@ -375,18 +383,21 @@ export class SocketUsersService {
 
     async getStatusByUserName(userName: string): Promise<UserStatus> {
         const userId: number = await this.getUserIdByUserName(userName);
+        if (userId === undefined) return undefined;
         return this.getStatusById(userId);
     }
 
     async getFriendStateList(
         userSlackId: string,
     ): Promise<{ userName: string; slackId: string; userStatus: UserStatus }[]> {
-        const userId = (await this.userService.getUserBySlackId(userSlackId)).id;
+        const user: User = await this.userService.getUserBySlackId(userSlackId);
+        if (user === undefined) return;
         const friendStateList: { userName: string; slackId: string; userStatus: UserStatus }[] = [];
 
-        const friendIdList: Array<number> = await this.friendService.getFriendList(userId);
+        const friendIdList: Array<number> = await this.friendService.getFriendList(user.id);
         for (const friendId of friendIdList) {
             const friend: User = await this.getUserByUserId(friendId);
+            if (friend === undefined) continue;
             const friendInfo = {
                 userName: friend.userName,
                 slackId: friend.slackId,

@@ -78,7 +78,6 @@ const ChattingPage = (props: ChattingPageProps) => {
         event: 'receiveMessage',
         once: true,
         callback: (data: receiveMessage) => {
-          console.log('receiveMessage 받음.');
           if (join === JoinStatus.CHAT && data.canReceive === false) return;
           let newMsg: ChatMessage = {
             userName: data.userName,
@@ -110,7 +109,7 @@ const ChattingPage = (props: ChattingPageProps) => {
     registerSocketEvent(props.socket!, e);
     return () => clearSocketEvent(props.socket!, e);
   }, [join, chatMessages, target, chatState]);
-  
+
   useEffect(() => {
     if (join === JoinStatus.DM) prevDmMessages();
     else if (join === JoinStatus.CHAT) clearChatMessages();
@@ -137,14 +136,6 @@ const ChattingPage = (props: ChattingPageProps) => {
   // 메세지 보내기
   const SendMessage = () => {
     if (!inputMessage) return;
-    console.log(
-      'sendMessage event 보냄',
-      target,
-      myName,
-      inputMessage,
-      chatRoom?.status,
-	  props.socket
-    );
     props.socket?.emit('sendMessage', {
       roomName: target,
       userName: myName!,
@@ -223,8 +214,8 @@ const ChattingPage = (props: ChattingPageProps) => {
             onClose={toggleSettings}
             style={{ zIndex: 3 }} // z-index 값을 낮춤
           >
-        <ChatSetting />
-      </Drawer>
+            <ChatSetting />
+          </Drawer>
         </>
       )}
       <Card

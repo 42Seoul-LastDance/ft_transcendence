@@ -1,9 +1,8 @@
 body {
-  /* background-image: url('/theme/background.jpeg'); 이미지 파일의 경로 */
-  background-color: "#444444";
-  /* background-size: cover; /* 배경 이미지를 화면 크기에 맞게 확대 또는 축소 */
-  /* background-position: center; 배경 이미지를 중앙 정렬 */
-  /* background-attachment: fixed; 스크롤 시 배경 이미지 고정 여부 (선택적) */
+  background-image: url('/theme/background.jpeg');
+  background-size: cover; /* 배경 이미지를 화면 크기에 맞게 확대 또는 축소 */
+  background-position: center; /* 배경 이미지를 중앙 정렬 */
+  background-attachment: fixed; /* 스크롤 시 배경 이미지 고정 여부 (선택적)*/
 }
 
 .alert-container {

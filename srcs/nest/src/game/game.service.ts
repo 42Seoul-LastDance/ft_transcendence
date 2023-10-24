@@ -71,10 +71,12 @@ export class GameService {
                 const prevSocket: Socket = this.socketUsersService.getPlayerBySocketId(prevSocketId).socket;
                 prevSocket.disconnect(false);
             }
+            const user: User = await this.userService.findUserById(+userId);
+            if (user === undefined) throw new BadRequestException('no such userId');
             const player: Player = {
                 socket: playerSocket,
                 userId: +userId,
-                userName: (await this.userService.findUserById(+userId)).userName,
+                userName: user.userName,
             };
             this.socketUsersService.addPlayerBySocketId(playerSocket.id, player);
             await this.socketUsersService.addGameUserList(+userId, playerSocket.id);
@@ -155,12 +157,13 @@ export class GameService {
     async inviteGame(playerId: string, gameMode: number, friendName: string) {
         try {
             const hostPlayer = this.socketUsersService.getPlayerBySocketId(playerId);
-            const friendId = (await this.userService.getUserByUserName(friendName)).id;
-            if (hostPlayer.userId === friendId) {
+            const friend: User = await this.userService.getUserByUserName(friendName);
+            if (friend === undefined) throw new BadRequestException('no such friendName');
+            if (hostPlayer.userId === friend.id) {
                 hostPlayer.socket.emit('kickout');
                 return;
             }
-            this.updatePlayer(playerId, gameMode, GameType.FRIEND, friendId);
+            this.updatePlayer(playerId, gameMode, GameType.FRIEND, friend.id);
             this.friendGameList.set(hostPlayer.userName, playerId);
             // console.log('inviteGame:', hostName, 'waiting for', friendName);
         } catch (error) {
@@ -207,16 +210,13 @@ export class GameService {
             const guestSocket: Socket = this.socketUsersService.getDMSocketById(hostPlayer.friendId);
             if (guestSocket) {
                 guestSocket.emit('updateInvitation');
-                guestSocket.emit(
-                    'invitationSize',
-                    this.getInvitationSize(hostPlayer.friendId)
-                );
+                guestSocket.emit('invitationSize', this.getInvitationSize(hostPlayer.friendId));
             }
             this.friendGameList.delete(hostPlayer.userName);
         }
     }
 
-    getInvitationSize(userId: number){
+    getInvitationSize(userId: number) {
         return this.socketUsersService.getInviteListByUserId(userId).size;
     }
 
@@ -255,7 +255,7 @@ export class GameService {
             leftPlayer.emit('startGame', gameInfo);
             gameInfo['side'] = PlayerSide.RIGHT;
             rightPlayer.emit('startGame', gameInfo);
-            console.log('>>>>>> emit startGame done');
+            // console.log('>>>>>> emit startGame done');
         }
     }
 
@@ -282,7 +282,7 @@ export class GameService {
     }
 
     sendEmoji(playerId: string, emoji: string) {
-        if (+emoji < Emoji.HI || Emoji.BADWORDS < +emoji) return;
+        if (+emoji < Emoji.MIN || Emoji.MAX < +emoji) return;
         const player = this.socketUsersService.getPlayerBySocketId(playerId);
         if (player.roomId === undefined) return;
         const side = player.side;
@@ -330,7 +330,7 @@ export class GameService {
             PADDLE_SCALE_Z !== gameInfo['rightScaleZ'] ||
             PADDLE_SPEED !== gameInfo['rightSpeed']
         ) {
-            console.log('validCheck: cheating detacted');
+            // console.log('validCheck: cheating detacted');
             const roomId = player.roomId;
             const rivalSide = (player.side + 1) % 2;
             try {
@@ -376,6 +376,7 @@ export class GameService {
         try {
             const roomId = this.socketUsersService.getPlayerBySocketId(playerId).roomId;
             if (roomId === undefined) return;
+            if (this.gameRoomList.get(roomId).gameStatus === GameStatus.WAIT) return;
             const rivalSide = (this.socketUsersService.getPlayerBySocketId(playerId).side + 1) % 2;
             await this.finishGame(roomId, rivalSide, GameEndStatus.OUTGAME);
         } catch (error) {
@@ -403,9 +404,9 @@ export class GameService {
 
     //게임 종료 (정상 + 비정상)
     async finishGame(roomId: number, winnerSide: number, endGameStatus: number) {
+        if (this.gameRoomList.get(roomId) === undefined) return;
         //gameRoom 업데이트
         this.updateGameRoom(roomId, winnerSide, endGameStatus);
-        // console.log('gameRoom: ', this.gameRoomList.get(roomId));
         //플레이어들에게 결과 전달
         const [player1Socket, player2Socket] = this.gameRoomList.get(roomId).socket;
         const gameResult = {
@@ -416,12 +417,15 @@ export class GameService {
         };
         player1Socket.emit('gameOver', gameResult);
         player2Socket.emit('gameOver', gameResult);
-        console.log('sent gameOver:', gameResult);
+        // console.log('sent gameOver:', gameResult);
         try {
             //DB에 저장
             await this.createGameData(roomId);
             //gameRoom 처리
-            if (this.gameRoomList.get(roomId).gameType === GameType.FRIEND && endGameStatus === GameEndStatus.NORMAL) {
+            if (
+                this.gameRoomList.get(roomId).gameType === GameType.FRIEND &&
+                endGameStatus !== GameEndStatus.DISCONNECT
+            ) {
                 //친선경기 => reset gameRoom for restart
                 this.resetGameRoom(roomId);
             } else {
@@ -516,7 +520,7 @@ export class GameService {
             ready: [false, false],
         };
         //TESTCODE
-        console.log('makeGameRoom: ', player1Id, player2Id);
+        // console.log('makeGameRoom: ', player1Id, player2Id);
         //방입장
         await this.enterGameRoom(gameRoom, player1Id, player2Id);
         this.gameRoomList.set(this.gameRoomIdx++, gameRoom);
@@ -538,7 +542,7 @@ export class GameService {
         gameRoom.name = [leftPlayer.userName, rightPlayer.userName];
 
         //Player 업데이트 && emit('handShake')
-        console.log('enterGameRoom:', gameRoom.id);
+        // console.log('enterGameRoom:', gameRoom.id);
         await this.handShake(left, PlayerSide.LEFT, gameRoom.id);
         await this.handShake(right, PlayerSide.RIGHT, gameRoom.id);
     }
@@ -611,6 +615,49 @@ export class GameService {
     }
 
     //*API용: 프로필 게임 정보
+    async getGameHistory(slackId: string) {
+        const user: User = await this.userService.getUserBySlackId(slackId);
+        if (user === undefined) return null;
+
+        const gameHistory: Array<{
+            myScore: number;
+            mySide: PlayerSide;
+            gameEnd: GameEndStatus;
+            rivalName: string;
+            rivalSlackId: string;
+            rivalScore: number;
+            gameType: GameType;
+        }> = [];
+        const gameRecords = await this.gameRepository.find({
+            where: [{ winnerId: user.id }, { loserId: user.id }],
+            order: { gameId: 'DESC' },
+            take: 5,
+        });
+        for (const record of gameRecords) {
+            let mySide: PlayerSide;
+            let rivalId: number;
+            if (record.winnerId === user.id) {
+                mySide = record.winnerSide;
+                rivalId = record.loserId;
+            } else {
+                mySide = record.loserSide;
+                rivalId = record.winnerId;
+            }
+            const rival: User = await this.userService.findUserById(rivalId);
+            if (rival === undefined) throw new BadRequestException('no such rivalId');
+            gameHistory.push({
+                myScore: mySide === record.winnerSide ? record.winnerScore : record.loserScore,
+                mySide: mySide,
+                gameEnd: record.endGameStatus,
+                rivalName: rival.userName,
+                rivalSlackId: rival.slackId,
+                rivalScore: mySide === record.winnerSide ? record.loserScore : record.winnerScore,
+                gameType: record.gameType,
+            });
+        }
+        return gameHistory;
+    }
+
     async getGameData(slackId: string) {
         try {
             const user: User = await this.userService.getUserBySlackId(slackId);

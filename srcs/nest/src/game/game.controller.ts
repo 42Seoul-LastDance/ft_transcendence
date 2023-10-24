@@ -8,6 +8,20 @@ export class GameController {
     private logger = new Logger(GameController.name);
     constructor(private readonly gameService: GameService) {}
 
+    @Get('/getGameHistory/:slackId')
+    @UseGuards(JwtAuthGuard)
+    async getGameHistory(@Req() req, @Res() res: Response, @Param('slackId') slackId: string) {
+        try {
+            const gameHistory = await this.gameService.getGameHistory(slackId);
+            return res.send(gameHistory);
+        } catch (error) {
+            //ERROR HANDLE
+            console.log('[ERROR]: getGameHistory', error);
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
+        }
+    }
+
     @Get('/getGameData/:slackId')
     @UseGuards(JwtAuthGuard)
     async getGameData(@Req() req, @Res() res: Response, @Param('slackId') slackId: string) {
@@ -17,8 +31,8 @@ export class GameController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getGameData', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'getGameData failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
@@ -31,8 +45,8 @@ export class GameController {
         } catch (error) {
             //ERROR HANDLE
             console.log('[ERROR]: getFriendGameData', error);
-            if (error.status === 500) res.sendStatus(500);
-            return res.status(400).send({ reason: 'getFriendGameData failed' });
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 }

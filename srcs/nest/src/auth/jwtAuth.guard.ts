@@ -23,11 +23,7 @@ export class JwtAuthGuard implements CanActivate {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
         const token = this.extractTokenFromHeader(request);
-        // this.logger.debug(`token in JwtGuard : ${token}`);
-        if (!token) {
-            //TODO 하기 exception 괜찮은지 확인 필요(404에러)
-            throw new NotFoundException('no token');
-        }
+        if (!token) throw new UnauthorizedException('no token');
         try {
             const payload = this.jwtService.verify(token, {
                 secret: process.env.JWT_SECRET_KEY,

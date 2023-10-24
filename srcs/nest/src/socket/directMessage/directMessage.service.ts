@@ -42,10 +42,7 @@ export class DirectMessageService {
         this.socketUsersService.setBlockList(userId);
         this.socketUsersService.setInviteList(userId);
 
-        socket.emit(
-            'invitationSize',
-            this.getInvitationSize(userId)
-        );
+        socket.emit('invitationSize', this.getInvitationSize(userId));
     }
 
     async getUserBySocketId(socketId: string): Promise<User> {
@@ -96,13 +93,13 @@ export class DirectMessageService {
         const userId: number = this.getUserId(socket);
         const userName: string = await this.socketUsersService.getUserNameByUserId(userId);
         const targetId: number = await this.socketUsersService.getUserIdByUserName(targetName);
-        const targetSocket: Socket = this.socketUsersService.getDMSocketById(targetId);
-
         // !test
-        if (!userId) {
+        if (!userId || userName === undefined || targetId === undefined) {
             this.emitFailReason(socket, 'sendMessage', '문제가 발생했습니다.');
             return;
         }
+
+        const targetSocket: Socket = this.socketUsersService.getDMSocketById(targetId);
 
         let hasReceived: boolean = false; //(전제 조건)만약 차단되었으면 false
         const isBlocked = await this.socketUsersService.isBlocked(targetId, userId);
@@ -116,11 +113,12 @@ export class DirectMessageService {
     }
 
     async findRecentDMs(target1Id: number, friendSlackId: string, count: number): Promise<DirectMessageInfoDto[]> {
-        const target2Id: number = (await this.socketUsersService.getUserBySlackId(friendSlackId)).id;
+        const target2: User = await this.socketUsersService.getUserBySlackId(friendSlackId);
+        if (target2 === undefined) throw new BadRequestException('no such user');
         const DMList: DirectMessage[] = await this.directMessageRepository.find({
             where: [
-                { senderId: target1Id, receiverId: target2Id },
-                { senderId: target2Id, receiverId: target1Id, hasReceived: true },
+                { senderId: target1Id, receiverId: target2.id },
+                { senderId: target2.id, receiverId: target1Id, hasReceived: true },
             ],
             order: {
                 sentTime: 'ASC',
@@ -133,6 +131,7 @@ export class DirectMessageService {
         // const friendList: Array<{ username: string; status: UserStatus }> = [];
         for (const dm of DMList) {
             const userName = await this.socketUsersService.getUserNameByUserId(dm.senderId);
+            if (userName === undefined) continue;
             const content = dm.content;
 
             returnArray.push({ userName: userName, content: content });
@@ -148,7 +147,6 @@ export class DirectMessageService {
         }
         const result: { userName: string; slackId: string; userStatus: UserStatus }[] =
             await this.socketUsersService.getFriendStateList(userSlackId);
-        // this.logger.debug(`GET FRIEND STATE LIST :: ${userSlackId} with : `, result);
         socket.emit('getFriendStateList', result);
     }
 
@@ -196,10 +194,9 @@ export class DirectMessageService {
         guestSocket.emit('invitationSize', this.getInvitationSize(guestId));
     }
 
-        getInvitationSize(userId: number){
-        return  this.socketUsersService.getInviteListByUserId(userId).size;
+    getInvitationSize(userId: number) {
+        return this.socketUsersService.getInviteListByUserId(userId).size;
     }
-
 
     async deleteFriend(socket: Socket, payload: JSON) {
         // 친구 삭제 이벤트가 일어날 때 친구 리스트 실시간 업데이트
@@ -208,6 +205,7 @@ export class DirectMessageService {
         const targetSlackId: string = payload['targetSlackId'];
         const user: User = await this.socketUsersService.getUserBySlackId(userSlackId);
         const target: User = await this.socketUsersService.getUserBySlackId(targetSlackId);
+        if (user === undefined || target === undefined) return;
 
         this.socketUsersService.deleteFriend(user.id, target.id);
         const targetSocket = this.socketUsersService.getDMSocketById(target.id);
@@ -220,11 +218,12 @@ export class DirectMessageService {
         const targetSlackId: string = payload['targetSlackId'];
         const user: User = await this.socketUsersService.getUserBySlackId(userSlackId);
         const target: User = await this.socketUsersService.getUserBySlackId(targetSlackId);
+        if (user === undefined || target === undefined) return;
 
         this.socketUsersService.addFriend(user.id, target.id);
         const targetSocket = this.socketUsersService.getDMSocketById(target.id);
         await this.getFriendStateList(socket, userSlackId);
-        if (targetSocket != undefined && targetSocket !== null)
+        if (targetSocket !== undefined && targetSocket !== null)
             await this.getFriendStateList(targetSocket, targetSlackId);
         else this.logger.error('targetSocket does not exist');
     }

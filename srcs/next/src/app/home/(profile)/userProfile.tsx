@@ -12,10 +12,25 @@ import { setViewProfile } from '@/app/redux/viewSlice';
 import { useSuperSocket } from '@/app/contexts/superSocketContext';
 import { Card, CircularProgress, Divider } from '@mui/material';
 import { setJoin, setUserImg } from '@/app/redux/userSlice';
-import { FriendStatus, JoinStatus } from '@/app/enums';
+import {
+  FriendStatus,
+  JoinStatus,
+  PlayerSide,
+  GameEndStatus,
+  MyHistory,
+  GameType,
+} from '@/app/enums';
+import { GameHistoryJson } from '@/app/interfaces';
 import Avatar from '@mui/material/Avatar';
 import sendRequestImage from '@/app/imageApi';
-// import axios from 'axios';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import AxiosHeaderValue from 'axios';
 
 const UserProfile = () => {
   const superSocket = useSuperSocket();
@@ -48,6 +63,8 @@ const UserProfile = () => {
   const [fRightLose, setfRightLose] = useState<number>(0);
   const [fLeftWin, setfLeftWin] = useState<number>(0);
   const [fLeftLose, setfLeftLose] = useState<number>(0);
+  //* game history
+  const [gameHistory, setGameHistory] = useState<MyHistory[]>([]);
   //* ////////////////////
   const [friendStatus, setFriendStatus] = useState<FriendStatus>(
     FriendStatus.UNKNOWN,
@@ -69,7 +86,6 @@ const UserProfile = () => {
       friendResp.data['status'] === FriendStatus.REQUESTED
     )
       setFriendRequestAvailable(false);
-    // console.log('친구니?', friendResp.data['status']);
   };
 
   const requestIsBlocked = async () => {
@@ -79,7 +95,52 @@ const UserProfile = () => {
       router,
     );
     setIsBlocked(blockedResp.data['isBlocked']);
-    // console.log('블락이니?', blockedResp.data['isBlocked']);
+  };
+
+  const getAndSetMyHistory = (data: GameHistoryJson[]) => {
+    let newHistrories: MyHistory[] = [];
+
+    data?.forEach((inputHistory) => {
+      let newHistory: MyHistory = {
+        leftName: '',
+        rightName: '',
+        score: '',
+        gameEnd: '',
+        gameType: '',
+        win: '',
+      };
+
+      if (inputHistory.mySide === PlayerSide.LEFT) {
+        newHistory.leftName = `${targetSlackId}`;
+        newHistory.rightName = `${inputHistory.rivalName}(${inputHistory.rivalSlackId})`;
+        newHistory.score = `${inputHistory.myScore} : ${inputHistory.rivalScore}`;
+      } else {
+        newHistory.leftName = `${inputHistory.rivalName}(${inputHistory.rivalSlackId})`;
+        newHistory.rightName = `${targetSlackId}`;
+        newHistory.score = `${inputHistory.rivalScore} : ${inputHistory.myScore}`;
+      }
+
+      newHistory.win = `${
+        inputHistory.myScore > inputHistory.rivalScore ? 'Win' : 'Lose'
+      }`;
+      newHistory.gameEnd = newHistory.win;
+      switch (inputHistory.gameEnd) {
+        case GameEndStatus.CHEATING:
+          newHistory.gameEnd += ' (Cheated)';
+          break;
+        case GameEndStatus.DISCONNECT:
+          newHistory.gameEnd += ' (Disconnected)';
+          break;
+        case GameEndStatus.OUTGAME:
+          newHistory.gameEnd += ' (Got lazy)';
+          break;
+      }
+      newHistory.gameType =
+        inputHistory.gameType === GameType.MATCH ? 'Rank' : 'Custom';
+
+      newHistrories.push(newHistory);
+    });
+    setGameHistory(newHistrories);
   };
 
   const handleOpen = async () => {
@@ -133,6 +194,13 @@ const UserProfile = () => {
     setHardWin(gameData.data['hardWin']);
     setHardLose(gameData.data['hardLose']);
 
+    const gameHistory = await sendRequest(
+      'get',
+      `/games/getGameHistory/${targetSlackId}`,
+      router,
+    );
+    getAndSetMyHistory(gameHistory.data);
+
     setTimeout(() => {
       setIsLoaded(true), 500;
     });
@@ -151,7 +219,7 @@ const UserProfile = () => {
 
   const handleClose = () => {
     setClose(true);
-	dispatch(setViewProfile({ viewProfile: false, targetSlackId: null }))
+    dispatch(setViewProfile({ viewProfile: false, targetSlackId: null }));
   };
 
   const requestBeFriend = async () => {
@@ -183,173 +251,302 @@ const UserProfile = () => {
   };
 
   const cardStyle = {
-    width: 'auto',
+    width: '300px',
     height: 'auto',
-    minWidth: '200px',
-    minHeight: '100px',
-    display: 'flex',
+    padding: '20px',
+    margin: '22px',
     borderRadius: '15px',
-    justifyContent: 'center',
-    padding: '10px',
-    margin: '10px',
-    opacity: '0.95',
+    display: 'flex',
+    // left: 0,
+    // alignItems: 'left',
+    opacity: '0.8',
     bgcolor: 'white',
+    flexDirection: 'column',
   };
 
-  const TypographyStyle = {
+  const commonStyle = {
     variant: 'h6',
-    color: 'Grey',
+    color: 'black',
     fontSize: '18px',
+    marginRight: '8px',
+    display: 'inline',
+    flexDirection: 'column',
+  };
+
+  const valueStyle = {
+    variant: 'h6',
+    color: '#a0b8cf',
+    fontSize: '18px',
+    display: 'inline',
+    flexDirection: 'column',
+  };
+
+  const buttonStyle = {
+    marginLeft: '8px',
+    borderRadius: '15px',
+    width: '80px',
+    height: '40px',
   };
 
   return (
-    <>
-      <Modal
-        className="modal"
-        open={viewProfile}
-        onClose={handleClose}
-        sx={{
-          display: 'flex',
-          justifyContent: 'center', // 수평 중앙 정렬
-          alignItems: 'center', // 수직 중앙 정렬
-        }}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
-      >
-        {isLoaded ? (
-          <Box className="modal-content">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignContent: 'center' }}>
-              <Card sx={{ ...cardStyle }}>
-                <Typography
-                  id="modal-modal-title"
-                  variant="h6"
-                  color="CadetBlue"
-                >
-                  {targetName}'s Profile
-                  <Avatar src={imageFile || undefined} alt={`${slackId}`} />
-                </Typography>
-              </Card>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Card sx={{ ...cardStyle }}>
-                  <Typography sx={{ ...TypographyStyle }}>
-                    slackId : {slackId}
-                    <br />
-                    Level : {level}
-                    <br />
-                    Exp : {exp} (
-                    {((exp / ((level + 1) * 500)) * 100).toFixed(2)}
-                    %)
-                  </Typography>
-                </Card>
+    <Modal
+      className="modal"
+      open={viewProfile}
+      onClose={handleClose}
+      style={{
+        marginTo: '100px',
+        display: 'flex',
+        justifyContent: 'center', // 수평 중앙 정렬
+        alignItems: 'center', // 수직 중앙 정렬
+      }}
+      aria-labelledby="modal-modal-title"
+      aria-describedby="modal-modal-description"
+    >
+      {isLoaded ? (
+        <Box className="modal-content" style={{ marginTop: '1000px' }}>
+          {/* ------------------------------  프로필  -------------------------------*/}
+          <div style={{ display: 'flex', flexDirection: 'row' }}>
+            <Card style={{ ...cardStyle }}>
+              <Typography>{targetName}'s Profile</Typography>
+              <Avatar
+                src={imageFile || undefined}
+                alt={`${slackId}`}
+                style={{ width: 80, height: 80, borderRadius: '25%' }}
+              />
+              <div>
+                {mySlackId !== targetSlackId && (
+                  <div>
+                    {friendStatus === FriendStatus.FRIEND ? (
+                      <Button onClick={removeFriend} color="error">
+                        [ 친구 해제 ]
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={requestBeFriend}
+                        disabled={!friendRequestAvailable}
+                        color="success"
+                      >
+                        [ 친구 추가 ]
+                      </Button>
+                    )}
+                    {isBlocked === true ? (
+                      <Button onClick={unBlock} color="success">
+                        [ 차단 해제 ]
+                      </Button>
+                    ) : (
+                      <Button onClick={block} color="error">
+                        [ 차단 하기 ]
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-            <Card sx={{ ...cardStyle }}>
-              <Typography sx={{ ...TypographyStyle }}>
-                <br />
-                Total Ranking Game :{' '}
-                {normalWin + normalLose + hardWin + hardLose}
-                <br />
-                {normalWin + normalLose > 0 && (
-                  <span>
-                    Normal Ranking Game Winning Rate:{' '}
-                    {((normalWin / (normalWin + normalLose)) * 100).toFixed(2)}%
-                  </span>
-                )}
-                <br />
-                {hardWin + hardLose > 0 && (
-                  <span>
-                    Hard Ranking Game Winning Rate:{' '}
-                    {((hardWin / (hardWin + hardLose)) * 100).toFixed(2)}%
-                  </span>
-                )}
-                <br />
-              </Typography>
             </Card>
-            {mySlackId !== targetSlackId && (
-              <Card sx={{ ...cardStyle }}>
-                <Typography sx={{ ...TypographyStyle }}>
-                  친선전 횟수:{' '}
-                  {fNormalWin + fNormalLose + fHardWin + fNormalLose}
-                  <br />
-                  {fNormalWin + fNormalLose > 0 && (
-                    <span>
-                      NORMAL 모드 승률:{' '}
-                      {(
-                        (fNormalWin / (fNormalWin + fNormalLose)) *
-                        100
-                      ).toFixed(2)}
-                      %<br />
-                    </span>
-                  )}
-                  {fHardWin + fHardLose > 0 && (
-                    <span>
-                      HARD 모드 승률:{' '}
-                      {((fHardWin / (fHardWin + fHardLose)) * 100).toFixed(2)}
-                      %
-                      <br />
-                    </span>
-                  )}
-                  {fLeftWin + fLeftLose > 0 && (
-                    <span>
-                      왼쪽에 있을 때 승률:{' '}
-                      {((fLeftWin / (fLeftWin + fLeftLose)) * 100).toFixed(2)}
-                      %
-                      <br />
-                    </span>
-                  )}
-                  {fRightWin + fRightLose > 0 && (
-                    <span>
-                      오른쪽에 있을 때 승률:{' '}
-                      {((fRightWin / (fRightWin + fRightLose)) * 100).toFixed(
-                        2,
-                      )}
-                      %<br />
-                    </span>
-                  )}
-                </Typography>
-              </Card>
-            )}
-            {mySlackId !== targetSlackId && (
-              <Card sx={{ ...cardStyle }}>
-                <Typography sx={{ ...TypographyStyle }}>
+            {/* 아이디, 레벨, exp */}
+            {/* ------------------------------   인트라 아이디   -------------------------------*/}
+            <Card style={{ ...cardStyle, display: 'flex' }}>
+              <div>
+                <Typography style={{ ...commonStyle }}>intra Id: </Typography>
+                <Typography style={{ ...valueStyle }}>{slackId}</Typography>
+              </div>
+              <div>
+                <Typography style={{ ...commonStyle }}> Level :</Typography>
+                <Typography style={{ ...valueStyle }}> {level}</Typography>
+              </div>
+              <div>
+                <Typography style={{ ...commonStyle }}> Exp :</Typography>
+                <Typography style={{ ...valueStyle }}>
                   {' '}
-                  {friendStatus === FriendStatus.FRIEND ? (
-                    <Button onClick={removeFriend} color="error">
-                      [ 친구 해제 ]
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={requestBeFriend}
-                      disabled={!friendRequestAvailable}
-                      color="success"
-                    >
-                      [ 친구 추가 ]
-                    </Button>
-                  )}
-                  {isBlocked === true ? (
-                    <Button onClick={unBlock} color="success">
-                      [ 차단 해제 ]
-                    </Button>
-                  ) : (
-                    <Button onClick={block} color="error">
-                      [ 차단 하기 ]
-                    </Button>
-                  )}
+                  {exp} ({((exp / ((level + 1) * 500)) * 100).toFixed(2)}
+                  %)
                 </Typography>
-              </Card>
-            )}
-          </Box>
-        ) : (
-          <CircularProgress />
-        )}
-      </Modal>
-    </>
+              </div>
+            </Card>
+          </div>
+          {/* ------------------------------   승률   -------------------------------*/}
+          <div style={{ display: 'flex', flexDirection: 'row' }}>
+            <Card style={{ ...cardStyle }}>
+              <div>
+                <Typography style={{ ...commonStyle }}>
+                  RANK 게임 수:
+                </Typography>
+                <Typography style={{ ...valueStyle }}>
+                  {normalWin + normalLose + hardWin + hardLose}
+                </Typography>
+              </div>
+              <div>
+                <Typography style={{ ...commonStyle }}>
+                  NORMAL 모드 승률:
+                </Typography>
+                <Typography style={{ ...valueStyle }}>
+                  {normalWin + normalLose
+                    ? ((normalWin / (normalWin + normalLose)) * 100).toFixed(
+                        2,
+                      ) + '%'
+                    : null}
+                </Typography>
+              </div>
+              <div>
+                <Typography style={{ ...commonStyle }}>
+                  HARD 모드 승률:
+                </Typography>
+                <Typography style={{ ...valueStyle }}>
+                  {hardWin + hardLose
+                    ? ((hardWin / (hardWin + hardLose)) * 100).toFixed(2) + '%'
+                    : null}
+                </Typography>
+              </div>
+            </Card>
+
+            {/* ------------------------------   친구랑 승률   -------------------------------*/}
+            <div>
+              {mySlackId !== targetSlackId ? (
+                <Card
+                  style={{
+                    ...cardStyle,
+                  }}
+                >
+                  <div>
+                    <Typography style={{ ...commonStyle }}>
+                      친선전 횟수:
+                    </Typography>
+                    <Typography style={{ ...valueStyle }}>
+                      {fNormalWin + fNormalLose + fHardWin + fNormalLose}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography style={{ ...commonStyle }}>
+                      NORMAL 모드 승률:
+                    </Typography>
+                    {fNormalWin + fNormalLose
+                      ? (
+                          (fNormalWin / (fNormalWin + fNormalLose)) *
+                          100
+                        ).toFixed(2) + '%'
+                      : null}
+                    <Typography style={{ ...valueStyle }}></Typography>
+                  </div>
+                  <div>
+                    <Typography style={{ ...commonStyle }}>
+                      HARD 모드 승률:
+                    </Typography>
+                    <Typography style={{ ...valueStyle }}>
+                      {fHardWin + fHardLose
+                        ? ((fHardWin / (fHardWin + fLeftLose)) * 100).toFixed(
+                            2,
+                          ) + '%'
+                        : null}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography style={{ ...commonStyle }}>
+                      왼쪽에 있을 때 승률:
+                    </Typography>
+                    <Typography style={{ ...valueStyle }}>
+                      {fLeftWin + fLeftLose
+                        ? ((fLeftWin / (fLeftWin + fLeftLose)) * 100).toFixed(
+                            2,
+                          ) + '%'
+                        : null}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography style={{ ...commonStyle }}>
+                      오른쪽에 있을 때 승률:
+                    </Typography>
+                    <Typography style={{ ...valueStyle }}>
+                      {fRightWin + fRightLose
+                        ? (
+                            (fRightWin / (fRightWin + fRightLose)) *
+                            100
+                          ).toFixed(2) + '%'
+                        : null}
+                    </Typography>
+                  </div>
+                </Card>
+              ) : null}
+            </div>
+          </div>
+          {/* ------------------------------   전적테이블  -------------------------------*/}
+          <Card sx={{ ...cardStyle, width: '650' }}>
+            <Typography style={{ ...commonStyle }}>
+              <TableContainer component={Paper}>
+                <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell align="middle">Left Player</TableCell>
+                      <TableCell align="middle">Score</TableCell>
+                      <TableCell align="middle">Right Player</TableCell>
+                      <TableCell align="middle">Game Type</TableCell>
+                      <TableCell align="middle">End Status</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {gameHistory.map((gameHistory, idx) => (
+                      <TableRow
+                        key={idx}
+                        sx={{
+                          '&:last-child td, &:last-child th': { border: 0 },
+                        }}
+                      >
+                        <TableCell component="th" scope="row" align="middle">
+                          <p style={{ textAlign: 'center' }}>
+                            {gameHistory.leftName}
+                          </p>
+                        </TableCell>
+                        <TableCell align="middle">
+                          {gameHistory.score}
+                        </TableCell>
+                        <TableCell align="middle">
+                          <p style={{ textAlign: 'center' }}>
+                            {gameHistory.rightName}
+                          </p>
+                        </TableCell>
+                        <TableCell align="middle">
+                          {gameHistory.gameType === 'Rank' ? (
+                            <p
+                              style={{
+                                color: 'magenta',
+                                textAlign: 'center',
+                              }}
+                            >
+                              {gameHistory.gameType}
+                            </p>
+                          ) : (
+                            <p
+                              style={{
+                                color: 'skyblue',
+                                textAlign: 'center',
+                              }}
+                            >
+                              {gameHistory.gameType}
+                            </p>
+                          )}
+                        </TableCell>
+                        <TableCell align="middle">
+                          {gameHistory.win === 'Win' ? (
+                            <p style={{ color: 'blue', textAlign: 'center' }}>
+                              {gameHistory.gameEnd}
+                            </p>
+                          ) : (
+                            <p style={{ color: 'red', textAlign: 'center' }}>
+                              {gameHistory.gameEnd}
+                            </p>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <br />
+            </Typography>
+          </Card>
+        </Box>
+      ) : (
+        <CircularProgress />
+      )}
+    </Modal>
   );
 };
 

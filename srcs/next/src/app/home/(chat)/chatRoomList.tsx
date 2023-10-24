@@ -15,14 +15,12 @@ import { RootState } from '../../redux/store';
 import { useDispatch } from 'react-redux';
 import { setChatRoom, setJoin } from '../../redux/userSlice';
 import { isValid } from '../valid';
-import { myAlert } from '../alert';
-import { clearSocketEvent, registerSocketEvent } from '@/app/contexts/socket';
-import { useEffect, useState } from 'react';
 import { Grow, ListItemIcon } from '@mui/material';
 import { maxPasswordLength } from '@/app/globals';
 import LockIcon from '@mui/icons-material/Lock';
 import CreateRoomForm from './createRoomForm';
 import { JoinStatus } from '@/app/enums';
+import BlackListItem from '../listItem';
 
 const ChatRoomList: React.FC = () => {
   const chatRoom = useSelector((state: RootState) => state.user.chatRoom);
@@ -30,40 +28,39 @@ const ChatRoomList: React.FC = () => {
   const dispatch = useDispatch();
   const roomList = useSelector((state: RootState) => state.room.roomList);
   const join = useSelector((state: RootState) => state.user.join);
-//   const [click, setClick] = useState<boolean>(false);
+  //   const [click, setClick] = useState<boolean>(false);
 
-//   useEffect(() => {
-//     const e: Events[] = [
-//       {
-//         event: 'getChatRoomInfo',
-//         callback: (data: ChatRoomDto) => {
-//           dispatch(setChatRoom(data));
-//         },
-//       },
-//       {
-//         event: 'joinPublicChatRoom',
-//         callback: (data: EmitResult) => {
-//           if (data.result === true) {
-//             dispatch(setJoin(JoinStatus.CHAT));
-//             myAlert('success', data.reason, dispatch);
-//           } else {
-//             // 밴 당했을 때, 비밀번호 틀렸을 때, (서버 자료구조에 이상이 있을 때, 서버한테 데이터 잘 못 보냈을 때)
-//             // if (join !== JoinStatus.CHAT) dispatch(setJoin(JoinStatus.NONE));
-//             myAlert('error', data.reason, dispatch);
-//           }
-//         },
-//       },
-//     ];
-//     registerSocketEvent(chatSocket!, e);
-//     return () => {
-//       clearSocketEvent(chatSocket!, e);
-//     };
-//   }, []);
+  //   useEffect(() => {
+  //     const e: Events[] = [
+  //       {
+  //         event: 'getChatRoomInfo',
+  //         callback: (data: ChatRoomDto) => {
+  //           dispatch(setChatRoom(data));
+  //         },
+  //       },
+  //       {
+  //         event: 'joinPublicChatRoom',
+  //         callback: (data: EmitResult) => {
+  //           if (data.result === true) {
+  //             dispatch(setJoin(JoinStatus.CHAT));
+  //             myAlert('success', data.reason, dispatch);
+  //           } else {
+  //             // 밴 당했을 때, 비밀번호 틀렸을 때, (서버 자료구조에 이상이 있을 때, 서버한테 데이터 잘 못 보냈을 때)
+  //             // if (join !== JoinStatus.CHAT) dispatch(setJoin(JoinStatus.NONE));
+  //             myAlert('error', data.reason, dispatch);
+  //           }
+  //         },
+  //       },
+  //     ];
+  //     registerSocketEvent(chatSocket!, e);
+  //     return () => {
+  //       clearSocketEvent(chatSocket!, e);
+  //     };
+  //   }, []);
 
   const joinRoom = (room: GetChatRoomListJSON) => {
     // setClick(!click);
-	if (!(chatSocket?.connected))
-		chatSocket?.connect();
+    if (!chatSocket?.connected) chatSocket?.connect();
     let password;
     if (room.requirePassword) {
       password = prompt(); // 비밀번호 비동기 입력
@@ -74,18 +71,18 @@ const ChatRoomList: React.FC = () => {
       roomName: room.roomName,
       password: password ? password : null,
     });
-	console.log('log', chatSocket)
   };
 
   return (
     <>
-      <List aria-label="ChatRoom-List">
-        {roomList.map((room: GetChatRoomListJSON, rowIdx: number) => {
-          return room.roomName !== chatRoom?.roomName ? (
-            <Grow in={true} key={room.roomName} timeout={800}>
+      {roomList.map((room: GetChatRoomListJSON, rowIdx: number) => {
+        return room.roomName !== chatRoom?.roomName ? (
+          <Grow in={true} key={room.roomName} timeout={800}>
+            <List aria-label="ChatRoom-List">
               <ListItem
                 divider
-                onClick={() => joinRoom(room)} sx={{width: '480px', height: '70px', borderRadius: '15px'}}
+                onClick={() => joinRoom(room)}
+                sx={{ ...BlackListItem }}
                 className="list-item"
               >
                 <ListItemText primary={`${room.roomName}`} />
@@ -95,10 +92,10 @@ const ChatRoomList: React.FC = () => {
                   </ListItemIcon>
                 ) : null}
               </ListItem>
-            </Grow>
-          ) : null;
-        })}
-      </List>
+            </List>
+          </Grow>
+        ) : null;
+      })}
       <CreateRoomForm />
     </>
   );

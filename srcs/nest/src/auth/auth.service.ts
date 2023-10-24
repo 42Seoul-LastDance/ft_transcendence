@@ -113,10 +113,10 @@ export class AuthService {
     async signUser(user: Auth42Dto): Promise<User> {
         try {
             const userExists = await this.userService.findUserByEmail(user.email);
+            if (userExists === undefined) return await this.userService.registerUser(user);
             return userExists;
         } catch (error) {
-            if (error.getStatus() == 404) {
-                // console.log('user does not exist, so must be saved.\n');
+            if (error.getStatus() === 404) {
                 return await this.userService.registerUser(user);
             } else throw error;
         }
@@ -129,20 +129,4 @@ export class AuthService {
             throw new InternalServerErrorException('error from twofactorAuthentication');
         }
     }
-
-    //안쓰는듯..?
-    // async checkUserIfExists(@Res() res: Response, user: Auth42Dto): Promise<boolean> {
-    //     try {
-    //         await this.userService.getUserBySlackId(user.slackId);
-    //         return true;
-    //     } catch (error) {
-    //         if (error.getStatus() == 404) {
-    //             return false;
-    //         } else {
-    //             this.logger.error('checkUserIfExists error');
-    //             //TODO 하기 exception 괜찮은지 확인 필요(400에러)
-    //             throw new BadRequestException('from 42callback');
-    //         }
-    //     }
-    // }
 }

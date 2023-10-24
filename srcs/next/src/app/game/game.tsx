@@ -1,18 +1,31 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { Unity, useUnityContext } from 'react-unity-webgl';
 import { RootState } from '../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
-import { setAlreadyPlayed, setIsMatchInProgress, setIsMatched, setNames } from '../redux/matchSlice';
+import {
+  setAlreadyPlayed,
+  setIsMatchInProgress,
+  setIsMatched,
+  setNames,
+  setCustomSet,
+} from '../redux/matchSlice';
 import { useGameSocket } from '../contexts/gameSocketContext';
 import { ReactUnityEventParameter } from 'react-unity-webgl/distribution/types/react-unity-event-parameters';
 import EmojiButtons from './emojiButtons';
 import UserPannel from './userPannel';
-import { PlayerSide, Emoji, GameJoinMode } from '../enums';
+import {
+  PlayerSide,
+  Emoji,
+  GameJoinMode,
+  GameEndStatus,
+  GameMode,
+} from '../enums';
 import { setEmoji } from '../redux/matchSlice';
 import { useRouter } from 'next/navigation';
-import { SendEmojiJson, StartGameJson } from '../interfaces';
+import { GameOverJson, SendEmojiJson, StartGameJson } from '../interfaces';
 import { Button } from '@mui/material';
 
 const Game = () => {
@@ -47,7 +60,6 @@ const Game = () => {
           }),
         );
         sendMessage('GameManager', 'StartGame', JSON.stringify(json));
-        // console.log('! startGame Event Detected : ', json);
       });
     }
     if (!socket?.hasListeners('movePaddle')) {
@@ -67,20 +79,19 @@ const Game = () => {
       });
     }
     if (!socket?.hasListeners('gameOver')) {
-      socket?.on('gameOver', (json: JSON) => {
-        // console.log('! gameOver Event Detected : ', json);
+      socket?.on('gameOver', (json: GameOverJson) => {
         sendMessage('GameManager', 'GameOver', JSON.stringify(json));
         setIsPlaying(false);
         if (
-          customSet.joinMode === GameJoinMode.CUSTOM_RECV ||
-          customSet.joinMode === GameJoinMode.CUSTOM_SEND
+          (customSet.joinMode === GameJoinMode.CUSTOM_RECV ||
+            customSet.joinMode === GameJoinMode.CUSTOM_SEND) &&
+          json.reason !== GameEndStatus.DISCONNECT
         )
           setIsReady(false);
       });
     }
     if (!socket?.hasListeners('ballHit')) {
       socket?.on('ballHit', (json: JSON) => {
-        // console.log('! ballHit Event Detected : ', json);
         sendMessage('Ball', 'SynchronizeBallPos', JSON.stringify(json));
       });
     }
@@ -119,9 +130,12 @@ const Game = () => {
       removeEventListener('BallHit', handleBallHit);
       removeEventListener('UnityException', handleUnityException);
       window.removeEventListener('blur', handleBlur);
-	  window.removeEventListener('resize', handleBlur);
+      window.removeEventListener('resize', handleBlur);
     };
   }, [
+    window.removeEventListener,
+    window.addEventListener,
+    handleBlur,
     addEventListener,
     removeEventListener,
     handleUnityException,
@@ -138,8 +152,19 @@ const Game = () => {
         rightName: '???',
       }),
     );
-	dispatch(setIsMatchInProgress({isMatchInProgress: false}));
-	dispatch(setAlreadyPlayed({alreadyPlayed: true}));
+
+    return () => {
+      dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
+      dispatch(setAlreadyPlayed({ alreadyPlayed: true }));
+      dispatch(
+        setCustomSet({
+          joinMode: GameJoinMode.MATCH,
+          gameMode: GameMode.NONE,
+          opponentName: undefined,
+          opponentSlackId: undefined,
+        }),
+      );
+    };
   }, []);
 
   if (!socket?.hasListeners('sendEmoji')) {
@@ -156,6 +181,8 @@ const Game = () => {
         dispatch(setEmoji({ emoji: '/emoji/emoji_SUNGLASSES.png' }));
       else if (json.type === Emoji.BADWORDS)
         dispatch(setEmoji({ emoji: '/emoji/emoji_BADWORDS.png' }));
+      else if (json.type === Emoji.WITCH)
+        dispatch(setEmoji({ emoji: '/emoji/emoji_witch.png' }));
       if (timeoutId) clearTimeout(timeoutId);
       const newTimeoutId = setTimeout(() => {
         dispatch(setEmoji({ emoji: '' }));
@@ -176,32 +203,53 @@ const Game = () => {
         <UserPannel screenSide={PlayerSide.LEFT} />
         <Unity
           unityProvider={unityProvider}
-          style={{ width: 1024, height: 576, minWidth: 1024, minHeight: 576, }}
+          style={{ width: 1024, height: 576, minWidth: 1024, minHeight: 576 }}
         />
         <UserPannel screenSide={PlayerSide.RIGHT} />
-	  </div>
+      </div>
+
       <EmojiButtons />
 
-      <Button
-        onClick={() => {
-          setIsReady(true);
-          socket?.emit('getReady');
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '30px',
         }}
-        disabled={isReady}
       >
-        Get Ready
-      </Button>
-      <Button
-        onClick={() => {
-          dispatch(setIsMatched({ isMatched: false }));
-		  dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
-          socket?.disconnect();
-          router.push('/home');
-        }}
-        disabled={isPlaying}
-      >
-        Exit Room
-      </Button>
+        <Button
+          variant="contained"
+          color="secondary"
+          size="large"
+          sx={{
+            borderRadius: '15px',
+          }}
+          onClick={() => {
+            setIsReady(true);
+            socket?.emit('getReady');
+          }}
+          disabled={isReady}
+        >
+          Get Ready
+        </Button>
+        <Button
+          variant="contained"
+          color="secondary"
+          size="large"
+          sx={{
+            borderRadius: '15px',
+          }}
+          onClick={() => {
+            dispatch(setIsMatched({ isMatched: false }));
+            dispatch(setIsMatchInProgress({ isMatchInProgress: false }));
+            socket?.disconnect();
+            router.push('/home');
+          }}
+          disabled={isPlaying}
+        >
+          Exit Room
+        </Button>
+      </div>
     </>
   );
 };

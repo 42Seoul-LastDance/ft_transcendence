@@ -18,7 +18,7 @@ import ChatIcon from '@mui/icons-material/Chat';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import BlockIcon from '@mui/icons-material/Block';
 const commonTabStyle = {
-  color: 'black', // 텍스트 색상을 검정색으로 설정
+  color: 'white', // 텍스트 색상을 검정색으로 설정
   width: '120px',
   height: '40px',
   borderRadius: '15px 15px 0 0',

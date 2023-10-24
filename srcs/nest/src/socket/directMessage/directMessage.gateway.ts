@@ -56,13 +56,12 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
             return;
         }
         socket.emit('connectSuccess');
-        
-        this.directMessageService
+
+        this.directMessageService;
     }
 
     handleDisconnect(socket: Socket) {
         this.directMessageService.deleteUser(socket);
-        this.logger.log(`DM socket >>> LOST CONNECTION WITH ${socket.id}`);
     }
 
     // * Sender =============================================================
@@ -88,6 +87,7 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
     @SubscribeMessage('getMyName')
     async getMyName(socket: Socket) {
         const user: User = await this.directMessageService.getUserBySocketId(socket.id);
+        if (user === undefined) return;
         const userInfo = {
             userName: user.userName,
             slackId: user.slackId,
@@ -112,7 +112,7 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
     // * friendList
     @SubscribeMessage('getFriendStateList')
     async getFriendStateList(socket: Socket, userSlackId: string): Promise<void> {
-        this.logger.log('** DM - GET FRIEND STATE LIST**');
+        // this.logger.log('** DM - GET FRIEND STATE LIST**');
 
         await this.directMessageService.getFriendStateList(socket, userSlackId);
     }
@@ -153,10 +153,4 @@ export class DirectMessageGateway implements OnGatewayConnection, OnGatewayDisco
         this.logger.log('DM socket:: deleteFriend');
         await this.directMessageService.deleteFriend(socket, payload);
     }
-
-    // // *update userName
-    // @SubscribeMessage('updateUserName')
-    // async updateUserName(socket: Socket, paylod: JSON) {
-    //     this.logger.log('updateUserName');
-    // }
 }

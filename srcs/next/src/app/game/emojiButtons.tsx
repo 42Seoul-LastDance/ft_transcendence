@@ -4,13 +4,14 @@ import { useGameSocket } from '../contexts/gameSocketContext';
 import { Emoji } from '../enums';
 import { useDispatch } from 'react-redux';
 import { setMyEmoji } from '../redux/matchSlice';
-
+import Button from '@mui/material/Button';
+import ButtonGroup from '@mui/material/ButtonGroup';
 const EmojiButtons = () => {
   const socket = useGameSocket();
   const dispatch = useDispatch();
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
-  const buttonStyle = {
+  const ButtonStyle = {
     background: 'transparent', // 투명 배경 설정
     border: 'none', // 테두리 없음
     cursor: 'pointer', // 마우스 커서를 포인터로 변경
@@ -22,8 +23,10 @@ const EmojiButtons = () => {
   };
 
   return (
-    <div>
-      <button
+    <ButtonGroup
+      sx={{ display: 'flex', justifyContent: 'center', mt: '20px', mb: '20px' }}
+    >
+      <Button
         onClick={() => {
           socket?.emit('sendEmoji', { type: Emoji.HI });
           dispatch(setMyEmoji({ myEmoji: '/emoji/emoji_HI.png' }));
@@ -33,12 +36,12 @@ const EmojiButtons = () => {
           }, 2000);
           setTimeoutId(newTimeoutId);
         }}
-        style={buttonStyle}
+        style={ButtonStyle}
       >
         <img src="/emoji/emoji_HI.png" style={imageStyle} />
-      </button>
+      </Button>
 
-      <button
+      <Button
         onClick={() => {
           socket?.emit('sendEmoji', { type: Emoji.THUMBUP });
           dispatch(setMyEmoji({ myEmoji: '/emoji/emoji_THUMBUP.png' }));
@@ -48,12 +51,12 @@ const EmojiButtons = () => {
           }, 2000);
           setTimeoutId(newTimeoutId);
         }}
-        style={buttonStyle}
+        style={ButtonStyle}
       >
         <img src="/emoji/emoji_THUMBUP.png" style={imageStyle} />
-      </button>
+      </Button>
 
-      <button
+      <Button
         onClick={() => {
           socket?.emit('sendEmoji', { type: Emoji.FANFARE });
           dispatch(setMyEmoji({ myEmoji: '/emoji/emoji_FANFARE.png' }));
@@ -63,12 +66,12 @@ const EmojiButtons = () => {
           }, 2000);
           setTimeoutId(newTimeoutId);
         }}
-        style={buttonStyle}
+        style={ButtonStyle}
       >
         <img src="/emoji/emoji_FANFARE.png" style={imageStyle} />
-      </button>
+      </Button>
 
-      <button
+      <Button
         onClick={() => {
           socket?.emit('sendEmoji', { type: Emoji.TONGUE });
           dispatch(setMyEmoji({ myEmoji: '/emoji/emoji_TONGUE.png' }));
@@ -78,12 +81,12 @@ const EmojiButtons = () => {
           }, 2000);
           setTimeoutId(newTimeoutId);
         }}
-        style={buttonStyle}
+        style={ButtonStyle}
       >
         <img src="/emoji/emoji_TONGUE.png" style={imageStyle} />
-      </button>
+      </Button>
 
-      <button
+      <Button
         onClick={() => {
           socket?.emit('sendEmoji', { type: Emoji.SUNGLASSES });
           dispatch(setMyEmoji({ myEmoji: '/emoji/emoji_SUNGLASSES.png' }));
@@ -93,12 +96,12 @@ const EmojiButtons = () => {
           }, 2000);
           setTimeoutId(newTimeoutId);
         }}
-        style={buttonStyle}
+        style={ButtonStyle}
       >
         <img src="/emoji/emoji_SUNGLASSES.png" style={imageStyle} />
-      </button>
+      </Button>
 
-      <button
+      <Button
         onClick={() => {
           socket?.emit('sendEmoji', { type: Emoji.BADWORDS });
           dispatch(setMyEmoji({ myEmoji: '/emoji/emoji_BADWORDS.png' }));
@@ -108,11 +111,26 @@ const EmojiButtons = () => {
           }, 2000);
           setTimeoutId(newTimeoutId);
         }}
-        style={buttonStyle}
+        style={ButtonStyle}
       >
         <img src="/emoji/emoji_BADWORDS.png" style={imageStyle} />
-      </button>
-    </div>
+      </Button>
+
+      <Button
+        onClick={() => {
+          socket?.emit('sendEmoji', { type: Emoji.WITCH });
+          dispatch(setMyEmoji({ myEmoji: '/emoji/emoji_witch.png' }));
+          if (timeoutId) clearTimeout(timeoutId);
+          const newTimeoutId = setTimeout(() => {
+            dispatch(setMyEmoji({ myEmoji: '' }));
+          }, 2000);
+          setTimeoutId(newTimeoutId);
+        }}
+        style={ButtonStyle}
+      >
+        <img src="/emoji/emoji_witch.png" style={imageStyle} />
+      </Button>
+    </ButtonGroup>
   );
 };
 

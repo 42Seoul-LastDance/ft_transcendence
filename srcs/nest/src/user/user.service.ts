@@ -1,12 +1,12 @@
 /* eslint-disable prettier/prettier */
 import {
     ConflictException,
-    Inject,
     Injectable,
-    InternalServerErrorException,
     Logger,
     NotFoundException,
     UnauthorizedException,
+    InternalServerErrorException,
+    BadRequestException,
 } from '@nestjs/common';
 import { Like } from 'typeorm';
 import { User } from './user.entity';
@@ -19,6 +19,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserStatus } from './user-status.enum';
 import { POINT, LEVELUP } from 'src/game/game.constants';
 import { DirectMessageService } from 'src/socket/directMessage/directMessage.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -84,10 +85,9 @@ export class UserService {
                 level: 0,
             } as User);
             const user = await this.userRepository.save(newUser);
-            this.logger.log('register user in UserService:', newUser);
             return user;
         } catch (error) {
-            if (error.code == '23505') throw new ConflictException('Existing userName');
+            if (error.code === '23505') throw new ConflictException('Existing userName');
             else throw new InternalServerErrorException('from registerUser');
         }
     }
@@ -100,6 +100,7 @@ export class UserService {
     ) {
         try {
             const user = await this.findUserById(userId);
+            if (user === undefined) throw new BadRequestException('no such userId');
             if (userName && user.userName !== userName) {
                 this.logger.debug('userName update');
                 user.userName = userName;
@@ -116,12 +117,10 @@ export class UserService {
                 }
             }
             user.profileurl = profileImage ? profileImage.filename : user.profileurl;
-
             await this.userRepository.update(userId, user);
-            // const newUser = await this.findUserById(userId);
-            // console.log('after update', newUser.userName, newUser.require2fa, newUser.profileurl);
         } catch (error) {
-            this.logger.error('[ERRRRRR] userService: updateUserInfo');
+            // this.logger.error('[ERRRRRR] userService: updateUserInfo');
+            throw new BadRequestException('no such userId');
         }
     }
 
@@ -145,15 +144,14 @@ export class UserService {
     async verifyRefreshToken(payload, token: string): Promise<void> {
         //userRepository 에서 payload.sub (userid) 에 해당하는 refresh token 꺼내서 같은 지 비교.
         try {
-            const storedToken = (await this.findUserById(payload.sub)).refreshToken;
-            this.logger.debug('Checking RefreshToken to Verify');
-            this.logger.debug(`storedToken : ${storedToken}`);
-            this.logger.debug(`InputToken : ${token}`);
-            if (!(storedToken && token === storedToken)) {
+            const user: User = await this.findUserById(payload.sub);
+            if (user === undefined) throw new NotFoundException('from verifyRefreshToken');
+            this.logger.log('Checking RefreshToken to Verify');
+            if (!(user.refreshToken && token === user.refreshToken)) {
                 throw new UnauthorizedException();
             }
         } catch (error) {
-            if (error.getStatus() == 404) throw new NotFoundException('from verifyRefreshToken');
+            if (error.getStatus() === 404) throw new NotFoundException('from verifyRefreshToken');
             throw new UnauthorizedException('from verifyRefreshToken');
         }
     }
@@ -189,25 +187,26 @@ export class UserService {
     로그아웃 용
      **/
     async removeRefreshToken(user): Promise<any> {
-        // TODO: 함수 명이랑 로직 다시 정리필요해보입니다!
-        const found = await this.findUserById(user.sub); //안에서 에러처리 됨
+        const found = await this.findUserById(user.sub);
+        if (found === undefined) return;
         found.refreshToken = null;
         return await this.userRepository.save(found);
     }
 
     async saveUser2faCode(userId: number, code: string): Promise<void> {
         try {
-            await this.userRepository.update(userId, { code2fa: code });
+            const encodedCode = await bcrypt.hash(code, 10);
+            await this.userRepository.update(userId, { code2fa: encodedCode });
         } catch {
             this.logger.debug(`code , id : ${code} ${userId} ${typeof code}`);
         }
     }
 
     async verifyUser2faCode(userId: number, code: string): Promise<boolean> {
-        const storedCode: string = (await this.findUserById(userId)).code2fa;
-        console.log('stored = ', storedCode);
-        console.log('input = ', code);
-        if (storedCode === code) return true;
+        const user: User = await this.findUserById(userId);
+        if (user === undefined) return false;
+        const isMatch = await bcrypt.compare(code, user.code2fa);
+        if (isMatch) return true;
         else return false;
     }
 
@@ -228,10 +227,7 @@ export class UserService {
 
     async getUserProfile(slackId: string): Promise<UserProfileDto> {
         const user: User = await this.getUserBySlackId(slackId);
-        if (user === undefined || user === null) {
-            console.log(slackId, user);
-            return null;
-        }
+        if (user === undefined || user === null) return undefined;
         const userProfileDto: UserProfileDto = {
             userName: user.userName,
             slackId: user.slackId,
@@ -244,10 +240,7 @@ export class UserService {
     async getUserProfileImage(slackId: string): Promise<{ image: Buffer; mimeType: string }> {
         try {
             const user: User = await this.getUserBySlackId(slackId);
-            if (user === undefined || user === null) {
-                console.log(slackId, user);
-                return null;
-            }
+            if (user === undefined || user === null) return undefined;
             let profileImgTarget = user.profileurl ? user.profileurl : 'default.png';
             let imagePath = '/usr/app/srcs/profile/' + profileImgTarget;
             let image = readFileSync(imagePath); // 이미지 파일을 읽어옴
@@ -265,6 +258,7 @@ export class UserService {
 
     async updateUserExp(userId: number, score: number) {
         const user = await this.findUserById(userId);
+        if (user === undefined) return;
         user.exp += POINT * score;
         if (user.exp >= (user.level + 1) * LEVELUP) {
             user.exp -= (user.level + 1) * LEVELUP;
