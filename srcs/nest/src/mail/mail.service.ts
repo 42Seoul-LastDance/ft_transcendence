@@ -45,7 +45,7 @@ export class MailService {
                             <!-- 하트 아이콘 ♥️ -->
                             <i class="fas fa-heart" style="color: red; font-size: 24px;"></i>
                             <!-- 감사 메시지 -->
-                            <p style="font-size: 18px; margin: 10px 0;">[The title is..... Last Pongmates's Dance with nest and next]를 사용해주셔서 감사합니다!</p>
+                            <p style="font-size: 18px; margin: 10px 0;">[Pongmates]를 사용해주셔서 감사합니다!</p>
                             <!-- 인증코드 변수 삽입 -->
                             <p style="font-size: 24px; font-weight: bold; color: #007bff;">당신의 인증코드는 ${code} 입니다.</p>
                         </td>
@@ -60,7 +60,7 @@ export class MailService {
 
         const mailOptions = {
             to: user.email,
-            subject: "🏓[The title is..... Last Pongmates's Dance with nest and next]🏓 2FA Verification Code",
+            subject: "🏓[Pongmates]🏓 2FA Verification Code",
             text: code,
             html: mailContent,
         };

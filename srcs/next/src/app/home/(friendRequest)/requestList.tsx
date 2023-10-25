@@ -144,7 +144,7 @@ const RequestList: React.FC = () => {
   return (
     <>
       <Card sx={{ ...cardStyle }}>
-        <div sx={{ margin: '8px' }}>
+        <div style={{ margin: '8px' }}>
           <Typography
             id="modal-modal-description"
             variant="body1"

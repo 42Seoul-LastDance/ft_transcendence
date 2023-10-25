@@ -7,7 +7,7 @@ $(NAME) :
 	@git submodule update --init --remote
 	@cp ./env/.env .
 	@bash utils/setting_ip.sh
-	@if docker info | grep -q "ERROR"; then \
+	@if docker info | grep -q "not" || docker info | grep -q "ERROR"; then \
 		echo "\033[0;96m--- Docker will be running soon ---"; \
 		echo "y" | ./utils/init_docker.sh; \
 		while docker info | grep -q "ERROR"; do \

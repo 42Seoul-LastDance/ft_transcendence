@@ -272,7 +272,7 @@ const ChatMenu = () => {
                   ...buttonStyle,
                 }}
               >
-                {selectedMember.permission === UserPermission.ADMIN ? (
+                {selectedMember?.permission === UserPermission.ADMIN ? (
                   <>관리자 해제하기</>
                 ) : (
                   <>관리자 만들기</>

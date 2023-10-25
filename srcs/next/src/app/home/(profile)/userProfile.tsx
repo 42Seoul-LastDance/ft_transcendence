@@ -17,10 +17,9 @@ import {
   JoinStatus,
   PlayerSide,
   GameEndStatus,
-  MyHistory,
   GameType,
 } from '@/app/enums';
-import { GameHistoryJson } from '@/app/interfaces';
+import { GameHistoryJson, MyHistory } from '@/app/interfaces';
 import Avatar from '@mui/material/Avatar';
 import sendRequestImage from '@/app/imageApi';
 import Table from '@mui/material/Table';
@@ -47,7 +46,7 @@ const UserProfile = () => {
   const [targetName, setTargetName] = useState<string>('');
   const [slackId, setSlackId] = useState<string>('');
   //* users profileImg
-  const [mimeType, setMimeType] = useState<AxiosHeaderValue | undefined>('');
+  const [mimeType, setMimeType] = useState<any | undefined>('');
   const [imageFile, setImageFile] = useState<string | undefined>('');
   //* game ranking
   const [normalWin, setNormalWin] = useState<number>(0);
@@ -294,7 +293,7 @@ const UserProfile = () => {
       open={viewProfile}
       onClose={handleClose}
       style={{
-        marginTo: '100px',
+        marginTop: '100px',
         display: 'flex',
         justifyContent: 'center', // 수평 중앙 정렬
         alignItems: 'center', // 수직 중앙 정렬
@@ -303,10 +302,12 @@ const UserProfile = () => {
       aria-describedby="modal-modal-description"
     >
       {isLoaded ? (
-        <Box className="modal-content" style={{ marginTop: '1000px' }}>
+        <Box className="modal-content" style={{ 
+          marginTop: '500px' 
+          }}>
           {/* ------------------------------  프로필  -------------------------------*/}
           <div style={{ display: 'flex', flexDirection: 'row' }}>
-            <Card style={{ ...cardStyle }}>
+            <Card sx={{ ...cardStyle }}>
               <Typography>{targetName}'s Profile</Typography>
               <Avatar
                 src={imageFile || undefined}
@@ -344,18 +345,18 @@ const UserProfile = () => {
             </Card>
             {/* 아이디, 레벨, exp */}
             {/* ------------------------------   인트라 아이디   -------------------------------*/}
-            <Card style={{ ...cardStyle, display: 'flex' }}>
+            <Card sx={{ ...cardStyle, display: 'flex' }}>
               <div>
-                <Typography style={{ ...commonStyle }}>intra Id: </Typography>
-                <Typography style={{ ...valueStyle }}>{slackId}</Typography>
+                <Typography sx={{ ...commonStyle }}>intra Id: </Typography>
+                <Typography sx={{ ...valueStyle }}>{slackId}</Typography>
               </div>
               <div>
-                <Typography style={{ ...commonStyle }}> Level :</Typography>
-                <Typography style={{ ...valueStyle }}> {level}</Typography>
+                <Typography sx={{ ...commonStyle }}> Level :</Typography>
+                <Typography sx={{ ...valueStyle }}> {level}</Typography>
               </div>
               <div>
-                <Typography style={{ ...commonStyle }}> Exp :</Typography>
-                <Typography style={{ ...valueStyle }}>
+                <Typography sx={{ ...commonStyle }}> Exp :</Typography>
+                <Typography sx={{ ...valueStyle }}>
                   {' '}
                   {exp} ({((exp / ((level + 1) * 500)) * 100).toFixed(2)}
                   %)
@@ -365,20 +366,20 @@ const UserProfile = () => {
           </div>
           {/* ------------------------------   승률   -------------------------------*/}
           <div style={{ display: 'flex', flexDirection: 'row' }}>
-            <Card style={{ ...cardStyle }}>
+            <Card sx={{ ...cardStyle }}>
               <div>
-                <Typography style={{ ...commonStyle }}>
+                <Typography sx={{ ...commonStyle }}>
                   RANK 게임 수:
                 </Typography>
-                <Typography style={{ ...valueStyle }}>
+                <Typography sx={{ ...valueStyle }}>
                   {normalWin + normalLose + hardWin + hardLose}
                 </Typography>
               </div>
               <div>
-                <Typography style={{ ...commonStyle }}>
+                <Typography sx={{ ...commonStyle }}>
                   NORMAL 모드 승률:
                 </Typography>
-                <Typography style={{ ...valueStyle }}>
+                <Typography sx={{ ...valueStyle }}>
                   {normalWin + normalLose
                     ? ((normalWin / (normalWin + normalLose)) * 100).toFixed(
                         2,
@@ -387,10 +388,10 @@ const UserProfile = () => {
                 </Typography>
               </div>
               <div>
-                <Typography style={{ ...commonStyle }}>
+                <Typography sx={{ ...commonStyle }}>
                   HARD 모드 승률:
                 </Typography>
-                <Typography style={{ ...valueStyle }}>
+                <Typography sx={{ ...valueStyle }}>
                   {hardWin + hardLose
                     ? ((hardWin / (hardWin + hardLose)) * 100).toFixed(2) + '%'
                     : null}
@@ -402,20 +403,20 @@ const UserProfile = () => {
             <div>
               {mySlackId !== targetSlackId ? (
                 <Card
-                  style={{
+                  sx={{
                     ...cardStyle,
                   }}
                 >
                   <div>
-                    <Typography style={{ ...commonStyle }}>
+                    <Typography sx={{ ...commonStyle }}>
                       친선전 횟수:
                     </Typography>
-                    <Typography style={{ ...valueStyle }}>
+                    <Typography sx={{ ...valueStyle }}>
                       {fNormalWin + fNormalLose + fHardWin + fNormalLose}
                     </Typography>
                   </div>
                   <div>
-                    <Typography style={{ ...commonStyle }}>
+                    <Typography sx={{ ...commonStyle }}>
                       NORMAL 모드 승률:
                     </Typography>
                     {fNormalWin + fNormalLose
@@ -424,13 +425,13 @@ const UserProfile = () => {
                           100
                         ).toFixed(2) + '%'
                       : null}
-                    <Typography style={{ ...valueStyle }}></Typography>
+                    <Typography sx={{ ...valueStyle }}></Typography>
                   </div>
                   <div>
-                    <Typography style={{ ...commonStyle }}>
+                    <Typography sx={{ ...commonStyle }}>
                       HARD 모드 승률:
                     </Typography>
-                    <Typography style={{ ...valueStyle }}>
+                    <Typography sx={{ ...valueStyle }}>
                       {fHardWin + fHardLose
                         ? ((fHardWin / (fHardWin + fLeftLose)) * 100).toFixed(
                             2,
@@ -439,10 +440,10 @@ const UserProfile = () => {
                     </Typography>
                   </div>
                   <div>
-                    <Typography style={{ ...commonStyle }}>
+                    <Typography sx={{ ...commonStyle }}>
                       왼쪽에 있을 때 승률:
                     </Typography>
-                    <Typography style={{ ...valueStyle }}>
+                    <Typography sx={{ ...valueStyle }}>
                       {fLeftWin + fLeftLose
                         ? ((fLeftWin / (fLeftWin + fLeftLose)) * 100).toFixed(
                             2,
@@ -451,10 +452,10 @@ const UserProfile = () => {
                     </Typography>
                   </div>
                   <div>
-                    <Typography style={{ ...commonStyle }}>
+                    <Typography sx={{ ...commonStyle }}>
                       오른쪽에 있을 때 승률:
                     </Typography>
-                    <Typography style={{ ...valueStyle }}>
+                    <Typography sx={{ ...valueStyle }}>
                       {fRightWin + fRightLose
                         ? (
                             (fRightWin / (fRightWin + fRightLose)) *
@@ -469,16 +470,16 @@ const UserProfile = () => {
           </div>
           {/* ------------------------------   전적테이블  -------------------------------*/}
           <Card sx={{ ...cardStyle, width: '650' }}>
-            <Typography style={{ ...commonStyle }}>
+            <Typography sx={{ ...commonStyle }}>
               <TableContainer component={Paper}>
                 <Table sx={{ minWidth: 650 }} aria-label="simple table">
                   <TableHead>
                     <TableRow>
-                      <TableCell align="middle">Left Player</TableCell>
-                      <TableCell align="middle">Score</TableCell>
-                      <TableCell align="middle">Right Player</TableCell>
-                      <TableCell align="middle">Game Type</TableCell>
-                      <TableCell align="middle">End Status</TableCell>
+                      <TableCell>Left Player</TableCell>
+                      <TableCell>Score</TableCell>
+                      <TableCell>Right Player</TableCell>
+                      <TableCell>Game Type</TableCell>
+                      <TableCell>End Status</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -489,20 +490,20 @@ const UserProfile = () => {
                           '&:last-child td, &:last-child th': { border: 0 },
                         }}
                       >
-                        <TableCell component="th" scope="row" align="middle">
+                        <TableCell component="th" scope="row">
                           <p style={{ textAlign: 'center' }}>
                             {gameHistory.leftName}
                           </p>
                         </TableCell>
-                        <TableCell align="middle">
+                        <TableCell>
                           {gameHistory.score}
                         </TableCell>
-                        <TableCell align="middle">
+                        <TableCell>
                           <p style={{ textAlign: 'center' }}>
                             {gameHistory.rightName}
                           </p>
                         </TableCell>
-                        <TableCell align="middle">
+                        <TableCell>
                           {gameHistory.gameType === 'Rank' ? (
                             <p
                               style={{
@@ -523,7 +524,7 @@ const UserProfile = () => {
                             </p>
                           )}
                         </TableCell>
-                        <TableCell align="middle">
+                        <TableCell>
                           {gameHistory.win === 'Win' ? (
                             <p style={{ color: 'blue', textAlign: 'center' }}>
                               {gameHistory.gameEnd}

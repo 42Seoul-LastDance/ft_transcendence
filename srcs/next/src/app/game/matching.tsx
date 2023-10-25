@@ -66,7 +66,7 @@ const Matching = () => {
         >
           <Card sx={{ ...cardContent, bgcolor: '#ffde80' }}>
             <img
-              src="/theme/easy.jpeg"
+              src="/theme/easy.png"
               width="350px"
               height="350px"
               style={{
@@ -95,7 +95,7 @@ const Matching = () => {
           </Card>
           <Card sx={{ ...cardContent, bgcolor: '#ae5781' }}>
             <img
-              src="/theme/hard.jpeg"
+              src="/theme/hard.png"
               width="350px"
               height="350px"
               style={{
