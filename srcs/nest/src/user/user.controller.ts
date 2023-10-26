@@ -92,7 +92,7 @@ export class UserController {
             const { image, mimeType } = await this.userService.getUserProfileImage(slackId);
             if (image === undefined || mimeType === undefined) return;
             res.setHeader('Content-Type', mimeType); // 이미지의 MIME 타입 설정
-            return res.send(image); // 이미지 파일을 클라이언트로 전송
+            res.send(image); // 이미지 파일을 클라이언트로 전송
         } catch (error) {
             //ERROR HANDLE
             this.logger.error(`getProfileImage : ${error.name}`);

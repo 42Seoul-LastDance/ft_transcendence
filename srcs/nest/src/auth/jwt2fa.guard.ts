@@ -14,6 +14,8 @@ export class Jwt2faGuard implements CanActivate {
         if (!token) {
             console.log('2faJwt: no token');
             throw new UnauthorizedException('2faJwt: no token');
+            console.log('2faJwt: no token');
+            throw new UnauthorizedException('2faJwt: no token');
         }
         try {
             const payload = await this.jwtService.verifyAsync(token, {
@@ -26,6 +28,7 @@ export class Jwt2faGuard implements CanActivate {
             console.log('2faJwt: token not right', error.message);
             throw new UnauthorizedException("2faJwt: can't verify token");
         }
+        console.log('2faJwt guard okay');
         console.log('2faJwt guard okay');
         return true;
     }

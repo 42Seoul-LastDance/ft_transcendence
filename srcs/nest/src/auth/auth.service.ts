@@ -55,6 +55,7 @@ export class AuthService {
         return undefined;
     }
 
+
     async regenerateJwt(request) {
         //헤더 에서 jwt, refreshToken 추출 후 DB에 저장해둔 것과 비교하여 검증
         //jwt payload 에서 id추출.
@@ -64,7 +65,11 @@ export class AuthService {
             throw new UnauthorizedException('no token ');
         }
         let payload;
+        let payload;
         try {
+            payload = await this.jwtService.verifyAsync(token, {
+                secret: process.env.JWT_SECRET_KEY,
+            });
             payload = await this.jwtService.verifyAsync(token, {
                 secret: process.env.JWT_SECRET_KEY,
             });
