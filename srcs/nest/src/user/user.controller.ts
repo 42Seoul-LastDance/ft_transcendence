@@ -12,145 +12,125 @@ import {
     Res,
     NotFoundException,
     InternalServerErrorException,
+    BadRequestException,
     ParseIntPipe,
-	BadRequestException,
+    Logger,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
-import { JwtEnrollGuard } from 'src/auth/jwtEnroll.guard';
-import { UserInfoDto } from './dto/userInfo.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { readFileSync } from 'fs';
-import { extname } from 'path';
 import { UserProfileDto } from './dto/userProfile.dto';
+import { User } from './user.entity';
 
 @Controller('users')
 export class UserController {
+    private logger = new Logger(UserController.name);
     constructor(private readonly userService: UserService) {}
 
-//* user signup
-
-    @Post('/signup')
-    @UseGuards(JwtEnrollGuard)
-    async signup(@Req() req) {
-        await this.userService.registerUser(req.authDto);
-    }
-
-    @Patch('/signup/username')
-    @UseGuards(JwtEnrollGuard)
-    async signupUsername(@Req() req, @Body('username') username: string) {
-        const user = await this.userService.getUserByUsername(username);
-        if (user)
-            throw new BadRequestException('already used username');
-        await this.userService.updateUsernameBySlackId(req.authDto.slackId, username);
-    }
-
-    //*프론트에서 이거 안한대
-    // @Patch('/signup/2fa')
-    // @UseGuards(JwtEnrollGuard)
-    // async signupUser2fa(@Req() req, @Body('2fa') is2fa: boolean) {
-    //     await this.userService.update2faConfBySlackId(req.authDto.slackId, is2fa);
-    // }
-
-    //TODO: null일 수 도 있다
-    @Patch('/signup/profileImage')
-    @UseGuards(JwtEnrollGuard)
+    @Patch('/update')
+    @UseGuards(JwtAuthGuard)
     @UseInterceptors(FileInterceptor('profileImage'))
-    async signupProfileImage(@Req() req, @UploadedFile() file: Express.Multer.File) {
-        await this.userService.updateProfileImageBySlackId(req.authDto.slackId, file.filename);
-    }
-    
-//* user info update
-    @Patch('/update/username')
-    @UseGuards(JwtAuthGuard)
-    async updateUsername(@Req() req, @Body('username') username: string ) {
-    const user = await this.userService.getUserByUsername(username);
-    if (user)
-        throw new BadRequestException('already used username');
-    await this.userService.updateUsernameBySlackId(req.user.slackId, username);
-    }
-
-    @Patch('/update/2fa')
-    @UseGuards(JwtAuthGuard)
-    async updateUser2fa(@Req() req, @Body('2fa') is2fa: boolean) {
-        await this.userService.update2faConfBySlackId(req.user.slackId, is2fa);
-    }
-
-    @Patch('/update/username')
-    @UseGuards(JwtAuthGuard)
-    @UseInterceptors(FileInterceptor('image_url'))
-    async updateProfileImage(@Req() req, @UploadedFile() file: Express.Multer.File) {
-        await this.userService.updateProfileImageBySlackId(req.user.slackId, file.filename);
-    }
-
-    @Get('/profile/:id')
-    @UseGuards(JwtAuthGuard)
-    async getProfile(@Param('id', ParseIntPipe) id: number, @Res() res) {
-        //누구의 profile을 보고 싶은지 id로 조회.
-        const userProfile: UserProfileDto = await this.userService.getUserProfile(id);
-        return res.status(200).json(userProfile);
-    }
-
-    @Get('/profileImg/:id')
-    @UseGuards(JwtAuthGuard)
-    async getProfileImage(
+    async updateUserInfo(
+        @Req() req,
         @Res() res: Response,
-        @Param('id', ParseIntPipe) id: number,
+        @UploadedFile() profileImage: Express.Multer.File | undefined,
+        @Body('userName') userName: string | undefined,
+        @Body('require2fa') require2fa: string,
     ) {
         try {
-            const { image, mimeType } =
-                await this.userService.getUserProfileImage(id);
+            let require: boolean;
+            console.log('update', userName, require2fa, profileImage?.filename);
+            if (require2fa === 'true') require = true;
+            else require = false;
+            await this.userService.updateUserInfo(req.user.sub, userName, require, profileImage);
+            return res.sendStatus(200);
+        } catch (error) {
+            //ERROR HANDLE
+            console.log('[ERROR]: updateUserInfo', error);
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
+        }
+    }
+
+    @Get('/userInfo')
+    @UseGuards(JwtAuthGuard)
+    async getUserSetInfo(@Req() req, @Res() res: Response) {
+        try {
+            const userSetting = await this.userService.getUserSetInfo(req.user.sub);
+            return res.status(200).json(userSetting);
+        } catch (error) {
+            //ERROR HANDLE
+            console.log('[ERROR]: getUserSetInfo', error);
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
+        }
+    }
+
+    @Get('/profile/:slackId')
+    @UseGuards(JwtAuthGuard)
+    async getProfile(@Param('slackId') slackId: string, @Res() res) {
+        try {
+            //누구의 profile을 보고 싶은지 id로 조회.
+            // * 무조건 있는 유저를 조회하긴 할텐데, userProfile도 검사 한 번 하는게 좋지 않을까요?
+            //TODO 존재하는 유저인지 확인 필요
+            const userProfile: UserProfileDto = await this.userService.getUserProfile(slackId);
+            return res.status(200).json(userProfile);
+        } catch (error) {
+            //ERROR HANDLE
+            console.log('[ERROR]: getProfile', error);
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
+        }
+    }
+
+    @Get('/profileImg/:slackId')
+    @UseGuards(JwtAuthGuard)
+    async getProfileImage(@Res() res: Response, @Param('slackId') slackId: string) {
+        try {
+            //getUserProfileImage에서 존재하는 유저인지 확인함 (juhoh)
+            const { image, mimeType } = await this.userService.getUserProfileImage(slackId);
+            if (image === undefined || mimeType === undefined) return;
             res.setHeader('Content-Type', mimeType); // 이미지의 MIME 타입 설정
             res.send(image); // 이미지 파일을 클라이언트로 전송
         } catch (error) {
-            if (error.getStatus() == 404) throw new NotFoundException();
-            else throw new InternalServerErrorException();
+            //ERROR HANDLE
+            this.logger.error(`getProfileImage : ${error.name}`);
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
-    @Get('/username/:name')
-    // @UseGuards(JwtAuthGuard) // TODO : enroll 과 accesstoken 분리 필요
-    async checkUniqueName(@Param('name') name: string, @Res() res: Response) {
+    @Post('/exist/')
+    @UseGuards(JwtAuthGuard)
+    async checkIfExists(@Res() res: Response, @Body('slackId') slackId: string) {
         try {
-            console.log(`checking name : ${name}`);
-            const user = await this.userService.getUserByUsername(name);
-            if (user) throw new BadRequestException('username exist');
+            const user: User = await this.userService.getUserBySlackId(slackId);
+            if (user === undefined) return res.sendStatus(400);
+            // this.logger.debug('user', user);
+            return res.sendStatus(200);
         } catch (error) {
-            if (error.getStatus() == 404) res.send('OK');
-            else throw new InternalServerErrorException();
+            //ERROR HANDLE
+            console.log('[ERROR]: checkIfExists', error);
+            if (error.status === 500) return res.sendStatus(500);
+            return res.sendStatus(400);
         }
     }
 
-    // @Get('/status')
-    // @UseGuards(JwtAuthGuard)
-    // getStatus(@Param() id) {
-    //     // TODO: 서로 친구인지 조회 필요
-    // }
-
-    // @Get()
-    // findAll(): Promise<User[]> {
-    //     return this.userService.findAll();
-    // }
-
-    // @Post()
-    // @UsePipes(ValidationPipe)
-    // async createUser(@Body() createUserDto: CreateUserDto): Promise<User> {
-    //     return this.userService.createUser(createUserDto);
-    // }
-
-    // @Get('searchOne')
-    // async searchOne(@Query('name') name: string): Promise<User> {
-    //     return this.userService.searchOne(name);
-    // }
-
-    // @Get('searchUser')
-    // async searchUser(@Query('slackId') slackId: string): Promise<User[]> {
-    //     return this.userService.getUserListBySlackId(slackId);
-    // }
-
-    // @Delete('deleteOne/:id')
-    // async deleteOne(@Param('id') id: number): Promise<void> {
-    //     await this.userService.deleteOne(id);
-    // }
+    @Post('/username/')
+    @UseGuards(JwtAuthGuard)
+    async checkUniqueName(@Body('name') name: string, @Res() res: Response) {
+        try {
+            // console.log(`checking name : ${body.name}`);
+            const user = await this.userService.getUserByUserName(name);
+            if (user) {
+                console.log('[ERROR]: checkUniqueName');
+                return res.sendStatus(400);
+            } else return res.sendStatus(200);
+        } catch (error) {
+            if (error.status === 500) return res.sendStatus(500);
+            //* this is not error
+            return res.sendStatus(200);
+        }
+    }
 }

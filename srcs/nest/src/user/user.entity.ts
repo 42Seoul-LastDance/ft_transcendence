@@ -1,17 +1,17 @@
 import { Entity, PrimaryGeneratedColumn, Column, Unique } from 'typeorm';
-import { userStatus } from './user-status.enum';
-import { IsNumber, IsString } from 'class-validator';
+import { UserStatus } from './user-status.enum';
+import { IsBoolean, IsEnum, IsNumber, IsString } from 'class-validator';
 import { userRole } from './user-role.enum';
 
 @Entity({ name: 'user', schema: 'public' })
-@Unique(['username']) // * username이 중복될 경우 알아서 오류를 내뱉음. : try catch 구문 사용.
+@Unique(['userName']) // * userName이 중복될 경우 알아서 오류를 내뱉음. : try catch 구문 사용.
 export class User {
     @PrimaryGeneratedColumn('increment')
     id: number;
 
     @Column({ nullable: true })
     @IsString()
-    username: string;
+    userName: string;
 
     @Column()
     @IsString()
@@ -33,20 +33,20 @@ export class User {
     @IsString()
     require2fa: boolean;
 
-    @Column({ default: 0 })
+    @Column({ default: '' })
     @IsString()
     code2fa: string;
 
-    @Column({ default: userStatus.OFFLINE })
-    @IsString()
-    status: userStatus;
+    @Column({ default: UserStatus.OFFLINE })
+    @IsEnum(UserStatus)
+    status: UserStatus;
 
     @Column({ default: 0 })
-    @IsString()
+    @IsNumber()
     exp: number;
 
     @Column({ default: 0 })
-    @IsString()
+    @IsNumber()
     level: number;
 
     @Column({ default: 0, nullable: true })

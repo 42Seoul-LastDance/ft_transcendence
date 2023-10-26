@@ -1,6 +1,7 @@
 # compiled output
 /dist
-/node_modules
+/node_modulesß
+/env
 
 # Logs
 logs
@@ -14,10 +15,6 @@ lerna-debug.log*
 # OS
 .DS_Store
 srcs/postgresql/*
-*.png
-*.jpeg
-*.jpg
-!default.png
 .env
 
 # Tests

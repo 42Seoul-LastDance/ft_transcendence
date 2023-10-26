@@ -4,7 +4,10 @@ all		: $(NAME)
 
 $(NAME) :
 	mkdir -p ./srcs/postgresql
-	@if docker info | grep -q "ERROR"; then \
+	@git submodule update --init --remote
+	@cp ./env/.env .
+	@bash utils/setting_ip.sh
+	@if docker info | grep -q "not" || docker info | grep -q "ERROR"; then \
 		echo "\033[0;96m--- Docker will be running soon ---"; \
 		echo "y" | ./utils/init_docker.sh; \
 		while docker info | grep -q "ERROR"; do \
@@ -15,6 +18,7 @@ $(NAME) :
 		echo "\033[0;96m--- Docker is already running ---"; \
 		docker-compose up --build; \
 	fi
+	docker-compose up --build
 
 down	: 
 	docker-compose down
@@ -42,6 +46,12 @@ xtest	:
 	docker exec next curl http://localhost:4242
 
 exec	:
-	docker exec -it react /bin/bash
+	docker exec -it next /bin/bash
 
-.PHONY	: all down clean fclean docker cntest stest xtest next
+next	:
+	docker-compose restart next
+
+db	:
+	docker exec -it postgresql psql
+
+.PHONY	: all down clean fclean docker cntest stest xtest next db

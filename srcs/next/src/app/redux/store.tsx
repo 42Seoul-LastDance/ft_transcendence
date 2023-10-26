@@ -1,20 +1,23 @@
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
-import mySlice from './mySlice';
-import tokenSlice from './tokenSlice';
+import { configureStore } from '@reduxjs/toolkit';
+import { matchSlice } from './matchSlice';
 import userSlice from './userSlice';
-
-// const rootReducer = combineReducers({
-//   my: mySlice.reducer,
-//   token: tokenSlice.reducer
-// });
+import roomSlice from './roomSlice';
+import alertSlice from './alertSlice';
+import dmSlice from './dmSlice';
+import friendSlice from './friendSlice';
+import viewSlice from './viewSlice';
 
 const store = configureStore({
-  reducer: 
-  {
+  reducer: {
     user: userSlice.reducer,
-  }
+    room: roomSlice.reducer,
+    match: matchSlice.reducer,
+    alert: alertSlice.reducer,
+    dm: dmSlice.reducer,
+    friend: friendSlice.reducer,
+    view: viewSlice.reducer,
+  },
 });
 
 export default store;
-
-//export type RootState = ReturnType<typeof rootReducer>;
+export type RootState = ReturnType<typeof store.getState>;

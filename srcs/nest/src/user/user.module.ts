@@ -1,4 +1,4 @@
-import { Module, UnprocessableEntityException } from '@nestjs/common';
+import { Module, UnprocessableEntityException, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
@@ -8,6 +8,10 @@ import { JwtEnrollGuard } from 'src/auth/jwtEnroll.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { GameModule } from 'src/game/game.module';
+import { GameService } from 'src/game/game.service';
+import { SocketUsersModule } from '../socket/socketUsersService/socketUsers.module';
+import { DirectMessageModule } from 'src/socket/directMessage/directMessage.module';
 
 @Module({
     imports: [
@@ -20,7 +24,7 @@ import { diskStorage } from 'multer';
         MulterModule.registerAsync({
             useFactory: () => ({
                 storage: diskStorage({
-                    destination: __dirname + '/../../profile',
+                    destination: '/usr/app/srcs/profile/',
                     filename: (req, file, callback) => {
                         const name = Date.now().toString(); // 파일 이름 -> 현재 시각 (유니크하게)
                         const mimeTypeMap = {
@@ -30,10 +34,7 @@ import { diskStorage } from 'multer';
                         };
                         if (mimeTypeMap[file.mimetype]) {
                             // 확장자 체크
-                            callback(
-                                null,
-                                `${name}${mimeTypeMap[file.mimetype]}`,
-                            );
+                            callback(null, `${name}${mimeTypeMap[file.mimetype]}`);
                         } else {
                             callback(new UnprocessableEntityException(), null);
                         }
@@ -46,7 +47,7 @@ import { diskStorage } from 'multer';
         }),
     ],
     controllers: [UserController],
-    providers: [UserService, JwtEnrollGuard],
-    exports: [UserService],
+    providers: [UserService, JwtAuthGuard, UserRepository],
+    exports: [UserService, UserRepository],
 })
 export class UserModule {}

@@ -1,35 +1,24 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as express from 'express';
-import * as proxy from 'express-http-proxy';
-// import { HttpExceptionFilter } from './http-exception.filter';
+import { MyLogger } from './my-logger';
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule);
+    // Set the defaultMaxListeners before creating the NestJS app instance
 
-    // // 프록시 설정
-    // app.use('/auth/42login', proxy('http://10.14.9.4:3000', {
-    //     // 다양한 프록시 옵션 설정 가능
-    //     proxyReqPathResolver: (req) => {
-    //     // 프록시 경로를 설정
-    //     return '/auth/42login';
-    //     },
-    // }));
+    require('events').EventEmitter.prototype._maxListeners = 100;
+    const app = await NestFactory.create(AppModule, { cors: true, logger: new MyLogger() });
 
     app.enableCors({
-        allowedHeaders:
-        'Authorization, X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, Access-Control-Allow-Origin',
-		origin: '*',
+        origin: true,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
+        allowedHeaders: 'Authorization, X-Requested-With, X-HTTP-Method-Override, Content-Type',
     });
 
-    //정적파일 미들웨어 추가
-    app.use(express.static('public'));
-
-    // global-scoped filter
-    // app.useGlobalFilters(new HttpExceptionFilter());
+    // Other app configuration and startup code...
 
     await app.listen(3000);
 }
+
 bootstrap();
