@@ -1,9 +1,23 @@
-NAME		= .transcendence
+NAME	= .transcendence
 
 all		: $(NAME)
 
 $(NAME) :
 	mkdir -p ./srcs/postgresql
+	@git submodule update --init --remote
+	@cp ./env/.env .
+	@bash utils/setting_ip.sh
+	@if docker info | grep -q "not" || docker info | grep -q "ERROR"; then \
+		echo "\033[0;96m--- Docker will be running soon ---"; \
+		echo "y" | ./utils/init_docker.sh; \
+		while docker info | grep -q "ERROR"; do \
+			sleep 1; \
+		done >/dev/null 2>&1; \
+		docker-compose up --build; \
+	else \
+		echo "\033[0;96m--- Docker is already running ---"; \
+		docker-compose up --build; \
+	fi
 	docker-compose up --build
 
 down	: 
@@ -12,30 +26,32 @@ down	:
 
 clean	:
 	make down
-	docker system prune -af
+	@docker system prune -af
 
 fclean	:
 	make clean
-	docker volume rm $$(docker volume ls -q -f dangling=true) || docker volume ls
+	@docker volume rm $$(docker volume ls -q -f dangling=true) || docker volume ls
 
 re		:
 	make fclean
 	make all
 
 docker	:
-	chmod 777 ./utils/init_docker.sh
 	echo "y" | ./utils/init_docker.sh
 
-compile	:
-	docker exec node npx tsc $(ls ./srcs/ | grep .ts$)
-
-cntest	:
+stest	:
 	docker exec nest curl http://localhost:3000
 
-run :
-	docker exec nest npm --prefix srcs run start
+xtest	:
+	docker exec next curl http://localhost:4242
 
-restart :
-	docker exec nest npm --prefix srcs run restart
+exec	:
+	docker exec -it next /bin/bash
 
-.PHONY	: all down clean fclean docker compile cntest run stop
+next	:
+	docker-compose restart next
+
+db	:
+	docker exec -it postgresql psql
+
+.PHONY	: all down clean fclean docker cntest stest xtest next db
