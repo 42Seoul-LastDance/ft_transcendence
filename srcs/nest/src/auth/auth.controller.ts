@@ -7,10 +7,7 @@ import {
     Res,
     UseGuards,
     UnauthorizedException,
-    Query,
-    InternalServerErrorException,
     Logger,
-    Param,
     Body,
     Patch,
 } from '@nestjs/common';

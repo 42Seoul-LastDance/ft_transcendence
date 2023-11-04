@@ -1,17 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AppService } from '../../app.service';
 import { Socket, Server } from 'socket.io';
 import { ChatRoomDto } from './dto/chatRoom.dto';
 import { CreateRoomDto } from './dto/createRoom.dto';
 import { RoomStatus } from './roomStatus.enum';
 import { UserPermission } from './userPermission.enum';
 import { SocketUsersService } from '../socketUsersService/socketUsers.service';
-import { time } from 'console';
-import { InviteType } from '../socketUsersService/socketUsers.enum';
 import { User } from 'src/user/user.entity';
-// import { RouterModule } from '@nestjs/core';
-// import * as schedule from 'node-schedule';
-
 /*
 1. 채팅방 개설
 2. 채팅방 나가기
@@ -71,13 +65,6 @@ export class ChatRoomService {
         return memberList;
     }
 
-    private async getBlockListById(userId: number): Promise<Array<number>> {
-        // 새로 들어오는 유저의 blockList를 DB에서 꺼내와 배열로 반환하기
-        const resultArray = new Array<number>();
-        // DB에서 userId가 block한 다른 user의 id들을 가져와 resultArray에 담기
-        return resultArray;
-    }
-
     getUserId(socket: Socket): number | undefined {
         return this.socketUsersService.getUserIdByChatSocketId(socket.id);
     }
@@ -93,7 +80,6 @@ export class ChatRoomService {
 
     async deleteUser(socket: Socket) {
         const userId = this.getUserId(socket);
-        // console.log('DELETE USER', await this.socketUsersService.getUserNameByUserId(userId));
         //user가 속했던 방  삭제
         const publicRooms: Map<string, ChatRoomDto> = this.publicRoomList;
         const privateRooms: Map<string, ChatRoomDto> = this.privateRoomList;

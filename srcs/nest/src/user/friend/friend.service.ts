@@ -3,7 +3,6 @@ import { FriendRepository } from './friend.repository';
 import { Friend } from './friend.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from '../user.service';
-import { UserStatus } from '../user-status.enum';
 import { FriendStatus } from './friend.enum';
 import { User } from '../user.entity';
 

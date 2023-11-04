@@ -12,9 +12,7 @@ import { UserModule } from 'src/user/user.module';
 import { HttpModule } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
-// import { RegenerateJwtStrategy } from './regenerate-auth.strategy';
 import { RegenerateAuthGuard } from './regenerateAuth.guard';
-// import { JwtAuthGuard } from './jwtAuth.guard';
 import { SocketUsersModule } from '../socket/socketUsersService/socketUsers.module';
 
 @Module({

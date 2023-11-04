@@ -10,10 +10,6 @@ import {
     UseInterceptors,
     UploadedFile,
     Res,
-    NotFoundException,
-    InternalServerErrorException,
-    BadRequestException,
-    ParseIntPipe,
     Logger,
 } from '@nestjs/common';
 import { UserService } from './user.service';

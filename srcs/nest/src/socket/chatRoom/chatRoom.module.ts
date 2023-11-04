@@ -8,7 +8,6 @@ import { BlockedUsersRepository } from 'src/user/blockedUsers/blockedUsers.repos
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BlockedUsersModule } from 'src/user/blockedUsers/blockedUsers.module';
 import { SocketUsersModule } from '../socketUsersService/socketUsers.module';
-import { SocketUsersService } from '../socketUsersService/socketUsers.service';
 import { FriendModule } from 'src/user/friend/friend.module';
 
 @Module({

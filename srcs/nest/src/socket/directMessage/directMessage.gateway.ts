@@ -7,9 +7,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { DirectMessageService } from './directMessage.service';
-import { DateTime } from 'luxon';
 import { JwtService } from '@nestjs/jwt';
-import { UserStatus } from 'src/user/user-status.enum';
 import { Logger } from '@nestjs/common';
 import { User } from 'src/user/user.entity';
 export const TIMEZONE: string = 'Asia/Seoul';

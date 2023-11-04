@@ -8,7 +8,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DirectMessageController } from './directMessage.controller';
 import { UserModule } from 'src/user/user.module';
 import { BlockedUsersModule } from 'src/user/blockedUsers/blockedUsers.module';
-import { SocketUsersService } from '../socketUsersService/socketUsers.service';
 import { SocketUsersModule } from '../socketUsersService/socketUsers.module';
 import { FriendModule } from 'src/user/friend/friend.module';
 

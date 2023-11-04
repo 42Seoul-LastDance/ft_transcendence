@@ -1,17 +1,12 @@
-import { Module, UnprocessableEntityException, forwardRef } from '@nestjs/common';
+import { Module, UnprocessableEntityException } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { User } from './user.entity';
 import { UserRepository } from './user.repository';
-import { JwtEnrollGuard } from 'src/auth/jwtEnroll.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { GameModule } from 'src/game/game.module';
-import { GameService } from 'src/game/game.service';
-import { SocketUsersModule } from '../socket/socketUsersService/socketUsers.module';
-import { DirectMessageModule } from 'src/socket/directMessage/directMessage.module';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 
 @Module({

@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, Unique } from 'typeorm';
 import { UserStatus } from './user-status.enum';
-import { IsBoolean, IsEnum, IsNumber, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsString } from 'class-validator';
 import { userRole } from './user-role.enum';
 
 @Entity({ name: 'user', schema: 'public' })

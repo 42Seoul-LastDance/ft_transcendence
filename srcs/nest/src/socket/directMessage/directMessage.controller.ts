@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, Param, ParseIntPipe, Put, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Param, Put, Req, Res, UseGuards } from '@nestjs/common';
 import { DirectMessageService } from './directMessage.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { UserService } from 'src/user/user.service';

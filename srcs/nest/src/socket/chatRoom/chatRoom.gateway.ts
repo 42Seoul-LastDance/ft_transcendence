@@ -1,12 +1,5 @@
-import {
-    OnGatewayConnection,
-    OnGatewayDisconnect,
-    SubscribeMessage,
-    WebSocketGateway,
-    WebSocketServer,
-} from '@nestjs/websockets';
+import { OnGatewayConnection, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
-import { AppService } from 'src/app.service';
 import { Server, Socket } from 'socket.io';
 import { ChatRoomService } from './chatRoom.service';
 import { CreateRoomDto } from './dto/createRoom.dto';

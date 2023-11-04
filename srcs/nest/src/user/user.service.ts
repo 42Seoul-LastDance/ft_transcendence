@@ -16,9 +16,7 @@ import { existsSync, readFileSync, unlinkSync } from 'fs';
 import { extname } from 'path';
 import { UserProfileDto } from './dto/userProfile.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserStatus } from './user-status.enum';
 import { POINT, LEVELUP } from 'src/game/game.constants';
-import { DirectMessageService } from 'src/socket/directMessage/directMessage.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()

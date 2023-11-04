@@ -1,8 +1,6 @@
 import {
     Injectable,
     UnauthorizedException,
-    Res,
-    HttpStatus,
     InternalServerErrorException,
     Logger,
     BadRequestException,
@@ -10,10 +8,9 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 import { Auth42Dto } from './dto/auth42.dto';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { User } from 'src/user/user.entity';
 import { MailService } from 'src/mail/mail.service';
-import { UserInfoDto } from 'src/user/dto/userInfo.dto';
 
 @Injectable()
 export class AuthService {

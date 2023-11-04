@@ -5,8 +5,6 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-oauth2';
 import axios from 'axios';
 import { Response } from 'express';
-// import { UserInfoDto } from 'src/user/dto/user-info.dto';
-// import { userRole } from 'src/user/user-role.enum';
 
 //42 OAuth2 인증을 위한 클래스
 /*
