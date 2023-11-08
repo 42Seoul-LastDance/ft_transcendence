@@ -62,25 +62,30 @@ const Home = () => {
                 alt="pingpong"
                 style={{
                   width: '400px',
+                  padding: '25',
                 }}
               />
               <br />
               <Link
                 href={`${BACK_URL}/auth/42login`}
-                style={{ textDecoration: 'none' }}
+                style={{
+                  textDecoration: 'none',
+                  justifyContent: 'center',
+                  display: 'flex',
+                }}
               >
                 <Button
                   variant="outlined"
                   className="yellow-hover"
                   sx={{
-                    width: '400px',
+                    width: '350px',
                     height: '50px',
                     borderRadius: '15px',
                     color: 'black',
                     borderColor: 'black',
                   }}
                 >
-                  <Typography variant="body2">42 login</Typography>
+                  <Typography variant="body1">42 login</Typography>
                 </Button>
               </Link>
             </main>
