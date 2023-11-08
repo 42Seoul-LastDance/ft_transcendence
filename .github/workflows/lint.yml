@@ -27,7 +27,7 @@ jobs:
           node-version: '18'
 
       - name: Change to directory
-        run: cd srcs/nest/src
+        run: cd srcs/nest/
 
       - name: Install dependencies
         run: npm install
