@@ -1,33 +1,36 @@
 name: Lint
 on:
- push:
-  branches:
-   - develop
-   - main
- pull_request:
-  branches:
-   - develop
-   - main
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
       - name: check current path
-        run : pwd
+        run: pwd
+
       - name: list directories
-        run : ls
-      - name: Change to directory
-        run: cd ./srcs/nest/src
+        run: ls
 
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '18'
+
+      - name: Change to directory
+        run: cd srcs/nest/src
+
       - name: Install dependencies
         run: npm install
-        working-directory: /home/runner/work/Backend/Backend/srcs/nest/src
+
       - name: Run ESLint
         run: npm run lint
-        working-directory: /home/runner/work/Backend/Backend/srcs/nest/src
