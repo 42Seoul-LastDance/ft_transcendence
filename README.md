@@ -48,3 +48,8 @@
 <img width="600" alt="Screen Shot 2023-11-10 at 3 32 03 PM" src="https://github.com/42Seoul-LastDance/ft_transcendence/assets/87380790/f61203c3-2cb8-40c3-b1e4-0f7ea2fe8cf9">
 
 <br/><br/>
+
+## Game Socket Communication
+
+<img width="1444" alt="Screen Shot 2023-11-10 at 4 48 57 PM" src="https://github.com/42Seoul-LastDance/ft_transcendence/assets/87380790/e43fb017-8a8e-4754-98b1-068b6f3f0eac">
+
